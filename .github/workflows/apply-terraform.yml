@@ -65,7 +65,7 @@ jobs:
         INFRASTRUCTURE_FOLDER: ${{ inputs.INFRASTRUCTURE_FOLDER }}
       run: |
         cd main
-        if [[ $INSTANCE ]]; then
+        if [[ $INFRASTRUCTURE_FOLDER ]]; then
           make tf/init infrastructure_folder=${{inputs.INFRASTRUCTURE_FOLDER}}
         else
           make tf/init
@@ -78,7 +78,7 @@ jobs:
       run: |
         cd main
         tfParams=()
-        [[ $INSTANCE ]] && tfParams+=( "INFRASTRUCTURE_FOLDER=$INFRASTRUCTURE_FOLDER" )
+        [[ $INFRASTRUCTURE_FOLDER ]] && tfParams+=( "INFRASTRUCTURE_FOLDER=$INFRASTRUCTURE_FOLDER" )
         tfParams+=( "env=$ENVIRONMENT" )
         tfParams+=( "beta=$BETA" )
         make tf/set-or-create-workspace "${tfParams[@]}"
