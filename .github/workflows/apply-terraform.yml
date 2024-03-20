@@ -1,0 +1,96 @@
+name: Release instance
+
+on:
+  workflow_call:
+    inputs:
+      APP_NAME:
+        required: true
+        type: string
+      AWS_REGION:
+        required: true
+        type: string
+      RUNNER_LABEL:
+        required: true
+        type: string
+      ENVIRONMENT:
+        required: false
+        default: default
+        type: string
+      INFRASTRUCTURE_FOLDER:
+        required: false
+        type: string
+    secrets:
+      AWS_GITHUBRUNNER_PAT:
+        required: true
+      AWS_GITHUBRUNNER_PAT_USER:
+        required: true
+
+jobs:
+  release-terraform:
+    runs-on: ${{ inputs.RUNNER_LABEL }}
+
+    steps:
+
+    - name: Checkout
+      uses: actions/checkout@v3
+      with:
+        path: main
+
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v1-node16
+      id: aws-credentials
+      with:
+          aws-region: ${{ inputs.AWS_REGION }}
+          mask-aws-account-id: 'no'
+
+    - name: Dump inputs context
+      env:
+        INPUTS: ${{ toJSON(inputs) }}
+      run: echo "$INPUTS"
+
+    - name: Checkout i-ai-core-infrastructure
+      uses: actions/checkout@v3
+      with:
+        repository: i-dot-ai/i-ai-core-infrastructure
+        ref: refs/heads/main
+        token: ${{ secrets.AWS_GITHUBRUNNER_PAT }}
+        path: i-ai-core-infrastructure
+
+    - name: Login to Amazon ECR
+      id: login-ecr
+      uses: aws-actions/amazon-ecr-login@v1
+
+    - name: Terraform init
+      env:
+        INFRASTRUCTURE_FOLDER: ${{ inputs.INFRASTRUCTURE_FOLDER }}
+      run: |
+        cd main
+        if [[ $INFRASTRUCTURE_FOLDER ]]; then
+          make tf/init infrastructure_folder=${{inputs.INFRASTRUCTURE_FOLDER}}
+        else
+          make tf/init
+        fi
+
+    - name: Terraform apply
+      env: 
+        INFRASTRUCTURE_FOLDER: ${{ inputs.INFRASTRUCTURE_FOLDER }}
+        ENVIRONMENT: ${{ inputs.ENVIRONMENT }}
+      run: |
+        cd main
+        tfParams=()
+        [[ $INFRASTRUCTURE_FOLDER ]] && tfParams+=( "INFRASTRUCTURE_FOLDER=$INFRASTRUCTURE_FOLDER" )
+        tfParams+=( "env=$ENVIRONMENT" )
+        make tf/set-or-create-workspace "${tfParams[@]}"
+        make tf/apply "${tfParams[@]}"
+
+    - name: Tag built image with deployment environment
+      env:
+        ENVIRONMENT: ${{ inputs.ENVIRONMENT }}
+        APP_NAME: ${{ inputs.APP_NAME }}
+        INFRASTRUCTURE_FOLDER: ${{ inputs.INFRASTRUCTURE_FOLDER }}
+      continue-on-error: true
+      run: |
+        if [[ $INFRASTRUCTURE_FOLDER ]]; then
+          cd main
+          make docker/update-tag tag=$ENVIRONMENT
+        fi
