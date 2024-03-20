@@ -82,8 +82,7 @@ jobs:
         cd main
         make docker/push
         IMAGE=$(eval $(make docker/echo value=IMAGE) | awk '{print $1;}')
-        docker image rm ${IMAGE}
-
+      
     - name: Export ecr image attributes
       id: export-ecr
       env:
@@ -94,3 +93,5 @@ jobs:
         echo "repo=$REPO" >> $GITHUB_OUTPUT
         export TAG=$(eval $(make docker/echo value=IMAGE_TAG)| awk '{print $1;}')
         echo "tag=$TAG" >> $GITHUB_OUTPUT
+    - name: Clean Docker context
+      run: docker system prune -f
