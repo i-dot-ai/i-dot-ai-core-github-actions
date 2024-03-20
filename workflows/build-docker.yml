@@ -1,0 +1,97 @@
+name: Build dash
+
+on:
+  workflow_call:
+    inputs:
+      APP_NAME:
+        required: true
+        type: string
+      AWS_REGION:
+        required: true
+        type: string
+      RUNNER_LABEL:
+        required: true
+        type: string
+      INFRASTRUCTURE_FOLDER:
+        required: true
+        type: string
+    secrets:
+      AWS_GITHUBRUNNER_PAT:
+        required: true
+      AWS_GITHUBRUNNER_PAT_USER:
+        required: true
+
+jobs:
+  build-and-push-to-ecr:
+    name: Build and push to ECR
+    runs-on: ${{ inputs.RUNNER_LABEL }}
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v3
+      with:
+        path: main
+
+    - name: Dump inputs context
+      env:
+        INPUTS: ${{ toJSON(inputs) }}
+      run: echo "$INPUTS"
+
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v1-node16
+      id: aws-credentials
+      with:
+          aws-region: ${{ inputs.AWS_REGION }}
+          mask-aws-account-id: 'no'
+  
+    - name: Checkout i-dot-ai-core-terraform repo
+      uses: actions/checkout@v3
+      with:
+        repository: i-dot-ai/i-ai-core-terraform
+        ref: refs/heads/main
+        token: ${{ secrets.AWS_GITHUBRUNNER_PAT }}
+        path: i-dot-ai-core-terraform
+
+    - name: Terraform init
+      run: |
+        cd main
+        make tf/init instance=${{ inputs.infrastructure_folder }}
+
+    - name: Terraform scan
+      uses: bridgecrewio/checkov-action@v12
+      with:
+        directory: main/infrastructure
+
+    - name: Login to Amazon ECR
+      id: login-ecr
+      uses: aws-actions/amazon-ecr-login@v1
+
+    - name: Docker build
+      env:
+        ACCOUNT_ID: ${{ steps.aws-credentials.outputs.aws-account-id }}
+        APP_NAME: ${{ inputs.APP_NAME }}
+      run: |
+        cd main
+        make docker/build
+
+    - name: Docker Push
+      env:
+        ACCOUNT_ID: ${{ steps.aws-credentials.outputs.aws-account-id }}
+        APP_NAME: ${{ inputs.APP_NAME }}
+      run: |
+        cd main
+        make docker/push
+        IMAGE=$(eval $(make docker/echo value=IMAGE) | awk '{print $1;}')
+      
+    - name: Export ecr image attributes
+      id: export-ecr
+      env:
+        APP_NAME: ${{ inputs.APP_NAME }}
+      run: |
+        cd main
+        export REPO=$(eval $(make docker/echo value=ECR_REPO_NAME) | awk '{print $1;}')
+        echo "repo=$REPO" >> $GITHUB_OUTPUT
+        export TAG=$(eval $(make docker/echo value=IMAGE_TAG)| awk '{print $1;}')
+        echo "tag=$TAG" >> $GITHUB_OUTPUT
+    - name: Clean Docker context
+      run: docker system prune -f

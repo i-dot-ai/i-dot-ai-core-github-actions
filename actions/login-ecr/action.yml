@@ -1,0 +1,34 @@
+name: 'Build Docker Image'
+description: 'Builds a Docker image from a Dockerfile at a specified path'
+inputs:
+  dockerImagePath:
+    description: 'The path to the Dockerfile'
+    required: true
+  varFilePath:
+    description: 'File path to variable file or directory. Defaults to ./.github/variables/* if none specified and runs against each file in that directory.'
+    required: false
+    default: ./.github/.github.env
+  secrets:
+    AWS_ACCOUNT_ID:
+      required: true
+    AWS_REGION:
+      required: true
+  
+
+runs:
+  using: 'composite'
+  env:
+    IMAGE_TAG: ${{ github.sha }}
+    ECR_REPO_URL: ${{ secrets.AWS_ACCOUNT_ID}}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/{{ inputs.ECR_REPO_NAME }}
+  steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+    
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v1-node16
+      id: aws-credentials
+      with:
+          aws-region: ${{ inputs.AWS_REGION }}
+          mask-aws-account-id: 'yes'
+    - name: Login to Amazon ECR
+      uses: aws-actions/amazon-ecr-login@v1
