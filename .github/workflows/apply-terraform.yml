@@ -80,7 +80,6 @@ jobs:
         tfParams=()
         [[ $INFRASTRUCTURE_FOLDER ]] && tfParams+=( "INFRASTRUCTURE_FOLDER=$INFRASTRUCTURE_FOLDER" )
         tfParams+=( "env=$ENVIRONMENT" )
-        tfParams+=( "beta=$BETA" )
         make tf/set-or-create-workspace "${tfParams[@]}"
         make tf/apply "${tfParams[@]}"
 
