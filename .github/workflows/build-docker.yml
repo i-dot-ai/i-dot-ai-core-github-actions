@@ -6,9 +6,6 @@ on:
       APP_NAME:
         required: true
         type: string
-      AWS_REGION:
-        required: true
-        type: string
       RUNNER_LABEL:
         required: true
         type: string
@@ -43,7 +40,7 @@ jobs:
       uses: aws-actions/configure-aws-credentials@v1-node16
       id: aws-credentials
       with:
-          aws-region: ${{ inputs.AWS_REGION }}
+          aws-region: ${{ secrets.AWS_REGION }}
           mask-aws-account-id: 'yes'
   
     - name: Checkout i-dot-ai-core-terraform repo
