@@ -54,10 +54,9 @@ jobs:
         path: i-dot-ai-core-terraform
 
     - name: Login to Amazon ECR
-      id: login-ecr
-      uses: aws-actions/amazon-ecr-login@v1
-      with:
-        mask-password: 'true'
+      run: |
+        aws ecr get-login-password | docker login --username AWS --password-stdin ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com
+      shell: bash
 
     # - name: Docker build
     #   env:
