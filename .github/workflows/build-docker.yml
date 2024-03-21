@@ -19,6 +19,8 @@ on:
         required: true
       AWS_REGION:
         required: true
+      AWS_ACCOUNT_ID:
+        required: true
 
 jobs:
   build-and-push-to-ecr:
@@ -60,7 +62,6 @@ jobs:
         ACCOUNT_ID: ${{ steps.aws-credentials.outputs.aws-account-id }}
         APP_NAME: ${{ inputs.APP_NAME }}
       run: |
-        echo "::add-mask::${{ env.ACCOUNT_ID }}"
         cd main
         make docker/build
 
