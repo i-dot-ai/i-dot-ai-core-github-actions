@@ -42,7 +42,7 @@ jobs:
       id: aws-credentials
       with:
           aws-region: ${{ inputs.AWS_REGION }}
-          mask-aws-account-id: 'no'
+          mask-aws-account-id: 'yes'
   
     - name: Checkout i-dot-ai-core-terraform repo
       uses: actions/checkout@v3
