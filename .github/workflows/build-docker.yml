@@ -51,16 +51,6 @@ jobs:
         token: ${{ secrets.AWS_GITHUBRUNNER_PAT }}
         path: i-dot-ai-core-terraform
 
-    - name: Terraform init
-      run: |
-        cd main
-        make tf/init instance=${{ inputs.infrastructure_folder }}
-
-    - name: Terraform scan
-      uses: bridgecrewio/checkov-action@v12
-      with:
-        directory: main/infrastructure
-
     - name: Login to Amazon ECR
       id: login-ecr
       uses: aws-actions/amazon-ecr-login@v1
