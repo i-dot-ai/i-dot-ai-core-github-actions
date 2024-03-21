@@ -58,32 +58,32 @@ jobs:
         aws ecr get-login-password | docker login --username AWS --password-stdin ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com
       shell: bash
 
-    # - name: Docker build
-    #   env:
-    #     ACCOUNT_ID: ${{ steps.aws-credentials.outputs.aws-account-id }}
-    #     APP_NAME: ${{ inputs.APP_NAME }}
-    #   run: |
-    #     cd main
-    #     make docker/build
+    - name: Docker build
+      env:
+        ACCOUNT_ID: ${{ steps.aws-credentials.outputs.aws-account-id }}
+        APP_NAME: ${{ inputs.APP_NAME }}
+      run: |
+        cd main
+        make docker/build
 
-    # - name: Docker Push
-    #   env:
-    #     ACCOUNT_ID: ${{ steps.aws-credentials.outputs.aws-account-id }}
-    #     APP_NAME: ${{ inputs.APP_NAME }}
-    #   run: |
-    #     cd main
-    #     make docker/push
-    #     IMAGE=$(eval $(make docker/echo value=IMAGE) | awk '{print $1;}')
+    - name: Docker Push
+      env:
+        ACCOUNT_ID: ${{ steps.aws-credentials.outputs.aws-account-id }}
+        APP_NAME: ${{ inputs.APP_NAME }}
+      run: |
+        cd main
+        make docker/push
+        IMAGE=$(eval $(make docker/echo value=IMAGE) | awk '{print $1;}')
       
-    # - name: Export ecr image attributes
-    #   id: export-ecr
-    #   env:
-    #     APP_NAME: ${{ inputs.APP_NAME }}
-    #   run: |
-    #     cd main
-    #     export REPO=$(eval $(make docker/echo value=ECR_REPO_NAME) | awk '{print $1;}')
-    #     echo "repo=$REPO" >> $GITHUB_OUTPUT
-    #     export TAG=$(eval $(make docker/echo value=IMAGE_TAG)| awk '{print $1;}')
-    #     echo "tag=$TAG" >> $GITHUB_OUTPUT
-    # - name: Clean Docker context
-    #   run: docker system prune -f
+    - name: Export ecr image attributes
+      id: export-ecr
+      env:
+        APP_NAME: ${{ inputs.APP_NAME }}
+      run: |
+        cd main
+        export REPO=$(eval $(make docker/echo value=ECR_REPO_NAME) | awk '{print $1;}')
+        echo "repo=$REPO" >> $GITHUB_OUTPUT
+        export TAG=$(eval $(make docker/echo value=IMAGE_TAG)| awk '{print $1;}')
+        echo "tag=$TAG" >> $GITHUB_OUTPUT
+    - name: Clean Docker context
+      run: docker system prune -f
