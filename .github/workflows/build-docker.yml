@@ -20,6 +20,8 @@ on:
         required: true
       AWS_GITHUBRUNNER_PAT_USER:
         required: true
+      AWS_REGION:
+        required: true
 
 jobs:
   build-and-push-to-ecr:
