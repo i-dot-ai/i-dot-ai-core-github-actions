@@ -69,6 +69,7 @@ jobs:
         ACCOUNT_ID: ${{ steps.aws-credentials.outputs.aws-account-id }}
         APP_NAME: ${{ inputs.APP_NAME }}
       run: |
+        echo "::add-mask::${{ env.ACCOUNT_ID }}"
         cd main
         make docker/push
         IMAGE=$(eval $(make docker/echo value=IMAGE) | awk '{print $1;}')
