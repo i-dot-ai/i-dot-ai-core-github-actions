@@ -80,11 +80,13 @@ jobs:
       env:
         INFRASTRUCTURE_FOLDER: ${{ inputs.INFRASTRUCTURE_FOLDER }}
       run: |
+        ls
+        pwd
         cd main
         if [[ $INFRASTRUCTURE_FOLDER ]]; then
-          make terraform_init infrastructure_folder=${{inputs.INFRASTRUCTURE_FOLDER}}
+          make tf_init infrastructure_folder=${{inputs.INFRASTRUCTURE_FOLDER}}
         else
-          make terraform_init
+          make tf_init
         fi
 
     - name: Terraform apply
@@ -96,8 +98,8 @@ jobs:
         tfParams=()
         [[ $INFRASTRUCTURE_FOLDER ]] && tfParams+=( "INFRASTRUCTURE_FOLDER=$INFRASTRUCTURE_FOLDER" )
         tfParams+=( "env=$ENVIRONMENT" )
-        make terraform_set_or_create_workspace "${tfParams[@]}"
-        make terraform_apply "${tfParams[@]}"
+        make tf_set_or_create_workspace "${tfParams[@]}"
+        make tf_apply "${tfParams[@]}"
 
     - name: Tag built image with deployment environment
       env:
