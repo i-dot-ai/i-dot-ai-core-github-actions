@@ -9,6 +9,9 @@ on:
       RUNNER_LABEL:
         required: true
         type: string
+      PUBLIC_INFRA_DEPLOYMENT:
+        required: true
+        type: boolean
       ENVIRONMENT:
         required: false
         default: prod
@@ -17,9 +20,6 @@ on:
         required: false
         default: "infrastructure"
         type: string
-      PUBLIC_INFRA_DEPLOYMENT:
-        required: true
-        type: boolean
       INFRA_CONFIG_REPO:
         required: false
         type: string
