@@ -68,7 +68,7 @@ jobs:
           echo $data
           available_runners=$(jq -r '.runners[] | select(.labels[].name=='\"$label_name\"' and .busy==false and .status=="online" )' <<< "${data}")
 
-          if [[ $available_runners && "${{ inputs.EC2_INSTANCE_TYPE }}" == "t3.micro" ]]; then
+          if [[ $available_runners && "${{ inputs.EC2_INSTANCE_TYPE }}" == "t3.large" ]]; then
            echo "use_persisted=1" >> $GITHUB_OUTPUT
            echo "runner_label=${label_name}" >> $GITHUB_OUTPUT
           else

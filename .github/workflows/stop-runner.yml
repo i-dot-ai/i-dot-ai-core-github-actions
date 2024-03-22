@@ -1,0 +1,42 @@
+name: stop-runner
+
+on:
+  workflow_call:
+    inputs:
+      AWS_REGION:
+        required: false
+        type: string
+        default: eu-west-2
+      RUNNER_LABEL:
+        required: true
+        type: string
+      EC2_INSTANCE_ID:
+        required: true
+        type: string
+    secrets:
+      AWS_GITHUBRUNNER_USER_ACCESS_KEY:
+        required: true
+      AWS_GITHUBRUNNER_USER_SECRET_ID:
+        required: true
+      AWS_GITHUBRUNNER_PAT:
+        required: true
+
+jobs:
+  stop-runner:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1-node16
+        with:
+          aws-access-key-id: ${{ secrets.AWS_GITHUBRUNNER_USER_ACCESS_KEY }}
+          aws-secret-access-key: ${{ secrets.AWS_GITHUBRUNNER_USER_SECRET_ID }}
+          aws-region: ${{ inputs.AWS_REGION }}
+
+      - name: Stop EC2 runner
+        if: ${{ ! contains( 'persistent', inputs.RUNNER_LABEL ) }}
+        uses: machulav/ec2-github-runner@v2
+        with:
+          mode: stop
+          github-token: ${{ secrets.AWS_GITHUBRUNNER_PAT }}
+          label: ${{ inputs.RUNNER_LABEL }}
+          ec2-instance-id: ${{ inputs.EC2_INSTANCE_ID }}
