@@ -80,9 +80,8 @@ jobs:
       env:
         INFRASTRUCTURE_FOLDER: ${{ inputs.INFRASTRUCTURE_FOLDER }}
       run: |
-        ls
-        pwd
         cd main
+        rm .terraform.lock.hcl
         if [[ $INFRASTRUCTURE_FOLDER ]]; then
           make tf_init infrastructure_folder=${{inputs.INFRASTRUCTURE_FOLDER}}
         else
