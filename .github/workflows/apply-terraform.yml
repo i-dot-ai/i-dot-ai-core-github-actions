@@ -6,23 +6,30 @@ on:
       APP_NAME:
         required: true
         type: string
-      AWS_REGION:
-        required: true
-        type: string
       RUNNER_LABEL:
         required: true
         type: string
       ENVIRONMENT:
         required: false
-        default: default
+        default: prod
         type: string
       INFRASTRUCTURE_FOLDER:
         required: false
+        default: "infrastructure"
         type: string
+      PUBLIC_INFRA_DEPLOYMENT:
+        default: true
+        type: boolean
+      INFRA_CONFIG_REPO:
+        required: false
+        type: string
+
     secrets:
       AWS_GITHUBRUNNER_PAT:
         required: true
       AWS_GITHUBRUNNER_PAT_USER:
+        required: true
+      AWS_REGION:
         required: true
 
 jobs:
@@ -40,7 +47,7 @@ jobs:
       uses: aws-actions/configure-aws-credentials@v1-node16
       id: aws-credentials
       with:
-          aws-region: ${{ inputs.AWS_REGION }}
+          aws-region: ${{ secrets.AWS_REGION }}
           mask-aws-account-id: 'no'
 
     - name: Dump inputs context
@@ -56,6 +63,15 @@ jobs:
         token: ${{ secrets.AWS_GITHUBRUNNER_PAT }}
         path: i-ai-core-infrastructure
 
+    - name: Optionally checkout terraform config variables for public repos
+      if: ${{ inputs.PUBLIC_INFRA_DEPLOYMENT == true }}
+      uses: actions/checkout@v3
+      with:
+        repository: i-dot-ai/${{ inputs.INFRA_CONFIG_REPO }}
+        ref: refs/heads/main
+        token: ${{ secrets.AWS_GITHUBRUNNER_PAT }}
+        path: ${{ inputs.INFRA_CONFIG_REPO }}
+
     - name: Login to Amazon ECR
       id: login-ecr
       uses: aws-actions/amazon-ecr-login@v1
@@ -66,9 +82,9 @@ jobs:
       run: |
         cd main
         if [[ $INFRASTRUCTURE_FOLDER ]]; then
-          make tf/init infrastructure_folder=${{inputs.INFRASTRUCTURE_FOLDER}}
+          make terraform_init infrastructure_folder=${{inputs.INFRASTRUCTURE_FOLDER}}
         else
-          make tf/init
+          make terraform_init
         fi
 
     - name: Terraform apply
@@ -80,8 +96,8 @@ jobs:
         tfParams=()
         [[ $INFRASTRUCTURE_FOLDER ]] && tfParams+=( "INFRASTRUCTURE_FOLDER=$INFRASTRUCTURE_FOLDER" )
         tfParams+=( "env=$ENVIRONMENT" )
-        make tf/set-or-create-workspace "${tfParams[@]}"
-        make tf/apply "${tfParams[@]}"
+        make terraform_set_or_create_workspace "${tfParams[@]}"
+        make terraform_apply "${tfParams[@]}"
 
     - name: Tag built image with deployment environment
       env:
@@ -92,5 +108,5 @@ jobs:
       run: |
         if [[ $INFRASTRUCTURE_FOLDER ]]; then
           cd main
-          make docker/update-tag tag=$ENVIRONMENT
+          make docker_update_tag tag=$ENVIRONMENT
         fi
