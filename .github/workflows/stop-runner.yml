@@ -3,10 +3,7 @@ name: stop-runner
 on:
   workflow_call:
     inputs:
-      AWS_REGION:
-        required: false
-        type: string
-        default: eu-west-2
+
       RUNNER_LABEL:
         required: true
         type: string
@@ -20,6 +17,8 @@ on:
         required: true
       AWS_GITHUBRUNNER_PAT:
         required: true
+      AWS_REGION:
+        required: true
 
 jobs:
   stop-runner:
@@ -30,7 +29,7 @@ jobs:
         with:
           aws-access-key-id: ${{ secrets.AWS_GITHUBRUNNER_USER_ACCESS_KEY }}
           aws-secret-access-key: ${{ secrets.AWS_GITHUBRUNNER_USER_SECRET_ID }}
-          aws-region: ${{ inputs.AWS_REGION }}
+          aws-region: ${{ secrets.AWS_REGION }}
 
       - name: Stop EC2 runner
         if: ${{ ! contains( 'persistent', inputs.RUNNER_LABEL ) }}
