@@ -1,0 +1,21 @@
+name: 'Export parameter'
+description: 'Exports AWS Paramter Store variable to the github environment'
+inputs:
+  PARAMETER_STORE_VAR_NAME:
+    description: "The name of the variable to fetch from parameter store"
+    required: true
+  ENVIRONMENT_VAR_NAME:
+    description: "The name of the variable to export to the Github action environment"
+    required: true
+runs:
+  using: "composite"
+  steps:
+    - name: Authenticate with aws
+      env:
+        PARAMETER_STORE_VAR_NAME: ${{ inputs.PARAMETER_STORE_VAR_NAME }}
+        ENVIRONMENT_VAR_NAME: ${{ inputs.ENVIRONMENT_VAR_NAME }}
+      run: |
+          VAR=$(aws ssm get-parameters --names "$PARAMETER_STORE_VAR_NAME" --query "Parameters[*].{Value:Value}" --with-decryption --output text)
+          echo "$ENVIRONMENT_VAR_NAME=$VAR" >> $GITHUB_ENV
+          echo "::add-mask::$VAR"
+      shell: bash

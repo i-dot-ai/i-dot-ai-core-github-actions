@@ -1,0 +1,132 @@
+name: start-runner
+
+on:
+  workflow_call:
+    inputs:
+      EC2_INSTANCE_TYPE:
+        required: true
+        type: string
+      ENVIRONMENT:
+        required: false
+        type: string
+    secrets:
+      AWS_GITHUBRUNNER_USER_ACCESS_KEY:
+        required: true
+      AWS_GITHUBRUNNER_USER_SECRET_ID:
+        required: true
+      AWS_GITHUBRUNNER_PAT:
+        required: true
+      AWS_REGION:
+        required: true
+    outputs:
+      label:
+        description: The ec2 runner label
+        value: ${{ jobs.start-runner.outputs.label }}
+      ec2-instance-id:
+        description: The id of the ec2 instance
+        value: ${{ jobs.start-runner.outputs.ec2-instance-id }}
+      use-persisted:
+        description: Whether to use a persistent github runner
+        value: ${{ jobs.start-runner.outputs.use_persisted }}
+
+jobs:
+  start-runner: # This job runs on the github actions runner, and all it is doing is setting up our own runner on AWS 
+    runs-on: ubuntu-latest
+    outputs:
+      label: ${{ steps.get-runner-label.outputs.label }}
+      ec2-instance-id: ${{ steps.start-ec2-runner.outputs.ec2-instance-id }}
+      use_persisted: ${{ steps.check-persistent-running.outputs.use_persisted }}
+    steps:
+      - name: Checkout 10ds actions repo
+        uses: actions/checkout@v3
+        with:
+          repository: PMO-Data-Science/10ds-core-github-actions
+          ref: refs/heads/main
+          token: ${{ secrets.AWS_GITHUBRUNNER_PAT }}
+
+      - name: Dump inputs context
+        env:
+          INPUTS: ${{ toJSON(inputs) }}
+        run: echo "$INPUTS"
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1-node16
+        with:
+          aws-access-key-id: ${{ secrets.AWS_GITHUBRUNNER_USER_ACCESS_KEY }}
+          aws-secret-access-key: ${{ secrets.AWS_GITHUBRUNNER_USER_SECRET_ID }}
+          aws-region: ${{ secrets.AWS_REGION }}
+          mask-aws-account-id: 'yes'
+
+      - name: Check for persistent runner
+        id: check-persistent-running
+        run: |
+          data="$(curl \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer ${{ secrets.AWS_GITHUBRUNNER_PAT }}" \
+            https://api.github.com/orgs/i-dot-ai/actions/runners)"
+          label_name="persistent-${{ inputs.ENVIRONMENT }}"
+          echo $data
+          available_runners=$(jq -r '.runners[] | select(.labels[].name=='\"$label_name\"' and .busy==false and .status=="online" )' <<< "${data}")
+
+          if [[ $available_runners && "${{ inputs.EC2_INSTANCE_TYPE }}" == "t3.large" ]]; then
+           echo "use_persisted=1" >> $GITHUB_OUTPUT
+           echo "runner_label=${label_name}" >> $GITHUB_OUTPUT
+          else
+           echo "use_persisted=0" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Export EC2_ROLE
+        uses: ./.github/actions/export_parameter
+        if: steps.check-persistent-running.outputs.use_persisted == 0
+        with:
+            PARAMETER_STORE_VAR_NAME: /github-runner-${{ inputs.ENVIRONMENT }}/ec2-role
+            ENVIRONMENT_VAR_NAME: EC2_ROLE
+
+      - name: Export SECURITY_GROUP_ID
+        uses: ./.github/actions/export_parameter
+        if: steps.check-persistent-running.outputs.use_persisted == 0
+        with:
+            PARAMETER_STORE_VAR_NAME: /github-runner-${{ inputs.ENVIRONMENT }}/security-group-id
+            ENVIRONMENT_VAR_NAME: SECURITY_GROUP_ID
+
+      - name: Export SUBNET_ID
+        uses: ./.github/actions/export_parameter
+        if: steps.check-persistent-running.outputs.use_persisted == 0
+        with:
+            PARAMETER_STORE_VAR_NAME: /github-runner-${{ inputs.ENVIRONMENT }}/subnet-id
+            ENVIRONMENT_VAR_NAME: SUBNET_ID
+
+      - name: Export AMI_ID
+        uses: ./.github/actions/export_parameter
+        if: steps.check-persistent-running.outputs.use_persisted == 0
+        with:
+            PARAMETER_STORE_VAR_NAME: /github-runner-${{ inputs.ENVIRONMENT }}/ami-id
+            ENVIRONMENT_VAR_NAME: AMI_ID
+
+      - name: Start EC2 runner
+        id: start-ec2-runner
+        uses:  machulav/ec2-github-runner@v2
+        if: steps.check-persistent-running.outputs.use_persisted == 0
+        with:
+          mode: start
+          github-token: ${{ secrets.AWS_GITHUBRUNNER_PAT}}
+          ec2-image-id: ${{ env.AMI_ID }}
+          ec2-instance-type: ${{ inputs.EC2_INSTANCE_TYPE }}
+          subnet-id: ${{ env.SUBNET_ID }}
+          security-group-id: ${{ env.SECURITY_GROUP_ID }}
+          # Controls the access of the instance
+          iam-role-name: ${{ env.EC2_ROLE }}
+          aws-resource-tags: > # optional, requires additional permissions
+            [
+              {"Key": "Name", "Value": "ec2-github-runner"},
+              {"Key": "GitHubRepository", "Value": "${{ github.repository }}"}
+            ]
+
+      - name: Get runner label
+        id: get-runner-label
+        run: |
+          if [[ ${{ steps.check-persistent-running.outputs.use_persisted }} == 1 ]]; then
+            echo "label=${{ steps.check-persistent-running.outputs.runner_label }}" >> $GITHUB_OUTPUT
+          else
+            echo "label=${{ steps.start-ec2-runner.outputs.label }}" >> $GITHUB_OUTPUT
+          fi
