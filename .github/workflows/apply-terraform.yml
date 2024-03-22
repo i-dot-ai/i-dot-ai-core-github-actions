@@ -18,7 +18,7 @@ on:
         default: "infrastructure"
         type: string
       PUBLIC_INFRA_DEPLOYMENT:
-        default: true
+        required: true
         type: boolean
       INFRA_CONFIG_REPO:
         required: false
