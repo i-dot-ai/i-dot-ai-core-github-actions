@@ -8,7 +8,6 @@ on:
         type: string
       ENVIRONMENT:
         required: false
-        default: prod
         type: string
     secrets:
       AWS_GITHUBRUNNER_USER_ACCESS_KEY:
