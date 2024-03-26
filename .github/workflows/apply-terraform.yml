@@ -49,7 +49,7 @@ jobs:
       uses: aws-actions/configure-aws-credentials@v3-node20
       id: aws-credentials
       with:
-          aws-account-id: ${{ secrets.AWS_ACCOUNT_ID }}
+          aws-region: ${{ secrets.AWS_REGION }}
           mask-aws-account-id: 'yes'
 
     - name: Dump inputs context
