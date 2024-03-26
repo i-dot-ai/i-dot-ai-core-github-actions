@@ -85,6 +85,6 @@ jobs:
         echo "repo=$REPO" >> $GITHUB_OUTPUT
         export TAG=$(eval $(make docker_echo value=IMAGE_TAG)| awk '{print $1;}')
         echo "tag=$TAG" >> $GITHUB_OUTPUT
-        export IMAGE_TAG=$IMAGE_TAG
-        echo "image_tag=$IMAGE_TAG" >> $GITHUB_OUTPUT
+        export IMAGE=$IMAGE
+        echo "image=$IMAGE" >> $GITHUB_OUTPUT
 
