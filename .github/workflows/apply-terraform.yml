@@ -49,7 +49,7 @@ jobs:
       uses: aws-actions/configure-aws-credentials@v3-node20
       id: aws-credentials
       with:
-          aws-account-id: ${{ secrets.AWS_ACCOUNT_ID }}
+          aws-region: ${{ secrets.AWS_REGION }}
           mask-aws-account-id: 'yes'
 
     - name: Dump inputs context
@@ -100,7 +100,7 @@ jobs:
         [[ $INFRASTRUCTURE_FOLDER ]] && tfParams+=( "INFRASTRUCTURE_FOLDER=$INFRASTRUCTURE_FOLDER" )
         tfParams+=( "env=$ENVIRONMENT" )
         make tf_set_or_create_workspace "${tfParams[@]}"
-        make tf_apply "${tfParams[@]}" --auto-approve
+        make tf_apply "${tfParams[@]}"
 
     - name: Tag built image with deployment environment
       env:
