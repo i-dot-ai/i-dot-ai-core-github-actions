@@ -64,7 +64,7 @@ jobs:
         APP_NAME: ${{ inputs.APP_NAME }}
       run: |
         cd main
-        make docker/build
+        make docker_build
 
     - name: Docker Push
       env:
@@ -72,8 +72,8 @@ jobs:
         APP_NAME: ${{ inputs.APP_NAME }}
       run: |
         cd main
-        make docker/push
-        IMAGE=$(eval $(make docker/echo value=IMAGE) | awk '{print $1;}')
+        make docker_push
+        IMAGE=$(eval $(make docker_echo value=IMAGE) | awk '{print $1;}')
       
     - name: Export ecr image attributes
       id: export-ecr
@@ -81,9 +81,9 @@ jobs:
         APP_NAME: ${{ inputs.APP_NAME }}
       run: |
         cd main
-        export REPO=$(eval $(make docker/echo value=ECR_REPO_NAME) | awk '{print $1;}')
+        export REPO=$(eval $(make docker_echo value=ECR_REPO_NAME) | awk '{print $1;}')
         echo "repo=$REPO" >> $GITHUB_OUTPUT
-        export TAG=$(eval $(make docker/echo value=IMAGE_TAG)| awk '{print $1;}')
+        export TAG=$(eval $(make docker_echo value=IMAGE_TAG)| awk '{print $1;}')
         echo "tag=$TAG" >> $GITHUB_OUTPUT
     - name: Clean Docker context
       run: docker system prune -f
