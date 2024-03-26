@@ -31,6 +31,8 @@ on:
         required: true
       AWS_REGION:
         required: true
+      AWS_ACCOUNT_ID:
+        required: true
 
 jobs:
   release-terraform:
@@ -44,11 +46,11 @@ jobs:
         path: main
 
     - name: Configure AWS credentials
-      uses: aws-actions/configure-aws-credentials@v1-node16
+      uses: aws-actions/configure-aws-credentials@v3-node20
       id: aws-credentials
       with:
-          aws-region: ${{ secrets.AWS_REGION }}
-          mask-aws-account-id: 'no'
+          aws-account-id: ${{ secrets.AWS_ACCOUNT_ID }}
+          mask-aws-account-id: 'yes'
 
     - name: Dump inputs context
       env:
@@ -56,7 +58,7 @@ jobs:
       run: echo "$INPUTS"
 
     - name: Checkout i-ai-core-infrastructure
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
       with:
         repository: i-dot-ai/i-ai-core-infrastructure
         ref: refs/heads/main
@@ -73,8 +75,9 @@ jobs:
         path: ${{ inputs.INFRA_CONFIG_REPO }}
 
     - name: Login to Amazon ECR
-      id: login-ecr
-      uses: aws-actions/amazon-ecr-login@v1
+      run: |
+        aws ecr get-login-password | docker login --username AWS --password-stdin ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com
+      shell: bash
 
     - name: Terraform init
       env:
@@ -97,7 +100,7 @@ jobs:
         [[ $INFRASTRUCTURE_FOLDER ]] && tfParams+=( "INFRASTRUCTURE_FOLDER=$INFRASTRUCTURE_FOLDER" )
         tfParams+=( "env=$ENVIRONMENT" )
         make tf_set_or_create_workspace "${tfParams[@]}"
-        make tf_apply "${tfParams[@]}"
+        make tf_apply "${tfParams[@]}" --auto-approve
 
     - name: Tag built image with deployment environment
       env:
