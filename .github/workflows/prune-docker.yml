@@ -1,0 +1,18 @@
+name: Build dash
+
+on:
+  workflow_call:
+
+jobs:
+  prune-docker-images:
+    name: Prune all docker images on runner
+    runs-on: ${{ inputs.RUNNER_LABEL }}
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      with:
+        path: main
+        
+    - name: Clean Docker context
+      run: docker system prune -f
