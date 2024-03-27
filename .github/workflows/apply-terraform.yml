@@ -96,11 +96,11 @@ jobs:
         ENVIRONMENT: ${{ inputs.ENVIRONMENT }}
       run: |
         cd main
-        tfParams=()
+        tfParams=(-auto-approve)
         [[ $INFRASTRUCTURE_FOLDER ]] && tfParams+=( "INFRASTRUCTURE_FOLDER=$INFRASTRUCTURE_FOLDER" )
         tfParams+=( "env=$ENVIRONMENT" )
         make tf_set_or_create_workspace "${tfParams[@]}"
-        make tf_apply -auto-approve "${tfParams[@]}" 
+        make tf_apply "${tfParams[@]}" 
 
     - name: Tag built image with deployment environment
       env:
