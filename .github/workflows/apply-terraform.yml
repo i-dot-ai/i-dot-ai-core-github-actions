@@ -41,7 +41,7 @@ jobs:
     steps:
 
     - name: Checkout
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
       with:
         path: main
 
@@ -61,13 +61,13 @@ jobs:
       uses: actions/checkout@v4
       with:
         repository: i-dot-ai/i-ai-core-infrastructure
-        ref: refs/heads/add/postgres-endpoint-mask
+        ref: refs/heads/main
         token: ${{ secrets.AWS_GITHUBRUNNER_PAT }}
         path: i-ai-core-infrastructure
 
     - name: Optionally checkout terraform config variables for public repos
       if: ${{ inputs.PUBLIC_INFRA_DEPLOYMENT == true }}
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
       with:
         repository: i-dot-ai/${{ inputs.INFRA_CONFIG_REPO }}
         ref: refs/heads/main
