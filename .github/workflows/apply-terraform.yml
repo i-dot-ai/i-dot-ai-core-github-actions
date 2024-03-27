@@ -96,7 +96,7 @@ jobs:
         ENVIRONMENT: ${{ inputs.ENVIRONMENT }}
       run: |
         cd main
-        tfParams=(-auto-approve)
+        tfParams=()
         [[ $INFRASTRUCTURE_FOLDER ]] && tfParams+=( "INFRASTRUCTURE_FOLDER=$INFRASTRUCTURE_FOLDER" )
         tfParams+=( "env=$ENVIRONMENT" )
         make tf_set_or_create_workspace "${tfParams[@]}"
