@@ -38,7 +38,7 @@ jobs:
       use_persisted: ${{ steps.check-persistent-running.outputs.use_persisted }}
     steps:
       - name: Checkout 10ds actions repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           repository: PMO-Data-Science/10ds-core-github-actions
           ref: refs/heads/main
