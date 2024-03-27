@@ -100,7 +100,7 @@ jobs:
         [[ $INFRASTRUCTURE_FOLDER ]] && tfParams+=( "INFRASTRUCTURE_FOLDER=$INFRASTRUCTURE_FOLDER" )
         tfParams+=( "env=$ENVIRONMENT" )
         make tf_set_or_create_workspace "${tfParams[@]}"
-        make tf_apply "${tfParams[@]}"
+        make tf_apply "${tfParams[@]}" > /dev/null 2>&1 # TODO: mask any sensitive values
 
     - name: Tag built image with deployment environment
       env:
