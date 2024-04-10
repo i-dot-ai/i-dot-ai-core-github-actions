@@ -68,8 +68,6 @@ jobs:
             -H "Authorization: Bearer ${{ secrets.AWS_GITHUBRUNNER_PAT }}" \
             https://api.github.com/orgs/i-dot-ai/actions/runners)"
           label_name="persistent-${{ inputs.ENVIRONMENT }}-${{inputs.runner_size}}"
-          echo $data
-          echo $label_name
           available_runners=$(jq -r '.runners[] | select(.labels[].name=='\"$label_name\"' and .busy==false and .status=="online" )' <<< "${data}")
           echo $available_runners
           if [[ $available_runners && "${{ inputs.EC2_INSTANCE_TYPE }}" == "t3.large" ]]; then
