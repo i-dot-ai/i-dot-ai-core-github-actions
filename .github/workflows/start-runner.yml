@@ -12,7 +12,7 @@ on:
         type: string
       RUNNER_SIZE:
         type: string
-        default: "regular"
+        default: regular
     secrets:
       AWS_GITHUBRUNNER_USER_ACCESS_KEY:
         required: true
