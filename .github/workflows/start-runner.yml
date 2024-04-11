@@ -8,6 +8,7 @@ on:
         type: string
       ENVIRONMENT:
         required: true
+        default: prod
         type: string
       runner_size:
         type: string
