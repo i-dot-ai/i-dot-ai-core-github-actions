@@ -13,6 +13,9 @@ on:
       RUNNER_SIZE:
         type: string
         default: regular
+      USE_CUSTOM_RUNNER:
+        type: string
+        default: "0"
     secrets:
       AWS_GITHUBRUNNER_USER_ACCESS_KEY:
         required: true
@@ -70,7 +73,7 @@ jobs:
             https://api.github.com/orgs/i-dot-ai/actions/runners)"
           label_name="persistent-${{ inputs.ENVIRONMENT }}-${{inputs.RUNNER_SIZE}}"
           available_runners=$(jq -r '.runners[] | select(.labels[].name=='\"$label_name\"' and .busy==false and .status=="online" )' <<< "${data}")
-          if [[ $available_runners && "${{ inputs.EC2_INSTANCE_TYPE }}" == "t3.large" ]]; then
+          if [[ $available_runners && "${{ inputs.USE_CUSTOM_RUNNER }}" == "0" ]]; then
            echo "use_persisted=1" >> $GITHUB_OUTPUT
            echo "runner_label=${label_name}" >> $GITHUB_OUTPUT
           else
