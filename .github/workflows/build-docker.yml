@@ -90,4 +90,4 @@ jobs:
         export TAG=$(eval $(make docker_echo value=IMAGE_TAG)| awk '{print $1;}')
         echo "tag=$TAG" >> $GITHUB_OUTPUT
     - name: Clean Docker context
-      run: docker system prune -f --filter "until=72h"
+      run: docker system prune --all -f --filter "until=72h"
