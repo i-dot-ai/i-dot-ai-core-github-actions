@@ -67,6 +67,7 @@ jobs:
         
       run: |
         cd main
+        docker system prune --all -f --filter "until=24h" && docker system prune -f
         make docker_build
 
     - name: Docker Push
@@ -89,4 +90,4 @@ jobs:
         export TAG=$(eval $(make docker_echo value=IMAGE_TAG)| awk '{print $1;}')
         echo "tag=$TAG" >> $GITHUB_OUTPUT
     - name: Clean Docker context
-      run: docker system prune --all -f --filter "until=48h" && docker system prune -f
+      run: docker system prune --all -f --filter "until=24h" && docker system prune -f
