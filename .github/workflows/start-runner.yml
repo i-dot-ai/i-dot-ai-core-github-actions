@@ -107,7 +107,7 @@ jobs:
 
       - name: Start EC2 runner
         id: start-ec2-runner
-        uses:  machulav/ec2-github-runner@v2
+        uses: i-dot-ai/ec2-github-runner@main
         if: steps.check-persistent-running.outputs.use_persisted == 0
         with:
           mode: start
@@ -123,6 +123,7 @@ jobs:
               {"Key": "Name", "Value": "ec2-github-runner"},
               {"Key": "GitHubRepository", "Value": "${{ github.repository }}"}
             ]
+          ec2-volume-size: 64
 
       - name: Get runner label
         id: get-runner-label
