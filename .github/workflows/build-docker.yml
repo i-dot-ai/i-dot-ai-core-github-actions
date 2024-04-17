@@ -67,7 +67,6 @@ jobs:
         
       run: |
         cd main
-        docker system prune --all -f --filter "until=12h"
         make docker_build
 
     - name: Docker Push
