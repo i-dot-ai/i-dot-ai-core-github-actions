@@ -60,6 +60,14 @@ jobs:
         aws ecr get-login-password | docker login --username AWS --password-stdin ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com
       shell: bash
 
+    - name: Restore Docker layer cache
+      uses: action/cache@v4
+      with:
+        path: /tmp/.build-cache
+        key: ${{ inputs.APP_NAME }}-docker-${{ github.sha }}
+        restore-keys: |
+          ${{ inputs.APP_NAME }}-docker-
+
     - name: Docker build
       env:
         AWS_ACCOUNT_ID: ${{ steps.aws-credentials.outputs.aws-account-id }}
@@ -77,7 +85,13 @@ jobs:
         cd main
         make docker_push
         IMAGE=$(eval $(make docker_echo value=IMAGE) | awk '{print $1;}')
-      
+
+    - name: Save Docker layer cache
+      uses: action/cache@v4
+      with:
+        path: /tmp/.build-cache
+        key: ${{ inputs.APP_NAME }}-docker-${{ github.sha }}
+
     - name: Export ecr image attributes
       id: export-ecr
       env:
