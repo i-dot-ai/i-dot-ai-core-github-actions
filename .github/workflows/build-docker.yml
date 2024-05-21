@@ -12,7 +12,7 @@ on:
       INFRASTRUCTURE_FOLDER:
         required: true
         type: string
-      DOCKER_BUILD_INSTANCE_NAME:
+      DOCKER_BUILD_INSTANCE:
         required: false
         default: container
         type: string
