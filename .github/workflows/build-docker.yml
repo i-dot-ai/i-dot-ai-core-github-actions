@@ -64,6 +64,24 @@ jobs:
         aws ecr get-login-password | docker login --username AWS --password-stdin ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com
       shell: bash
 
+    - name: Define Docker Cache Container
+      env:
+        AWS_ACCOUNT_ID: ${{ steps.aws-credentials.outputs.aws-account-id }}
+        APP_NAME: ${{ inputs.APP_NAME }}
+        
+      run: |
+        INSTANCE_NAME=${{inputs.DOCKER_BUILD_INSTANCE_NAME}}
+        # Check if the instance already exists
+        EXISTING_INSTANCE=$(docker buildx ls --format "{{.Name}}" | grep -w "$INSTANCE_NAME")
+        
+        if [ -z "$EXISTING_INSTANCE" ]; then
+            # Create the instance only if it does not exist
+            docker buildx create --name "$INSTANCE_NAME" --driver docker-container
+            echo "Buildx instance '$INSTANCE_NAME' created successfully."
+        else
+            echo "Buildx instance '$INSTANCE_NAME' already exists."
+        fi
+
     - name: Docker build
       env:
         AWS_ACCOUNT_ID: ${{ steps.aws-credentials.outputs.aws-account-id }}
