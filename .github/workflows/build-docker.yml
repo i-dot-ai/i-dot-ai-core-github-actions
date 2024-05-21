@@ -12,6 +12,10 @@ on:
       INFRASTRUCTURE_FOLDER:
         required: true
         type: string
+      DOCKER_BUILD_INSTANCE_NAME:
+        required: false
+        default: container
+        type: string
     secrets:
       AWS_GITHUBRUNNER_PAT:
         required: true
