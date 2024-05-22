@@ -71,15 +71,15 @@ jobs:
         
       run: |
         INSTANCE_NAME=${{inputs.DOCKER_BUILD_INSTANCE}}
-        # Check if the instance already exists
-        EXISTING_INSTANCE=$(docker buildx ls --format "{{.Name}}" | grep -w "${{INSTANCE_NAME}}")
         
-        if [ -z "${{EXISTING_INSTANCE}}" ]; then
+        EXISTING_INSTANCE=$(docker buildx ls --format "{{.Name}}" | grep -w "${INSTANCE_NAME}")
+        # Check if the instance already exists
+        if [ -z "${EXISTING_INSTANCE}" ]; then
             # Create the instance only if it does not exist
-            docker buildx create --name "${{INSTANCE_NAME}}" --driver docker-container
-            echo "Buildx instance '${{INSTANCE_NAME}}' created successfully."
+            docker buildx create --name "${INSTANCE_NAME}" --driver docker-container
+            echo "Buildx instance '${INSTANCE_NAME}' created successfully."
         else
-            echo "Buildx instance '${{INSTANCE_NAME}}' already exists."
+            echo "Buildx instance '${INSTANCE_NAME}' already exists."
         fi
 
     - name: Docker build
