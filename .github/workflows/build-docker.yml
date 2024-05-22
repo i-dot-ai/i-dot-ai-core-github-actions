@@ -73,6 +73,7 @@ jobs:
         INSTANCE_NAME=${{inputs.DOCKER_BUILD_INSTANCE}}
         
         EXISTING_INSTANCE=$(docker buildx ls --format "{{.Name}}" | grep -w "${INSTANCE_NAME}")
+        echo $EXISTING_INSTANCE
         # Check if the instance already exists
         if [ -z "${EXISTING_INSTANCE}" ]; then
             # Create the instance only if it does not exist
