@@ -71,6 +71,10 @@ jobs:
         
       run: |
         echo ">>"  
+        echo "Instance name is ${INSTANCE_NAME}"
+        echo ">>"  
+        docker buildx ls --format "{{.Name}}" 
+        echo ">>"  
         docker buildx ls --format "{{.Name}}" | grep -w "${INSTANCE_NAME}"
         echo ">>"
         echo "Instance name is ${INSTANCE_NAME}"
