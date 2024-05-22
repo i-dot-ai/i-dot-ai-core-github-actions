@@ -12,6 +12,10 @@ on:
       INFRASTRUCTURE_FOLDER:
         required: true
         type: string
+      DOCKER_BUILD_INSTANCE:
+        required: false
+        default: container
+        type: string
     secrets:
       AWS_GITHUBRUNNER_PAT:
         required: true
@@ -59,6 +63,19 @@ jobs:
       run: |
         aws ecr get-login-password | docker login --username AWS --password-stdin ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com
       shell: bash
+
+    - name: Create Docker cache container
+      env:
+        INSTANCE_NAME: ${{ inputs.DOCKER_BUILD_INSTANCE }}
+
+      run: |
+        if docker buildx ls --format "{{.Name}}" | grep -w "${INSTANCE_NAME}"; then
+          echo "Instance ${INSTANCE_NAME} found."
+        else
+          echo "Instance ${INSTANCE_NAME} not found."
+          docker buildx create --name "${INSTANCE_NAME}" --driver docker-container
+          echo "Instance ${INSTANCE_NAME} is created."
+        fi
 
     - name: Docker build
       env:
