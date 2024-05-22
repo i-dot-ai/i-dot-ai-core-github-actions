@@ -66,14 +66,12 @@ jobs:
 
     - name: Create Docker cache container
       env:
-        AWS_ACCOUNT_ID: ${{ steps.aws-credentials.outputs.aws-account-id }}
-        APP_NAME: ${{ inputs.APP_NAME }}
+        INSTANCE_NAME: ${{ inputs.DOCKER_BUILD_INSTANCE }}
         
       run: |
-        INSTANCE_NAME="${{ inputs.DOCKER_BUILD_INSTANCE }}"
         docker buildx ls --format "{{.Name}}"
         echo "Instance name is ${INSTANCE_NAME}"
-        EXISTING_INSTANCE=$(docker buildx ls --format "{{.Name}}" | grep -w "${INSTANCE_NAME}")
+        EXISTING_INSTANCE="$(docker buildx ls --format "{{.Name}}" | grep -w "${INSTANCE_NAME}")"
         echo "Existing Instance name is ${EXISTING_INSTANCE}"
         # Check if the instance already exists
         if [ -z "${EXISTING_INSTANCE}" ]; then
