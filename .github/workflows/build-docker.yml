@@ -68,36 +68,14 @@ jobs:
       env:
         INSTANCE_NAME: ${{ inputs.DOCKER_BUILD_INSTANCE }}
         
-        
       run: |
-        echo ">>"
-        echo "Instance name is ${INSTANCE_NAME}"
-        echo ">>"
-        docker buildx ls --format "{{.Name}}"
-        echo ">>"    
         if docker buildx ls --format "{{.Name}}" | grep -w "${INSTANCE_NAME}"; then
-          echo "Instance ${INSTANCE_NAME} found"
+          echo "Instance ${INSTANCE_NAME} found."
         else
-          echo "Instance ${INSTANCE_NAME} not found"
+          echo "Instance ${INSTANCE_NAME} not found."
+          docker buildx create --name "${INSTANCE_NAME}" --driver docker-container
         fi
-        echo ">>"  
-        echo "Instance name is ${INSTANCE_NAME}"
-        echo ">>"  
-        docker buildx ls --format "{{.Name}}" 
-        echo ">>"  
-        docker buildx ls --format "{{.Name}}" | grep -w "${INSTANCE_NAME}"
-        echo ">>"
-        echo "Instance name is ${INSTANCE_NAME}"
-        echo ">>"
-        EXISTING_INSTANCE=`docker buildx ls --format '{{.Name}}'  | grep -w "${INSTANCE_NAME}"`
-        echo ">>"
-        echo "Existing Instance name is ${EXISTING_INSTANCE}"
-        echo ">>"
-        # Check if the instance already exists
-        if [ -z "${EXISTING_INSTANCE}" ]; then
-            # Create the instance only if it does not exist
-            docker buildx create --name "${INSTANCE_NAME}" --driver docker-container
-        fi
+        docker buildx ls --format "{{.Name}}"
 
     - name: Docker build
       env:
