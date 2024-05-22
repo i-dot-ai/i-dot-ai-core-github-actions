@@ -67,12 +67,14 @@ jobs:
     - name: Create Docker cache container
       env:
         INSTANCE_NAME: ${{ inputs.DOCKER_BUILD_INSTANCE }}
-        EXISTING_INSTANCE: $(docker buildx ls --format "{{.Name}}" | grep -w "${INSTANCE_NAME}")
+        
         
       run: |
         docker buildx ls --format "{{.Name}}"
         echo ""
         echo "Instance name is ${INSTANCE_NAME}"
+        EXISTING_INSTANCE=$(docker buildx ls --format '{{.Name}}'  | grep -w "${INSTANCE_NAME}")
+        echo ""
         echo "Existing Instance name is ${EXISTING_INSTANCE}"
         # Check if the instance already exists
         if [ -z "${EXISTING_INSTANCE}" ]; then
