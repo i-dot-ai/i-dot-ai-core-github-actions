@@ -70,7 +70,7 @@ jobs:
         APP_NAME: ${{ inputs.APP_NAME }}
         
       run: |
-        INSTANCE_NAME="${{ inputs.DOCKER_BUILD_INSTANCE }}""
+        INSTANCE_NAME="${{ inputs.DOCKER_BUILD_INSTANCE }}"
         echo "Instance name is ${INSTANCE_NAME}"
         EXISTING_INSTANCE=$(docker buildx ls --format "{{.Name}}" | grep -w "${INSTANCE_NAME}")
         echo "Existing Instance name is ${EXISTING_INSTANCE}"
