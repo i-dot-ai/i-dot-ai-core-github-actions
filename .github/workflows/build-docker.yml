@@ -74,8 +74,8 @@ jobs:
         else
           echo "Instance ${INSTANCE_NAME} not found."
           docker buildx create --name "${INSTANCE_NAME}" --driver docker-container
+          echo "Instance ${INSTANCE_NAME} is created."
         fi
-        docker buildx ls --format "{{.Name}}"
 
     - name: Docker build
       env:
