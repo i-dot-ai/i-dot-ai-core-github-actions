@@ -71,6 +71,7 @@ jobs:
         
       run: |
         INSTANCE_NAME="${{ inputs.DOCKER_BUILD_INSTANCE }}"
+        docker buildx ls --format "{{.Name}}"
         echo "Instance name is ${INSTANCE_NAME}"
         EXISTING_INSTANCE=$(docker buildx ls --format "{{.Name}}" | grep -w "${INSTANCE_NAME}")
         echo "Existing Instance name is ${EXISTING_INSTANCE}"
