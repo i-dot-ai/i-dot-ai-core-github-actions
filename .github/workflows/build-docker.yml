@@ -70,12 +70,15 @@ jobs:
         
         
       run: |
+        echo ">>"  
         docker buildx ls --format "{{.Name}}"
-        echo ""
+        echo ">>"
         echo "Instance name is ${INSTANCE_NAME}"
+        echo ">>"
         EXISTING_INSTANCE=$(docker buildx ls --format '{{.Name}}'  | grep -w "${INSTANCE_NAME}")
-        echo ""
+        echo ">>"
         echo "Existing Instance name is ${EXISTING_INSTANCE}"
+        echo ">>"
         # Check if the instance already exists
         if [ -z "${EXISTING_INSTANCE}" ]; then
             # Create the instance only if it does not exist
