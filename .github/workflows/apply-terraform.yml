@@ -23,6 +23,17 @@ on:
       INFRA_CONFIG_REPO:
         required: false
         type: string
+      CORE_INFRA_REF:
+        type: string
+        required: false
+        default: refs/heads/main
+      INFRA_CONFIG_REF:
+        type: string
+        required: false
+        default: refs/heads/main
+      IMAGE_TAG:
+        type: string
+        required: false
 
     secrets:
       AWS_GITHUBRUNNER_PAT:
@@ -61,7 +72,7 @@ jobs:
       uses: actions/checkout@v4
       with:
         repository: i-dot-ai/i-ai-core-infrastructure
-        ref: refs/heads/main
+        ref: ${{ inputs.CORE_INFRA_REF }}
         token: ${{ secrets.AWS_GITHUBRUNNER_PAT }}
         path: i-ai-core-infrastructure
 
@@ -70,7 +81,7 @@ jobs:
       uses: actions/checkout@v4
       with:
         repository: i-dot-ai/${{ inputs.INFRA_CONFIG_REPO }}
-        ref: refs/heads/main
+        ref: ${{ inputs.INFRA_CONFIG_REF }}
         token: ${{ secrets.AWS_GITHUBRUNNER_PAT }}
         path: ${{ inputs.INFRA_CONFIG_REPO }}
 
@@ -94,14 +105,18 @@ jobs:
       env: 
         INFRASTRUCTURE_FOLDER: ${{ inputs.INFRASTRUCTURE_FOLDER }}
         ENVIRONMENT: ${{ inputs.ENVIRONMENT }}
+        IMAGE_TAG: ${{ inputs.IMAGE_TAG }}
       run: |
         cd main
         tfParams=()
         [[ $INFRASTRUCTURE_FOLDER ]] && tfParams+=( "INFRASTRUCTURE_FOLDER=$INFRASTRUCTURE_FOLDER" )
         tfParams+=( "env=$ENVIRONMENT" )
         make tf_set_or_create_workspace "${tfParams[@]}"
-        make tf_auto_apply "${tfParams[@]}" > /dev/null 2>&1 # TODO: mask any sensitive values
-
+        if [[ $IMAGE_TAG ]]; then
+          make tf_auto_apply IMAGE_TAG=${{ inputs.IMAGE_TAG }} "${tfParams[@]}" > /dev/null 2>&1 # TODO: mask any sensitive values
+        else
+          make tf_auto_apply "${tfParams[@]}" > /dev/null 2>&1 # TODO: mask any sensitive values
+        fi
     - name: Tag built image with deployment environment
       env:
         ENVIRONMENT: ${{ inputs.ENVIRONMENT }}
