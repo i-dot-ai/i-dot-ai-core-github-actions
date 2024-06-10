@@ -123,6 +123,7 @@ jobs:
 
     - name: Upload Logs to S3
       run: |
+        cd main
         aws s3 cp terraform_apply.log s3://${{ inputs.AWS_S3_BUCKET }}/terraform_apply.log
       if: always()
 
