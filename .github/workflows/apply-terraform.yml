@@ -120,9 +120,12 @@ jobs:
         else
           make tf_auto_apply "${tfParams[@]}" > terraform_apply.log 2>&1 # TODO: mask any sensitive values
         fi
+
     - name: Upload Logs to S3
       run: |
         aws s3 cp terraform_apply.log s3://${{ inputs.AWS_S3_BUCKET }}/terraform_apply.log
+      if: always()
+
     - name: Tag built image with deployment environment
       env:
         ENVIRONMENT: ${{ inputs.ENVIRONMENT }}
