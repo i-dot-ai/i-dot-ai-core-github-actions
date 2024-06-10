@@ -116,7 +116,7 @@ jobs:
         tfParams+=( "env=$ENVIRONMENT" )
         make tf_set_or_create_workspace "${tfParams[@]}"
         if [[ $IMAGE_TAG ]]; then
-          make tf_auto_apply IMAGE_TAG=${{ inputs.IMAGE_TAG }} "${tfParams[@]}" > /dev/null 2>&1 # TODO: mask any sensitive values
+          make tf_auto_apply IMAGE_TAG=${{ inputs.IMAGE_TAG }} "${tfParams[@]}" > terraform_apply.log 2>&1 # TODO: mask any sensitive values
         else
           make tf_auto_apply "${tfParams[@]}" > terraform_apply.log 2>&1 # TODO: mask any sensitive values
         fi
