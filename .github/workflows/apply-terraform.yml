@@ -132,12 +132,13 @@ jobs:
         ENVIRONMENT: ${{ inputs.ENVIRONMENT }}
         APP_NAME: ${{ inputs.APP_NAME }}
         INFRASTRUCTURE_FOLDER: ${{ inputs.INFRASTRUCTURE_FOLDER }}
+        IMAGE_TAG: ${{ inputs.IMAGE_TAG }}
       continue-on-error: true
       run: |
         if [[ $INFRASTRUCTURE_FOLDER ]]; then
           cd main
           if [[ $IMAGE_TAG ]]; then
-            make docker_update_tag tag=$ENVIRONMENT IMAGE_TAG=${{ inputs.IMAGE_TAG }}
+            make docker_update_tag tag=$ENVIRONMENT IMAGE_TAG=$IMAGE_TAG
           else
             make docker_update_tag tag=$ENVIRONMENT
           fi
