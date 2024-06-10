@@ -34,9 +34,6 @@ on:
       IMAGE_TAG:
         type: string
         required: false
-      AWS_S3_BUCKET:
-        type: string
-        required: true
 
     secrets:
       AWS_GITHUBRUNNER_PAT:
