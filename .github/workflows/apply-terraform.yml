@@ -34,6 +34,9 @@ on:
       IMAGE_TAG:
         type: string
         required: false
+      AWS_S3_BUCKET:
+        type: string
+        required: true
 
     secrets:
       AWS_GITHUBRUNNER_PAT:
@@ -115,8 +118,11 @@ jobs:
         if [[ $IMAGE_TAG ]]; then
           make tf_auto_apply IMAGE_TAG=${{ inputs.IMAGE_TAG }} "${tfParams[@]}" > /dev/null 2>&1 # TODO: mask any sensitive values
         else
-          make tf_auto_apply "${tfParams[@]}" > /dev/null 2>&1 # TODO: mask any sensitive values
+          make tf_auto_apply "${tfParams[@]}" > terraform_apply.log 2>&1 # TODO: mask any sensitive values
         fi
+    - name: Upload Logs to S3
+      run: |
+        aws s3 cp terraform_apply.log s3://${{ inputs.AWS_S3_BUCKET }}/terraform_apply.log
     - name: Tag built image with deployment environment
       env:
         ENVIRONMENT: ${{ inputs.ENVIRONMENT }}
