@@ -16,6 +16,10 @@ on:
         required: false
         default: container
         type: string
+      COMMIT_HASH:
+        required: false
+        type: string
+        default: main
       SERVICE:
         required: false
         type: string
@@ -39,7 +43,7 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v4
       with:
-        path: main
+        path: ${{ inputs.COMMIT_HASH }}
         fetch-depth: 0
 
     - name: Dump inputs context
