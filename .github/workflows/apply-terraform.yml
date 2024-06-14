@@ -123,9 +123,10 @@ jobs:
     - name: Copy terraform logs to s3
       env:
         ENVIRONMENT: ${{ inputs.ENVIRONMENT }}
+        APP_NAME: ${{ inputs.APP_NAME }}
       run: |
         cd main
-        FILENAME=$(git rev-parse HEAD)-$(date +%Y-%m-%d).log
+        FILENAME=$APP_NAME-$(git rev-parse HEAD)-$(date +%Y-%m-%d).log
         aws s3 cp tf_apply_log.log "s3://i-dot-ai-$ENVIRONMENT-github-runner-logs/${FILENAME}"
 
     - name: Tag built image with deployment environment
