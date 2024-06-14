@@ -43,8 +43,9 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v4
       with:
-        path: ${{ inputs.COMMIT_HASH }}
+        ref: ${{ inputs.COMMIT_HASH }}
         fetch-depth: 0
+        path: main
 
     - name: Dump inputs context
       env:
