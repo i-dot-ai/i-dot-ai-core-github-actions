@@ -105,5 +105,3 @@ jobs:
         echo "repo=$REPO" >> $GITHUB_OUTPUT
         export TAG=$(eval $(make docker_echo value=IMAGE_TAG)| awk '{print $1;}')
         echo "tag=$TAG" >> $GITHUB_OUTPUT
-    - name: Clean Docker context
-      run: docker system prune --all -f --filter "until=12h"
