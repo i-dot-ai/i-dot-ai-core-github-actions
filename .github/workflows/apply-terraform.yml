@@ -106,6 +106,8 @@ jobs:
         INFRASTRUCTURE_FOLDER: ${{ inputs.INFRASTRUCTURE_FOLDER }}
         ENVIRONMENT: ${{ inputs.ENVIRONMENT }}
         IMAGE_TAG: ${{ inputs.IMAGE_TAG }}
+        TF_LOGS: "INFO"
+        TF_CLI_ARGS: "-no-color"
       run: |
         cd main
         tfParams=()
@@ -113,10 +115,20 @@ jobs:
         tfParams+=( "env=$ENVIRONMENT" )
         make tf_set_or_create_workspace "${tfParams[@]}"
         if [[ $IMAGE_TAG ]]; then
-          make tf_auto_apply IMAGE_TAG=${{ inputs.IMAGE_TAG }} "${tfParams[@]}" > /dev/null 2>&1 # TODO: mask any sensitive values
+          make tf_auto_apply IMAGE_TAG=${{ inputs.IMAGE_TAG }} "${tfParams[@]}" > tf_apply_log.log # TODO: mask any sensitive values
         else
-          make tf_auto_apply "${tfParams[@]}" > /dev/null 2>&1 # TODO: mask any sensitive values
+          make tf_auto_apply "${tfParams[@]}" > tf_apply_log.log # TODO: mask any sensitive values
         fi
+
+    - name: Copy terraform logs to s3
+      if: always()
+      env:
+        ENVIRONMENT: ${{ inputs.ENVIRONMENT }}
+        APP_NAME: ${{ inputs.APP_NAME }}
+      run: |
+        cd main
+        FILENAME=$APP_NAME/$(date +\%H-\%M-%d-%m-%Y)-$(git rev-parse HEAD).log
+        aws s3 cp tf_apply_log.log "s3://i-dot-ai-$ENVIRONMENT-github-runner-logs/${FILENAME}"
 
     - name: Tag built image with deployment environment
       env:
