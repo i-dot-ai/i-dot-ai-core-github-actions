@@ -16,7 +16,7 @@ on:
         required: false
         default: container
         type: string
-      COMPONENT:
+      SERVICE:
         required: false
         type: string
     secrets:
@@ -84,31 +84,31 @@ jobs:
       env:
         AWS_ACCOUNT_ID: ${{ steps.aws-credentials.outputs.aws-account-id }}
         APP_NAME: ${{ inputs.APP_NAME }}
-        COMPONENT: ${{ inputs.COMPONENT }}
+        SERVICE: ${{ inputs.SERVICE }}
       run: |
         cd main
-        make docker_build component=$COMPONENT
+        make docker_build service=$SERVICE
 
     - name: Docker Push
       env:
         AWS_ACCOUNT_ID: ${{ steps.aws-credentials.outputs.aws-account-id }}
         APP_NAME: ${{ inputs.APP_NAME }}
-        COMPONENT: ${{ inputs.COMPONENT }}
+        SERVICE: ${{ inputs.SERVICE }}
       run: |
         cd main
-        make docker_push component=$COMPONENT
-        IMAGE=$(eval $(make docker_echo value=IMAGE component=$COMPONENT) | awk '{print $1;}')
+        make docker_push service=$SERVICE
+        IMAGE=$(eval $(make docker_echo value=IMAGE service=$SERVICE) | awk '{print $1;}')
       
     - name: Export ecr image attributes
       id: export-ecr
       env:
         APP_NAME: ${{ inputs.APP_NAME }}
-        COMPONENT: ${{ inputs.COMPONENT }}
+        SERVICE: ${{ inputs.SERVICE }}
       run: |
         cd main
-        export REPO=$(eval $(make docker_echo value=ECR_REPO_NAME component=$COMPONENT) | awk '{print $1;}')
+        export REPO=$(eval $(make docker_echo value=ECR_REPO_NAME service=$SERVICE) | awk '{print $1;}')
         echo "repo=$REPO" >> $GITHUB_OUTPUT
-        export TAG=$(eval $(make docker_echo value=IMAGE_TAG component=$COMPONENT)| awk '{print $1;}')
+        export TAG=$(eval $(make docker_echo value=IMAGE_TAG service=$SERVICE)| awk '{print $1;}')
         echo "tag=$TAG" >> $GITHUB_OUTPUT
 
     - name: Clean Docker context
