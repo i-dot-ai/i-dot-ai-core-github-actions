@@ -19,7 +19,7 @@ on:
       COMMIT_HASH:
         required: false
         type: string
-        default: main
+        default: ${{ github.sha }}
       SERVICE:
         required: false
         type: string
