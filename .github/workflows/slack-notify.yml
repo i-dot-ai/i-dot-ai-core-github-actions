@@ -1,3 +1,7 @@
+# To notify a new channel, access the GitHub Notification app created in slack web and add a new webhook URL
+# Add the webhook URL as a secret to the consuming repo, NOT at the i-dot-ai org level
+# Pass the SUCCESS_PAYLOAD and FAILURE_PAYLOAD as an escaped JSON string
+
 name: 'Notify Slack'
 
 on:
