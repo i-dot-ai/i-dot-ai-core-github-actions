@@ -1,0 +1,42 @@
+name: 'Notify Slack'
+
+on:
+  workflow_call:
+    inputs:
+      RUNNER_LABEL:
+        required: true
+        type: string
+      SUCCESS_PAYLOAD:
+        required: true
+        type: string
+      FAILURE_PAYLOAD:
+        required: true
+        type: string
+    secrets:
+      SLACK_WEBHOOK_URL:
+        required: true
+jobs:
+  notify-slack:
+    name: Send success/failure slack notification
+    runs-on: ${{ inputs.RUNNER_LABEL }}
+
+    steps:
+      - name: notify slack failure
+        id: slack-failure
+        uses: slackapi/slack-github-action@v1.24.0
+        if: ${{ failure() }}
+        with:
+          payload: echo "${{ toJson(inputs.SUCCESS_PAYLOAD) }}"
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
+
+      - name: notify slack pass
+        id: slack-pass
+        uses: slackapi/slack-github-action@v1.24.0
+        if: ${{ success() }}
+        with:
+          payload: echo "${{ toJson(inputs.SUCCESS_PAYLOAD) }}"
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
