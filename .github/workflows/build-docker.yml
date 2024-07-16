@@ -37,7 +37,6 @@ jobs:
   build-and-push-to-ecr:
     name: Build and push to ECR
     runs-on: ${{ inputs.RUNNER_LABEL }}
-    
 
     steps:
     - name: Checkout
