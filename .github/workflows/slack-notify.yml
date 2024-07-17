@@ -30,7 +30,7 @@ jobs:
         uses: slackapi/slack-github-action@v1.24.0
         if: ${{ failure() }}
         with:
-          payload: ${{ toJson(inputs.SUCCESS_PAYLOAD) }}
+          payload: ${{ toJson(inputs.FAILURE_PAYLOAD) }}
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
           SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
