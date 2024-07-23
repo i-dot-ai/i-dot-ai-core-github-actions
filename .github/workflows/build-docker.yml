@@ -50,6 +50,13 @@ jobs:
         fetch-depth: 0
         path: main
 
+    - name: Checkout 10ds actions repo
+      uses: actions/checkout@v4
+      with:
+        repository: PMO-Data-Science/10ds-core-github-actions
+        ref: refs/heads/main
+        token: ${{ secrets.AWS_GITHUBRUNNER_PAT }}
+
     - name: Dump inputs context
       env:
         INPUTS: ${{ toJSON(inputs) }}
