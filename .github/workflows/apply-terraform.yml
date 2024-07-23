@@ -135,4 +135,5 @@ jobs:
         ENVIRONMENT: ${{ inputs.ENVIRONMENT }}
         IMAGE_TAG: ${{ inputs.IMAGE_TAG }}
       run: |
+        cd main
         make docker_update_tag tag=$ENVIRONMENT IMAGE_TAG=$IMAGE_TAG
