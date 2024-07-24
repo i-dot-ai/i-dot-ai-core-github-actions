@@ -16,6 +16,13 @@ on:
         required: false
         default: container
         type: string
+      COMMIT_HASH:
+        required: false
+        type: string
+        default: ${{ github.sha }}
+      SERVICE:
+        required: false
+        type: string
     secrets:
       AWS_GITHUBRUNNER_PAT:
         required: true
@@ -30,14 +37,14 @@ jobs:
   build-and-push-to-ecr:
     name: Build and push to ECR
     runs-on: ${{ inputs.RUNNER_LABEL }}
-    
 
     steps:
     - name: Checkout
       uses: actions/checkout@v4
       with:
-        path: main
+        ref: ${{ inputs.COMMIT_HASH }}
         fetch-depth: 0
+        path: main
 
     - name: Dump inputs context
       env:
@@ -81,27 +88,29 @@ jobs:
       env:
         AWS_ACCOUNT_ID: ${{ steps.aws-credentials.outputs.aws-account-id }}
         APP_NAME: ${{ inputs.APP_NAME }}
-        
+        SERVICE: ${{ inputs.SERVICE }}
       run: |
         cd main
-        make docker_build
+        make docker_build service=$SERVICE
 
     - name: Docker Push
       env:
         AWS_ACCOUNT_ID: ${{ steps.aws-credentials.outputs.aws-account-id }}
         APP_NAME: ${{ inputs.APP_NAME }}
+        SERVICE: ${{ inputs.SERVICE }}
       run: |
         cd main
-        make docker_push
-        IMAGE=$(eval $(make docker_echo value=IMAGE) | awk '{print $1;}')
+        make docker_push service=$SERVICE
+        IMAGE=$(eval $(make docker_echo value=IMAGE service=$SERVICE) | awk '{print $1;}')
       
     - name: Export ecr image attributes
       id: export-ecr
       env:
         APP_NAME: ${{ inputs.APP_NAME }}
+        SERVICE: ${{ inputs.SERVICE }}
       run: |
         cd main
-        export REPO=$(eval $(make docker_echo value=ECR_REPO_NAME) | awk '{print $1;}')
+        export REPO=$(eval $(make docker_echo value=ECR_REPO_NAME service=$SERVICE) | awk '{print $1;}')
         echo "repo=$REPO" >> $GITHUB_OUTPUT
-        export TAG=$(eval $(make docker_echo value=IMAGE_TAG)| awk '{print $1;}')
+        export TAG=$(eval $(make docker_echo value=IMAGE_TAG service=$SERVICE)| awk '{print $1;}')
         echo "tag=$TAG" >> $GITHUB_OUTPUT
