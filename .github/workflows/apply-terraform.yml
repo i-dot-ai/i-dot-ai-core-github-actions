@@ -136,7 +136,6 @@ jobs:
         APP_NAME: ${{ inputs.APP_NAME }}
         INFRASTRUCTURE_FOLDER: ${{ inputs.INFRASTRUCTURE_FOLDER }}
         IMAGE_TAG: ${{ inputs.IMAGE_TAG }}
-      continue-on-error: true
       run: |
         if [[ $INFRASTRUCTURE_FOLDER ]]; then
           cd main
