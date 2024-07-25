@@ -71,7 +71,7 @@ jobs:
             -H "Accept: application/vnd.github+json" \
             -H "Authorization: Bearer ${{ secrets.AWS_GITHUBRUNNER_PAT }}" \
             https://api.github.com/orgs/i-dot-ai/actions/runners)"
-          label_name="persistent-${{ inputs.ENVIRONMENT }}-${{inputs.RUNNER_SIZE}}"
+          label_name="i-dot-ai-${{ inputs.ENVIRONMENT }}-persistent-${{inputs.RUNNER_SIZE}}"
           available_runners=$(jq -r '.runners[] | select(.labels[].name=='\"$label_name\"' and .busy==false and .status=="online" )' <<< "${data}")
           if [[ $available_runners && "${{ inputs.USE_CUSTOM_RUNNER }}" == "0" ]]; then
            echo "use_persisted=1" >> $GITHUB_OUTPUT
@@ -108,6 +108,20 @@ jobs:
             PARAMETER_STORE_VAR_NAME: /github-runner-${{ inputs.ENVIRONMENT }}/ami-id
             ENVIRONMENT_VAR_NAME: AMI_ID
 
+      - name: Export EFS_ID
+        uses: ./.github/actions/export_parameter
+        if: steps.check-persistent-running.outputs.use_persisted == 0
+        with:
+            PARAMETER_STORE_VAR_NAME: /github-runner-${{ inputs.ENVIRONMENT }}/efs-id
+            ENVIRONMENT_VAR_NAME: EFS_ID
+
+      - name: Export EFS_MOUNT_PATH
+        uses: ./.github/actions/export_parameter
+        if: steps.check-persistent-running.outputs.use_persisted == 0
+        with:
+            PARAMETER_STORE_VAR_NAME: /github-runner-${{ inputs.ENVIRONMENT }}/efs-mount-path
+            ENVIRONMENT_VAR_NAME: EFS_MOUNT_PATH
+
       - name: Start EC2 runner
         id: start-ec2-runner
         uses: i-dot-ai/ec2-github-runner@main
@@ -127,6 +141,10 @@ jobs:
               {"Key": "GitHubRepository", "Value": "${{ github.repository }}"}
             ]
           ec2-volume-size: 64
+          pre-runner-script: >
+            #!/bin/bash
+            sudo mkdir ${{ env.EFS_MOUNT_PATH }}
+            sudo mount -t efs ${{ env.EFS_ID }}:/ ${{ env.EFS_MOUNT_PATH }}
 
       - name: Get runner label
         id: get-runner-label
