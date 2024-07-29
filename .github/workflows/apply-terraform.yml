@@ -35,7 +35,7 @@ on:
         type: string
         required: false
       SERVICE:
-          required: true
+          required: false
           type: string
           default: all
 
