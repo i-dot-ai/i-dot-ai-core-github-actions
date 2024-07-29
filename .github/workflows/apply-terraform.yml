@@ -34,6 +34,10 @@ on:
       IMAGE_TAG:
         type: string
         required: false
+      SERVICE:
+          required: true
+          type: string
+          default: all
 
     secrets:
       AWS_GITHUBRUNNER_PAT:
@@ -48,6 +52,10 @@ on:
 jobs:
   release-terraform:
     runs-on: ${{ inputs.RUNNER_LABEL }}
+    
+    strategy:
+      matrix:
+        service: [frontend, backend]
 
     steps:
 
@@ -136,11 +144,12 @@ jobs:
         APP_NAME: ${{ inputs.APP_NAME }}
         INFRASTRUCTURE_FOLDER: ${{ inputs.INFRASTRUCTURE_FOLDER }}
         IMAGE_TAG: ${{ inputs.IMAGE_TAG }}
+        SERVICE: ${{ matrix.service }}
       run: |
         if [[ $INFRASTRUCTURE_FOLDER ]]; then
           cd main
           if [[ $IMAGE_TAG ]]; then
-            make docker_update_tag tag=$ENVIRONMENT IMAGE_TAG=$IMAGE_TAG
+            make docker_update_tag tag=$ENVIRONMENT IMAGE_TAG=$IMAGE_TAG service=$SERVICE 
           else
             make docker_update_tag tag=$ENVIRONMENT
           fi
