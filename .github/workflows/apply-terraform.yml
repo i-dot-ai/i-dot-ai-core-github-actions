@@ -34,10 +34,7 @@ on:
       IMAGE_TAG:
         type: string
         required: false
-      SERVICE:
-          required: false
-          type: string
-          default: all
+
 
     secrets:
       AWS_GITHUBRUNNER_PAT:
@@ -149,7 +146,7 @@ jobs:
         if [[ $INFRASTRUCTURE_FOLDER ]]; then
           cd main
           if [[ $IMAGE_TAG ]]; then
-            make docker_update_tag tag=$ENVIRONMENT IMAGE_TAG=$IMAGE_TAG service=$SERVICE 
+            make docker_update_tag tag=$ENVIRONMENT IMAGE_TAG=$IMAGE_TAG service=${{ matrix.service }}
           else
             make docker_update_tag tag=$ENVIRONMENT
           fi
