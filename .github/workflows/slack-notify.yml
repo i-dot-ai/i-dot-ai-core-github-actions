@@ -21,7 +21,7 @@ on:
         required: true
 jobs:
   notify-slack:
-    if: ${{ always() }}
+#    if: ${{ always() }}
     name: Send success/failure slack notification
     runs-on: ${{ inputs.RUNNER_LABEL }}
 
@@ -29,7 +29,7 @@ jobs:
       - name: notify slack failure
         id: slack-failure
         uses: slackapi/slack-github-action@v1.24.0
-        if: ${{ failure() }} && ${{ always() }}
+        if: failure()
         with:
           payload: ${{ toJson(inputs.FAILURE_PAYLOAD) }}
         env:
@@ -39,7 +39,7 @@ jobs:
       - name: notify slack pass
         id: slack-pass
         uses: slackapi/slack-github-action@v1.24.0
-        if: ${{ success() }} && ${{ always() }}
+        if: success()
         with:
           payload: ${{ toJson(inputs.SUCCESS_PAYLOAD) }}
         env:
