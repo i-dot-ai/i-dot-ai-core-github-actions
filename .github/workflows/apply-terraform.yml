@@ -143,6 +143,7 @@ jobs:
         IMAGE_TAG: ${{ inputs.IMAGE_TAG }}
         SERVICE: ${{ matrix.service }}
       run: |
+        echo "SERVICE is set to $SERVICE"
         if [[ $INFRASTRUCTURE_FOLDER ]]; then
           cd main
           if [[ $IMAGE_TAG ]]; then
