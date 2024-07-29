@@ -21,6 +21,7 @@ on:
         required: true
 jobs:
   notify-slack:
+    if: ${{ always() }}
     name: Send success/failure slack notification
     runs-on: ${{ inputs.RUNNER_LABEL }}
 
