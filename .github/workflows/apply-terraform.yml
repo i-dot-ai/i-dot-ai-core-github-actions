@@ -34,7 +34,9 @@ on:
       IMAGE_TAG:
         type: string
         required: false
-
+      SERVICE:
+          type: string
+          required: false
 
     secrets:
       AWS_GITHUBRUNNER_PAT:
