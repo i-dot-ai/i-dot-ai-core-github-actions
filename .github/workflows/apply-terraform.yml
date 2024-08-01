@@ -50,6 +50,10 @@ on:
 
 jobs:
   release-terraform:
+    strategy:
+      matrix:
+        service: ${{ inputs.SERVICE }}
+
     runs-on: ${{ inputs.RUNNER_LABEL }}
     
     steps:
@@ -139,16 +143,16 @@ jobs:
         APP_NAME: ${{ inputs.APP_NAME }}
         INFRASTRUCTURE_FOLDER: ${{ inputs.INFRASTRUCTURE_FOLDER }}
         IMAGE_TAG: ${{ inputs.IMAGE_TAG }}
-        SERVICE: ${{ inputs.SERVICE }}
+        SERVICE: ${{ matrix.service }}
       run: |
         echo "SERVICE is set to $SERVICE"
         if [[ $INFRASTRUCTURE_FOLDER ]]; then
           cd main
-          if [[ $IMAGE_TAG ]]; then
-            echo "IMAGE_TAG is set to $IMAGE_TAG"
-            make docker_update_tag tag=$ENVIRONMENT IMAGE_TAG=$IMAGE_TAG service=$SERVICE
+          if [[ $SERVICE ]]; then
+             make docker_update_tag tag=$ENVIRONMENT service=$SERVICE
+          elif [[ $IMAGE_TAG ]]; then
+             make docker_update_tag tag=$ENVIRONMENT IMAGE_TAG=$IMAGE_TAG
           else
-            echo "No IMAGE_TAG provided"
-            make docker_update_tag tag=$ENVIRONMENT service=$SERVICE
+             make docker_update_tag tag=$ENVIRONMENT
           fi
         fi
