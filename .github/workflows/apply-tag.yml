@@ -3,7 +3,9 @@ name: 'Apply Tagging'
 on:
   workflow_call:
     inputs:
-
+      RUNNER_LABEL:
+        required: true
+        type: string
       ENVIRONMENT:
         required: false
         default: prod
