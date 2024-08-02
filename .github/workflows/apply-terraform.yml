@@ -138,6 +138,7 @@ jobs:
         ENVIRONMENT: ${{ inputs.ENVIRONMENT }}
         APP_NAME: ${{ inputs.APP_NAME }}
         INFRASTRUCTURE_FOLDER: ${{ inputs.INFRASTRUCTURE_FOLDER }}
+        ECR_REPO: ${{ inputs.ECR_REPO }}  
         IMAGE_TAG: ${{ inputs.IMAGE_TAG }}
       run: |
         if [[ $INFRASTRUCTURE_FOLDER ]]; then
