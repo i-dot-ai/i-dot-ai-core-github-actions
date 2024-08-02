@@ -34,8 +34,8 @@ on:
       IMAGE_TAG:
         type: string
         required: false
-      ECR_REPO:
-        type: string
+      ECR_REPO: 
+        type: string  # comma-delimited string
         required: false
 
     secrets:
