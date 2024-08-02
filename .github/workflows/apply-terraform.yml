@@ -34,6 +34,9 @@ on:
       IMAGE_TAG:
         type: string
         required: false
+      ECR_REPO:
+        type: string
+        required: false
 
     secrets:
       AWS_GITHUBRUNNER_PAT:
@@ -130,18 +133,20 @@ jobs:
         FILENAME=$APP_NAME/$(date +\%H-\%M-%d-%m-%Y)-$(git rev-parse HEAD).log
         aws s3 cp tf_apply_log.log "s3://i-dot-ai-$ENVIRONMENT-github-runner-logs/${FILENAME}"
 
-    # - name: Tag built image with deployment environment
-    #   env:
-    #     ENVIRONMENT: ${{ inputs.ENVIRONMENT }}
-    #     APP_NAME: ${{ inputs.APP_NAME }}
-    #     INFRASTRUCTURE_FOLDER: ${{ inputs.INFRASTRUCTURE_FOLDER }}
-    #     IMAGE_TAG: ${{ inputs.IMAGE_TAG }}
-    #   run: |
-    #     if [[ $INFRASTRUCTURE_FOLDER ]]; then
-    #       cd main
-    #       if [[ $IMAGE_TAG ]]; then
-    #         make docker_update_tag tag=$ENVIRONMENT IMAGE_TAG=$IMAGE_TAG
-    #       else
-    #         make docker_update_tag tag=$ENVIRONMENT
-    #       fi
-    #     fi
+    - name: Tag built image with deployment environment
+      env:
+        ENVIRONMENT: ${{ inputs.ENVIRONMENT }}
+        APP_NAME: ${{ inputs.APP_NAME }}
+        INFRASTRUCTURE_FOLDER: ${{ inputs.INFRASTRUCTURE_FOLDER }}
+        IMAGE_TAG: ${{ inputs.IMAGE_TAG }}
+        ECR_REPO: ${{ inputs.ECR_REPO }}  
+      run: | 
+        echo "Tagging image with deployment environment $ECR_REPO"
+        if [[ $INFRASTRUCTURE_FOLDER ]]; then
+          cd main
+          if [[ $IMAGE_TAG ]]; then
+            make docker_update_tag tag=$ENVIRONMENT IMAGE_TAG=$IMAGE_TAG
+          else
+            make docker_update_tag tag=$ENVIRONMENT
+          fi
+        fi
