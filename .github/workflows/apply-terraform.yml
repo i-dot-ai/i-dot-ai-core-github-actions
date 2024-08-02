@@ -141,11 +141,18 @@ jobs:
         IMAGE_TAG: ${{ inputs.IMAGE_TAG }}
         ECR_REPO: ${{ inputs.ECR_REPO }}  
       run: | 
-        echo "Tagging image with deployment environment $ECR_REPO"
+        echo "SERVICE is set to $SERVICE"
         if [[ $INFRASTRUCTURE_FOLDER ]]; then
           cd main
           if [[ $IMAGE_TAG ]]; then
             make docker_update_tag tag=$ENVIRONMENT IMAGE_TAG=$IMAGE_TAG
+          elif [[ $SERVICE ]]; then
+            echo "Processing $SERVICE"
+            IFS=',' read -ra SERVICES <<< "$SERVICE"
+            for service in "${SERVICES[@]}"; do
+              echo "Tagging service: $service"
+              make docker_update_tag tag=$ENVIRONMENT SERVICE=$service
+            done
           else
             make docker_update_tag tag=$ENVIRONMENT
           fi
