@@ -96,12 +96,13 @@ jobs:
     - name: Terraform init
       env:
         INFRASTRUCTURE_FOLDER: ${{ inputs.INFRASTRUCTURE_FOLDER }}
+        ENVIRONMENT: ${{ inputs.ENVIRONMENT }}
       run: |
         cd main
         if [[ $INFRASTRUCTURE_FOLDER ]]; then
-          make tf_init infrastructure_folder=${{inputs.INFRASTRUCTURE_FOLDER}}
+          make tf_init infrastructure_folder=${{inputs.INFRASTRUCTURE_FOLDER}} env=$ENVIRONMENT
         else
-          make tf_init
+          make tf_init 
         fi
 
     - name: Terraform apply
