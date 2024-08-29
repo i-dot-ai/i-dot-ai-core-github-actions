@@ -71,6 +71,9 @@ jobs:
         INPUTS: ${{ toJSON(inputs) }}
       run: echo "$INPUTS"
 
+    - name: Set global git credentials
+      run: git config --global url.https://${{ secrets.AWS_GITHUBRUNNER_PAT }}@github.com/.insteadOf https://github.com/
+
     - name: Checkout i-ai-core-infrastructure
       uses: actions/checkout@v4
       with:
