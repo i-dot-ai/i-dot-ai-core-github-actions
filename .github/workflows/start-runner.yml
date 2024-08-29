@@ -124,7 +124,7 @@ jobs:
 
       - name: Start EC2 runner
         id: start-ec2-runner
-        uses: i-dot-ai/ec2-github-runner@/fix/assume-ubuntu
+        uses: i-dot-ai/ec2-github-runner@fix/assume-ubuntu
         if: steps.check-persistent-running.outputs.use_persisted == 0
         with:
           mode: start
