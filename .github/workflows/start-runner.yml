@@ -124,7 +124,7 @@ jobs:
 
       - name: Start EC2 runner
         id: start-ec2-runner
-        uses: i-dot-ai/ec2-github-runner@main
+        uses: i-dot-ai/ec2-github-runner@/fix/assume-ubuntu
         if: steps.check-persistent-running.outputs.use_persisted == 0
         with:
           mode: start
@@ -145,7 +145,6 @@ jobs:
             #!/bin/bash
             sudo mkdir ${{ env.EFS_MOUNT_PATH }}
             sudo mount -t efs ${{ env.EFS_ID }}:/ ${{ env.EFS_MOUNT_PATH }}
-            echo "export HOME='/home/ubuntu'" >> /root/.bashrc
 
       - name: Get runner label
         id: get-runner-label
