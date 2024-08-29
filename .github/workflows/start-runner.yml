@@ -145,7 +145,7 @@ jobs:
             #!/bin/bash
             sudo mkdir ${{ env.EFS_MOUNT_PATH }}
             sudo mount -t efs ${{ env.EFS_ID }}:/ ${{ env.EFS_MOUNT_PATH }}
-            sudo export HOME='/home/ubuntu'
+            echo "export HOME='/home/ubuntu'" >> /root/.bashrc
 
       - name: Get runner label
         id: get-runner-label
