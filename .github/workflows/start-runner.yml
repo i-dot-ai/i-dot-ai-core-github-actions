@@ -145,6 +145,7 @@ jobs:
             #!/bin/bash
             sudo mkdir ${{ env.EFS_MOUNT_PATH }}
             sudo mount -t efs ${{ env.EFS_ID }}:/ ${{ env.EFS_MOUNT_PATH }}
+            sudo usermod -aG docker ubuntu
 
       - name: Get runner label
         id: get-runner-label
