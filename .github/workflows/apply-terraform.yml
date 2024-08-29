@@ -102,7 +102,7 @@ jobs:
         if [[ $INFRASTRUCTURE_FOLDER ]]; then
           make tf_init infrastructure_folder=${{inputs.INFRASTRUCTURE_FOLDER}} env=$ENVIRONMENT
         else
-          make tf_init 
+          make tf_init env=$ENVIRONMENT
         fi
 
     - name: Terraform apply
