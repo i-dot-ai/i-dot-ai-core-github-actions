@@ -68,7 +68,7 @@ jobs:
       with:
           aws-region: ${{ secrets.AWS_REGION }}
           mask-aws-account-id: 'yes'
-          role-to-assume: i-dot-ai-dev-infrastructure-github-deployment-role
+          role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/infra/i-dot-ai-dev-infrastructure-github-deployment-role
 
     - name: Check AWS Auth
       run: aws sts get-caller-identity
