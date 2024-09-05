@@ -51,7 +51,9 @@ on:
 jobs:
   release-terraform:
     runs-on: ${{ inputs.RUNNER_LABEL }}
-    permissions: write-all
+    permissions:
+      id-token: write
+      contents: read
 
     steps:
 
