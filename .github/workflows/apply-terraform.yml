@@ -75,11 +75,12 @@ jobs:
     - name: Check AWS Auth
       run: aws sts get-caller-identity
 
+    - name: Check Permissions Boundary is working
+      run: aws iam create-user --user-name DANNY-BURKE-OIDC-POC-DELETE-ME
+
     - name: Check IAM permisisons are working
       run: aws s3 ls
 
-    - name: Check Permissions Boundary is working
-      run: aws iam create-user --user-name DANNY-BURKE-OIDC-POC-DELETE-ME
 
     # - name: Dump inputs context
     #   env:
