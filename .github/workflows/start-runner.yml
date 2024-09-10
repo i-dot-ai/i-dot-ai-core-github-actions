@@ -30,6 +30,8 @@ on:
         required: true
       AWS_REGION:
         required: true
+      AWS_ACCOUNT_ID:
+        required: true
     outputs:
       label:
         description: The ec2 runner label
