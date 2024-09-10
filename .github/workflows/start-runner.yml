@@ -16,6 +16,11 @@ on:
       USE_CUSTOM_RUNNER:
         type: string
         default: "0"
+      USE_OIDC:
+        description: 'Use OIDC for AWS authentication'
+        required: true
+        type: boolean
+        default: false
     secrets:
       AWS_GITHUBRUNNER_USER_ACCESS_KEY:
         required: true
@@ -58,11 +63,24 @@ jobs:
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v3-node20
+        if: ${{ inputs.USE_OIDC == 'false' }}
         with:
           aws-access-key-id: ${{ secrets.AWS_GITHUBRUNNER_USER_ACCESS_KEY }}
           aws-secret-access-key: ${{ secrets.AWS_GITHUBRUNNER_USER_SECRET_ID }}
           aws-region: ${{ secrets.AWS_REGION }}
           mask-aws-account-id: 'yes'
+
+      - name: Configure AWS credentials - OIDC
+        uses: aws-actions/configure-aws-credentials@v4
+        if: ${{ inputs.USE_OIDC == 'true' }}
+        id: aws-credentials
+        with:
+            aws-region: ${{ secrets.AWS_REGION }}
+            mask-aws-account-id: 'yes'
+            role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/infra/i-dot-ai-${{ inputs.ENVIRONMENT }}-${{ github.event.repository.name }}-github-deployment-role
+
+      - name: Check AWS Auth
+        run: aws sts get-caller-identity
 
       - name: Check for persistent runner
         id: check-persistent-running

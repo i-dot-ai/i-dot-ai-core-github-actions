@@ -64,115 +64,97 @@ jobs:
       with:
         path: main
 
-    - name: Configure AWS credentials
-      uses: aws-actions/configure-aws-credentials@v4
-      id: aws-credentials
+    - name: Dump inputs context
+      env:
+        INPUTS: ${{ toJSON(inputs) }}
+      run: echo "$INPUTS"
+
+    - name: Set global git credentials
+      run: git config --global url.https://${{ secrets.AWS_GITHUBRUNNER_PAT }}@github.com/.insteadOf https://github.com/
+
+    - name: Checkout i-ai-core-infrastructure
+      uses: actions/checkout@v4
       with:
-          aws-region: ${{ secrets.AWS_REGION }}
-          mask-aws-account-id: 'yes'
-          role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/infra/i-dot-ai-${{ inputs.ENVIRONMENT }}-${{ inputs.APP_NAME }}-github-deployment-role
+        repository: i-dot-ai/i-ai-core-infrastructure
+        ref: ${{ inputs.CORE_INFRA_REF }}
+        token: ${{ secrets.AWS_GITHUBRUNNER_PAT }}
+        path: i-ai-core-infrastructure
 
-    - name: Check AWS Auth
-      run: aws sts get-caller-identity
+    - name: Optionally checkout terraform config variables for public repos
+      if: ${{ inputs.PUBLIC_INFRA_DEPLOYMENT == true }}
+      uses: actions/checkout@v4
+      with:
+        repository: i-dot-ai/${{ inputs.INFRA_CONFIG_REPO }}
+        ref: ${{ inputs.INFRA_CONFIG_REF }}
+        token: ${{ secrets.AWS_GITHUBRUNNER_PAT }}
+        path: ${{ inputs.INFRA_CONFIG_REPO }}
 
-    - name: Check Permissions Boundary is working
-      run: aws iam create-user --user-name DANNY-BURKE-OIDC-POC-DELETE-ME
+    - name: Login to Amazon ECR
+      run: |
+        aws ecr get-login-password | docker login --username AWS --password-stdin ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com
+      shell: bash
 
-    - name: Check IAM permisisons are working
-      run: aws s3 ls
+    - name: Terraform init
+      env:
+        INFRASTRUCTURE_FOLDER: ${{ inputs.INFRASTRUCTURE_FOLDER }}
+        ENVIRONMENT: ${{ inputs.ENVIRONMENT }}
+      run: |
+        cd main
+        if [[ $INFRASTRUCTURE_FOLDER ]]; then
+          make tf_init infrastructure_folder=${{inputs.INFRASTRUCTURE_FOLDER}} env=$ENVIRONMENT
+        else
+          make tf_init env=$ENVIRONMENT
+        fi
 
+    - name: Terraform apply
+      env:
+        INFRASTRUCTURE_FOLDER: ${{ inputs.INFRASTRUCTURE_FOLDER }}
+        ENVIRONMENT: ${{ inputs.ENVIRONMENT }}
+        IMAGE_TAG: ${{ inputs.IMAGE_TAG }}
+        TF_LOGS: "INFO"
+        TF_CLI_ARGS: "-no-color"
+      run: |
+        cd main
+        tfParams=()
+        [[ $INFRASTRUCTURE_FOLDER ]] && tfParams+=( "INFRASTRUCTURE_FOLDER=$INFRASTRUCTURE_FOLDER" )
+        tfParams+=( "env=$ENVIRONMENT" )
+        make tf_set_or_create_workspace "${tfParams[@]}"
+        if [[ $IMAGE_TAG ]]; then
+          make tf_auto_apply IMAGE_TAG=${{ inputs.IMAGE_TAG }} "${tfParams[@]}" > tf_apply_log.log # TODO: mask any sensitive values
+        else
+          make tf_auto_apply "${tfParams[@]}" > tf_apply_log.log # TODO: mask any sensitive values
+        fi
 
-    # - name: Dump inputs context
-    #   env:
-    #     INPUTS: ${{ toJSON(inputs) }}
-    #   run: echo "$INPUTS"
+    - name: Copy terraform logs to s3
+      if: always()
+      env:
+        ENVIRONMENT: ${{ inputs.ENVIRONMENT }}
+        APP_NAME: ${{ inputs.APP_NAME }}
+      run: |
+        cd main
+        FILENAME=$APP_NAME/$(date +\%H-\%M-%d-%m-%Y)-$(git rev-parse HEAD).log
+        aws s3 cp tf_apply_log.log "s3://i-dot-ai-$ENVIRONMENT-github-runner-logs/${FILENAME}"
 
-    # - name: Set global git credentials
-    #   run: git config --global url.https://${{ secrets.AWS_GITHUBRUNNER_PAT }}@github.com/.insteadOf https://github.com/
-
-    # - name: Checkout i-ai-core-infrastructure
-    #   uses: actions/checkout@v4
-    #   with:
-    #     repository: i-dot-ai/i-ai-core-infrastructure
-    #     ref: ${{ inputs.CORE_INFRA_REF }}
-    #     token: ${{ secrets.AWS_GITHUBRUNNER_PAT }}
-    #     path: i-ai-core-infrastructure
-
-    # - name: Optionally checkout terraform config variables for public repos
-    #   if: ${{ inputs.PUBLIC_INFRA_DEPLOYMENT == true }}
-    #   uses: actions/checkout@v4
-    #   with:
-    #     repository: i-dot-ai/${{ inputs.INFRA_CONFIG_REPO }}
-    #     ref: ${{ inputs.INFRA_CONFIG_REF }}
-    #     token: ${{ secrets.AWS_GITHUBRUNNER_PAT }}
-    #     path: ${{ inputs.INFRA_CONFIG_REPO }}
-
-    # - name: Login to Amazon ECR
-    #   run: |
-    #     aws ecr get-login-password | docker login --username AWS --password-stdin ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com
-    #   shell: bash
-
-    # - name: Terraform init
-    #   env:
-    #     INFRASTRUCTURE_FOLDER: ${{ inputs.INFRASTRUCTURE_FOLDER }}
-    #     ENVIRONMENT: ${{ inputs.ENVIRONMENT }}
-    #   run: |
-    #     cd main
-    #     if [[ $INFRASTRUCTURE_FOLDER ]]; then
-    #       make tf_init infrastructure_folder=${{inputs.INFRASTRUCTURE_FOLDER}} env=$ENVIRONMENT
-    #     else
-    #       make tf_init env=$ENVIRONMENT
-    #     fi
-
-    # - name: Terraform apply
-    #   env:
-    #     INFRASTRUCTURE_FOLDER: ${{ inputs.INFRASTRUCTURE_FOLDER }}
-    #     ENVIRONMENT: ${{ inputs.ENVIRONMENT }}
-    #     IMAGE_TAG: ${{ inputs.IMAGE_TAG }}
-    #     TF_LOGS: "INFO"
-    #     TF_CLI_ARGS: "-no-color"
-    #   run: |
-    #     cd main
-    #     tfParams=()
-    #     [[ $INFRASTRUCTURE_FOLDER ]] && tfParams+=( "INFRASTRUCTURE_FOLDER=$INFRASTRUCTURE_FOLDER" )
-    #     tfParams+=( "env=$ENVIRONMENT" )
-    #     make tf_set_or_create_workspace "${tfParams[@]}"
-    #     if [[ $IMAGE_TAG ]]; then
-    #       make tf_auto_apply IMAGE_TAG=${{ inputs.IMAGE_TAG }} "${tfParams[@]}" > tf_apply_log.log # TODO: mask any sensitive values
-    #     else
-    #       make tf_auto_apply "${tfParams[@]}" > tf_apply_log.log # TODO: mask any sensitive values
-    #     fi
-
-    # - name: Copy terraform logs to s3
-    #   if: always()
-    #   env:
-    #     ENVIRONMENT: ${{ inputs.ENVIRONMENT }}
-    #     APP_NAME: ${{ inputs.APP_NAME }}
-    #   run: |
-    #     cd main
-    #     FILENAME=$APP_NAME/$(date +\%H-\%M-%d-%m-%Y)-$(git rev-parse HEAD).log
-    #     aws s3 cp tf_apply_log.log "s3://i-dot-ai-$ENVIRONMENT-github-runner-logs/${FILENAME}"
-
-    # - name: Tag built image with deployment environment
-    #   env:
-    #     ENVIRONMENT: ${{ inputs.ENVIRONMENT }}
-    #     APP_NAME: ${{ inputs.APP_NAME }}
-    #     INFRASTRUCTURE_FOLDER: ${{ inputs.INFRASTRUCTURE_FOLDER }}
-    #     ECR_REPO: ${{ inputs.ECR_REPO }}
-    #     IMAGE_TAG: ${{ inputs.IMAGE_TAG }}
-    #   run: |
-    #     if [[ $INFRASTRUCTURE_FOLDER ]]; then
-    #       cd main
-    #       if [[ $IMAGE_TAG ]]; then
-    #         make docker_update_tag tag=$ENVIRONMENT IMAGE_TAG=$IMAGE_TAG
-    #       elif [[ $ECR_REPO ]]; then
-    #         echo "Processing $ECR_REPO"
-    #         IFS=',' read -ra ECR_REPO <<< "$ECR_REPO"
-    #         for repo in "${ECR_REPO[@]}"; do
-    #           echo "Tagging service: $repo"
-    #           make docker_update_tag tag=$ENVIRONMENT repo=$repo
-    #         done
-    #       else
-    #         make docker_update_tag tag=$ENVIRONMENT
-    #       fi
-    #     fi
+    - name: Tag built image with deployment environment
+      env:
+        ENVIRONMENT: ${{ inputs.ENVIRONMENT }}
+        APP_NAME: ${{ inputs.APP_NAME }}
+        INFRASTRUCTURE_FOLDER: ${{ inputs.INFRASTRUCTURE_FOLDER }}
+        ECR_REPO: ${{ inputs.ECR_REPO }}
+        IMAGE_TAG: ${{ inputs.IMAGE_TAG }}
+      run: |
+        if [[ $INFRASTRUCTURE_FOLDER ]]; then
+          cd main
+          if [[ $IMAGE_TAG ]]; then
+            make docker_update_tag tag=$ENVIRONMENT IMAGE_TAG=$IMAGE_TAG
+          elif [[ $ECR_REPO ]]; then
+            echo "Processing $ECR_REPO"
+            IFS=',' read -ra ECR_REPO <<< "$ECR_REPO"
+            for repo in "${ECR_REPO[@]}"; do
+              echo "Tagging service: $repo"
+              make docker_update_tag tag=$ENVIRONMENT repo=$repo
+            done
+          else
+            make docker_update_tag tag=$ENVIRONMENT
+          fi
+        fi
