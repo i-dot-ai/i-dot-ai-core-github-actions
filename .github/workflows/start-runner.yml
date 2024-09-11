@@ -64,7 +64,7 @@ jobs:
         run: echo "$INPUTS"
 
       - name: AWS Authentication
-        uses: ./.github/actions/authenticate-aws
+        uses: .github/actions/authenticate-aws
         with:
           USE_OIDC: ${{ inputs.USE_OIDC }}
           ENVIRONMENT: ${{ inputs.ENVIRONMENT }}
