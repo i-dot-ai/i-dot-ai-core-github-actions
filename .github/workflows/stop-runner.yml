@@ -3,12 +3,20 @@ name: stop-runner
 on:
   workflow_call:
     inputs:
-
       RUNNER_LABEL:
         required: true
         type: string
       EC2_INSTANCE_ID:
         required: true
+        type: string
+      USE_OIDC:
+        description: 'Use OIDC for AWS authentication'
+        required: true
+        type: boolean
+        default: false
+      ENVIRONMENT:
+        required: false
+        default: prod
         type: string
     secrets:
       AWS_GITHUBRUNNER_USER_ACCESS_KEY:
@@ -24,12 +32,15 @@ jobs:
   stop-runner:
     runs-on: ubuntu-latest
     steps:
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v1-node16
+      - name: AWS Authentication
+        uses: ./.github/actions/authenticate_aws
         with:
-          aws-access-key-id: ${{ secrets.AWS_GITHUBRUNNER_USER_ACCESS_KEY }}
-          aws-secret-access-key: ${{ secrets.AWS_GITHUBRUNNER_USER_SECRET_ID }}
-          aws-region: ${{ secrets.AWS_REGION }}
+          USE_OIDC: ${{ inputs.USE_OIDC }}
+          ENVIRONMENT: ${{ inputs.ENVIRONMENT }}
+          AWS_REGION: ${{ secrets.AWS_REGION }}
+          AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
+          AWS_GITHUBRUNNER_USER_ACCESS_KEY: ${{ secrets.AWS_GITHUBRUNNER_USER_ACCESS_KEY }}
+          AWS_GITHUBRUNNER_USER_SECRET_ID: ${{ secrets.AWS_GITHUBRUNNER_USER_SECRET_ID }}
 
       - name: Stop EC2 runner
         if: ${{ ! contains( 'persistent', inputs.RUNNER_LABEL ) }}

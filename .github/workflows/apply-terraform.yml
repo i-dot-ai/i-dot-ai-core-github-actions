@@ -89,6 +89,10 @@ jobs:
         token: ${{ secrets.AWS_GITHUBRUNNER_PAT }}
         path: ${{ inputs.INFRA_CONFIG_REPO }}
 
+    - name: Check AWS Auth
+      shell: bash
+      run: aws sts get-caller-identity
+
     - name: Login to Amazon ECR
       run: |
         aws ecr get-login-password | docker login --username AWS --password-stdin ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com
