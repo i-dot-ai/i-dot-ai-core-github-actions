@@ -63,10 +63,6 @@ jobs:
           INPUTS: ${{ toJSON(inputs) }}
         run: echo "$INPUTS"
 
-      - name: Copy files
-        working-directory: ${{ env.WORK_DIR }}/local_checkout
-        run: cp -r .github "$GITHUB_WORKSPACE/"
-
       - name: AWS Authentication
         uses: ./.github/actions/authenticate_aws
         with:
