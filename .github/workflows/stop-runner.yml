@@ -32,6 +32,12 @@ jobs:
   stop-runner:
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout 10ds actions repo
+        uses: actions/checkout@v4
+        with:
+          repository: PMO-Data-Science/10ds-core-github-actions
+          ref: refs/heads/main
+          token: ${{ secrets.AWS_GITHUBRUNNER_PAT }}
       - name: AWS Authentication
         uses: ./.github/actions/authenticate_aws
         with:
