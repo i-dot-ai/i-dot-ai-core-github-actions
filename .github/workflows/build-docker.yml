@@ -27,6 +27,11 @@ on:
         required: false
         type: string
         default: prod
+      USE_OIDC:
+        description: 'Use OIDC for AWS authentication'
+        required: true
+        type: boolean
+        default: false
     secrets:
       AWS_GITHUBRUNNER_PAT:
         required: true
@@ -64,12 +69,15 @@ jobs:
         INPUTS: ${{ toJSON(inputs) }}
       run: echo "$INPUTS"
 
-    - name: Configure AWS credentials
-      uses: aws-actions/configure-aws-credentials@v3-node20
-      id: aws-credentials
+    - name: AWS Authentication
+      uses: ./.github/actions/authenticate_aws
       with:
-          aws-region: ${{ secrets.AWS_REGION }}
-          mask-aws-account-id: 'yes'
+          USE_OIDC: ${{ inputs.USE_OIDC }}
+          ENVIRONMENT: ${{ inputs.ENVIRONMENT }}
+          AWS_REGION: ${{ secrets.AWS_REGION }}
+          AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
+          AWS_GITHUBRUNNER_USER_ACCESS_KEY: ${{ secrets.AWS_GITHUBRUNNER_USER_ACCESS_KEY }}
+          AWS_GITHUBRUNNER_USER_SECRET_ID: ${{ secrets.AWS_GITHUBRUNNER_USER_SECRET_ID }}
   
     - name: Checkout i-dot-ai-core-terraform repo
       uses: actions/checkout@v4
