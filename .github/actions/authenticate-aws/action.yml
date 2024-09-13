@@ -10,7 +10,8 @@ inputs:
         description: 'optional flag for the APP Name'
     USE_OIDC:
         description: "Use OIDC for AWS authentication. Supported values 'true' or 'false'"
-        required: true
+        required: false
+        default: 'false'
     AWS_REGION:
         description: 'AWS region'
         required: true
