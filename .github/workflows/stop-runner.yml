@@ -11,7 +11,7 @@ on:
         type: string
       USE_OIDC:
         description: 'Use OIDC for AWS authentication'
-        required: true
+        required: false
         type: boolean
         default: false
       ENVIRONMENT:

@@ -18,7 +18,7 @@ on:
         default: "0"
       USE_OIDC:
         description: 'Use OIDC for AWS authentication'
-        required: true
+        required: false
         type: boolean
         default: false
     secrets:

@@ -29,7 +29,7 @@ on:
         default: prod
       USE_OIDC:
         description: 'Use OIDC for AWS authentication'
-        required: true
+        required: false
         type: boolean
         default: false
     secrets:
@@ -78,7 +78,7 @@ jobs:
           AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
           AWS_GITHUBRUNNER_USER_ACCESS_KEY: ${{ secrets.AWS_GITHUBRUNNER_USER_ACCESS_KEY }}
           AWS_GITHUBRUNNER_USER_SECRET_ID: ${{ secrets.AWS_GITHUBRUNNER_USER_SECRET_ID }}
-  
+
     - name: Checkout i-dot-ai-core-terraform repo
       uses: actions/checkout@v4
       with:
@@ -129,7 +129,7 @@ jobs:
         cd main
         make docker_push service=$SERVICE
         IMAGE=$(eval $(make docker_echo value=IMAGE service=$SERVICE) | awk '{print $1;}')
-      
+
     - name: Export ecr image attributes
       id: export-ecr
       env:
