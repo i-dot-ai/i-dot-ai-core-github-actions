@@ -72,6 +72,29 @@ jobs:
     - name: Set global git credentials
       run: git config --global url.https://${{ secrets.AWS_GITHUBRUNNER_PAT }}@github.com/.insteadOf https://github.com/
 
+    - name: Checkout 10ds actions repo
+      uses: actions/checkout@v4
+      with:
+        repository: PMO-Data-Science/10ds-core-github-actions
+        ref: refs/heads/main
+        token: ${{ secrets.AWS_GITHUBRUNNER_PAT }}
+        fetch-depth: 0
+        path: actions
+
+    - name: AWS Authentication
+      uses: ./.github/actions/authenticate_aws
+      with:
+        USE_OIDC: ${{ inputs.USE_OIDC }}
+        ENVIRONMENT: ${{ inputs.ENVIRONMENT }}
+        AWS_REGION: ${{ secrets.AWS_REGION }}
+        AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
+        AWS_GITHUBRUNNER_USER_ACCESS_KEY: ${{ secrets.AWS_GITHUBRUNNER_USER_ACCESS_KEY }}
+        AWS_GITHUBRUNNER_USER_SECRET_ID: ${{ secrets.AWS_GITHUBRUNNER_USER_SECRET_ID }}
+
+    - name: Check AWS Auth
+      shell: bash
+      run: aws sts get-caller-identity
+
     - name: Checkout i-ai-core-infrastructure
       uses: actions/checkout@v4
       with:
@@ -89,9 +112,7 @@ jobs:
         token: ${{ secrets.AWS_GITHUBRUNNER_PAT }}
         path: ${{ inputs.INFRA_CONFIG_REPO }}
 
-    - name: Check AWS Auth
-      shell: bash
-      run: aws sts get-caller-identity
+
 
     - name: Login to Amazon ECR
       run: |
