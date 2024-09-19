@@ -62,7 +62,6 @@ jobs:
         ref: refs/heads/main
         token: ${{ secrets.AWS_GITHUBRUNNER_PAT }}
         fetch-depth: 0
-        path: actions
 
     - name: Dump inputs context
       env:
