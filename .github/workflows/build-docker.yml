@@ -31,7 +31,7 @@ on:
         description: 'Use OIDC for AWS authentication'
         required: false
         type: boolean
-        default: 'false'
+        default: false
     secrets:
       AWS_GITHUBRUNNER_PAT:
         required: true

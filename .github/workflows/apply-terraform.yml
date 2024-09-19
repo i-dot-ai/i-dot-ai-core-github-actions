@@ -37,6 +37,9 @@ on:
       ECR_REPO:
           type: string
           required: false
+      USE_OIDC:
+          type: string
+          required: false
 
     secrets:
       AWS_GITHUBRUNNER_PAT:
@@ -111,8 +114,6 @@ jobs:
         ref: ${{ inputs.INFRA_CONFIG_REF }}
         token: ${{ secrets.AWS_GITHUBRUNNER_PAT }}
         path: ${{ inputs.INFRA_CONFIG_REPO }}
-
-
 
     - name: Login to Amazon ECR
       run: |
