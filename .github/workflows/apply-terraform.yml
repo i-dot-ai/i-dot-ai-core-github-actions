@@ -81,8 +81,11 @@ jobs:
         repository: PMO-Data-Science/10ds-core-github-actions
         ref: refs/heads/main
         token: ${{ secrets.AWS_GITHUBRUNNER_PAT }}
-        fetch-depth: 0
-        path: actions
+
+    - name: Dump inputs context
+      env:
+        INPUTS: ${{ toJSON(inputs) }}
+      run: echo "$INPUTS"
 
     - name: AWS Authentication
       uses: ./.github/actions/authenticate_aws
