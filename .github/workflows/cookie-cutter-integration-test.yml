@@ -83,6 +83,7 @@ jobs:
       env:
         AWS_ACCOUNT_ID: ${{ steps.aws-credentials.outputs.aws-account-id }}
       run: |
+        ls -ltra
         cd main
         ls -ltra
 
