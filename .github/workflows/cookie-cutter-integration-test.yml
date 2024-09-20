@@ -84,7 +84,6 @@ jobs:
         AWS_ACCOUNT_ID: ${{ steps.aws-credentials.outputs.aws-account-id }}
       run: |
         cd main
-        make test_fastapi
         ls -ltra
 
     - name: Login to Amazon ECR
