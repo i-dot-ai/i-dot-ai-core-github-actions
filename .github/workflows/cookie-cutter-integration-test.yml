@@ -78,6 +78,11 @@ jobs:
         ref: refs/heads/main
         token: ${{ secrets.AWS_GITHUBRUNNER_PAT }}
         path: i-dot-ai-core-terraform
+    
+    - name: ⬇️ Download artifact
+      uses: actions/download-artifact@v3
+      with:
+        path: integration
 
     - name: cookie cut project
       env:
@@ -86,6 +91,8 @@ jobs:
         ls -ltra
         cd main
         ls -ltra
+        cd integration
+        ls -ltr
 
     - name: Login to Amazon ECR
       run: |
