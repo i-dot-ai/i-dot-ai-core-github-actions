@@ -82,7 +82,7 @@ jobs:
     - name: ⬇️ Download artifact
       uses: actions/download-artifact@v3
       with:
-        path: integration
+        path: main
 
     - name: cookie cut project
       env:
@@ -90,6 +90,8 @@ jobs:
       run: |
         ls -ltra
         pwd
+        cd main
+        ls -ltra
 
     - name: Login to Amazon ECR
       run: |
