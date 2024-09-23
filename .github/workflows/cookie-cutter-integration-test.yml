@@ -89,10 +89,7 @@ jobs:
         AWS_ACCOUNT_ID: ${{ steps.aws-credentials.outputs.aws-account-id }}
       run: |
         ls -ltra
-        cd main
-        ls -ltra
-        cd integration
-        ls -ltr
+        pwd
 
     - name: Login to Amazon ECR
       run: |
