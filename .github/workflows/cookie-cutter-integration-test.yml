@@ -82,7 +82,7 @@ jobs:
     - name: ⬇️ Download artifact
       uses: actions/download-artifact@v3
       with:
-        path: main
+        path: integration
 
     - name: cookie cut project
       env:
@@ -92,6 +92,7 @@ jobs:
         pwd
         cd main
         ls -ltra
+      
 
     - name: Login to Amazon ECR
       run: |
@@ -123,7 +124,7 @@ jobs:
         SERVICE: ${{ inputs.SERVICE }}
         CACHE: ${{ env.EFS_MOUNT_PATH }}
       run: |
-        cd main
+        cd integration
         make docker_build service=$SERVICE cache=$CACHE
 
     - name: Docker Push
