@@ -154,7 +154,7 @@ jobs:
         ENVIRONMENT: ${{ inputs.ENVIRONMENT }}
       run: |
         cd artifact
-        tf_apply env=dev
+        make tf_apply env=dev
 
     - name: Export ecr image attributes
       id: export-ecr
