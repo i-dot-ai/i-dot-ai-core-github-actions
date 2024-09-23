@@ -77,7 +77,7 @@ jobs:
         repository: i-dot-ai/i-ai-core-infrastructure
         ref: refs/heads/main
         token: ${{ secrets.AWS_GITHUBRUNNER_PAT }}
-        path: i-dot-ai-core-terraform
+        path: artifact/i-dot-ai-core-terraform
     
     - name: ⬇️ Download artifact
       uses: actions/download-artifact@v4
