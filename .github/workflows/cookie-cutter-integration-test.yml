@@ -122,7 +122,7 @@ jobs:
         SERVICE: ${{ inputs.SERVICE }}
         CACHE: ${{ env.EFS_MOUNT_PATH }}
       run: |
-        cd integration/artifect
+        cd artifact
         make docker_build service=$SERVICE cache=$CACHE
 
     - name: Docker Push
