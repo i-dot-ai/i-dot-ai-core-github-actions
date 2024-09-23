@@ -88,7 +88,7 @@ jobs:
       run: |
         ls -ltra
         pwd
-        cd main
+        cd artifact
         ls -ltra
       
 
@@ -131,7 +131,7 @@ jobs:
         APP_NAME: ${{ inputs.APP_NAME }}
         SERVICE: ${{ inputs.SERVICE }}
       run: |
-        cd main
+        cd artifact
         make docker_push service=$SERVICE
         IMAGE=$(eval $(make docker_echo value=IMAGE service=$SERVICE) | awk '{print $1;}')
       
@@ -141,7 +141,7 @@ jobs:
         APP_NAME: ${{ inputs.APP_NAME }}
         SERVICE: ${{ inputs.SERVICE }}
       run: |
-        cd main
+        cd artifact
         export REPO=$(eval $(make docker_echo value=ECR_REPO_NAME service=$SERVICE) | awk '{print $1;}')
         echo "repo=$REPO" >> $GITHUB_OUTPUT
         export TAG=$(eval $(make docker_echo value=IMAGE_TAG service=$SERVICE)| awk '{print $1;}')
