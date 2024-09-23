@@ -43,12 +43,12 @@ jobs:
     runs-on: ${{ inputs.RUNNER_LABEL }}
 
     steps:
-    - name: Checkout
-      uses: actions/checkout@v4
-      with:
-        ref: ${{ inputs.COMMIT_HASH }}
-        fetch-depth: 0
-        path: main
+    # - name: Checkout
+    #   uses: actions/checkout@v4
+    #   with:
+    #     ref: ${{ inputs.COMMIT_HASH }}
+    #     fetch-depth: 0
+    #     path: main
 
     - name: Checkout 10ds actions repo
       uses: actions/checkout@v4
@@ -81,8 +81,6 @@ jobs:
     
     - name: ⬇️ Download artifact
       uses: actions/download-artifact@v3
-      with:
-        path: integration
 
     - name: cookie cut project
       env:
@@ -124,9 +122,7 @@ jobs:
         SERVICE: ${{ inputs.SERVICE }}
         CACHE: ${{ env.EFS_MOUNT_PATH }}
       run: |
-        pwd
-        ls -ltra
-        cd integration
+        cd integration/artifect
         make docker_build service=$SERVICE cache=$CACHE
 
     - name: Docker Push
