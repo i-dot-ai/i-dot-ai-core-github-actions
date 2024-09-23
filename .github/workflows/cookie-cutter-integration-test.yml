@@ -141,7 +141,8 @@ jobs:
         INFRASTRUCTURE_FOLDER: ${{ inputs.INFRASTRUCTURE_FOLDER }}
         ENVIRONMENT: ${{ inputs.ENVIRONMENT }}
       run: |
-          make tf_init env=dev
+        cd artifact    
+        make tf_init env=dev
 
   
     - name: Terraform apply
