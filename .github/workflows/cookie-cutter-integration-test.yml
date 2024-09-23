@@ -124,6 +124,8 @@ jobs:
         SERVICE: ${{ inputs.SERVICE }}
         CACHE: ${{ env.EFS_MOUNT_PATH }}
       run: |
+        pwd
+        ls -ltra
         cd integration
         make docker_build service=$SERVICE cache=$CACHE
 
