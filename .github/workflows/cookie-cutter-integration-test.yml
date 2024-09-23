@@ -135,7 +135,23 @@ jobs:
         cd artifact
         make docker_push service=$SERVICE
         IMAGE=$(eval $(make docker_echo value=IMAGE service=$SERVICE) | awk '{print $1;}')
-      
+    
+    - name: Terraform init
+      env:
+        INFRASTRUCTURE_FOLDER: ${{ inputs.INFRASTRUCTURE_FOLDER }}
+        ENVIRONMENT: ${{ inputs.ENVIRONMENT }}
+      run: |
+          make tf_init env=dev
+
+  
+    - name: Terraform apply
+      env: 
+        INFRASTRUCTURE_FOLDER: ${{ inputs.INFRASTRUCTURE_FOLDER }}
+        ENVIRONMENT: ${{ inputs.ENVIRONMENT }}
+      run: |
+        cd artifact
+        tf_apply env=dev
+
     - name: Export ecr image attributes
       id: export-ecr
       env:
