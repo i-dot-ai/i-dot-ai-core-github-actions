@@ -65,7 +65,7 @@ jobs:
       uses: ./.github/actions/authenticate_aws
       with:
         USE_OIDC: ${{ inputs.USE_OIDC }}
-        ENVIRONMENT: ${{ inputs.ENVIRONMENT }}
+        ENVIRONMENT: dev
         AWS_REGION: ${{ secrets.AWS_REGION }}
         AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
         AWS_GITHUBRUNNER_USER_ACCESS_KEY: ${{ secrets.AWS_GITHUBRUNNER_USER_ACCESS_KEY }}
