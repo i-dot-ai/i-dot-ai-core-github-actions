@@ -77,12 +77,6 @@ jobs:
         INPUTS: ${{ toJSON(inputs) }}
       run: echo "$INPUTS"
 
-    # - name: Configure AWS credentials
-    #   uses: aws-actions/configure-aws-credentials@v3-node20
-    #   id: aws-credentials
-    #   with:
-    #       aws-region: ${{ secrets.AWS_REGION }}
-    #       mask-aws-account-id: 'yes'
   
     - name: Set global git credentials
       run: git config --global url.https://${{ secrets.AWS_GITHUBRUNNER_PAT }}@github.com/.insteadOf https://github.com/
@@ -95,8 +89,7 @@ jobs:
     #     token: ${{ secrets.AWS_GITHUBRUNNER_PAT }}
     #     path: artifact/i-dot-ai-core-terraform
     
-    - name: ⬇️ Download artifact
-      uses: actions/download-artifact@v4
+
 
 
     - name: cookie cut project
@@ -141,6 +134,9 @@ jobs:
       with:
           PARAMETER_STORE_VAR_NAME: /github-runner-${{ inputs.ENVIRONMENT }}/efs-mount-path
           ENVIRONMENT_VAR_NAME: EFS_MOUNT_PATH
+
+    - name: ⬇️ Download artifact
+      uses: actions/download-artifact@v4
 
     - name: Docker build
       env:
