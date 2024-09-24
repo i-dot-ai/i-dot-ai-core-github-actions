@@ -27,6 +27,10 @@ on:
         required: false
         type: string
         default: prod
+      USE_OIDC:
+        required: false
+        type: boolean
+        default: true
     secrets:
       AWS_GITHUBRUNNER_PAT:
         required: true
@@ -58,18 +62,28 @@ jobs:
         token: ${{ secrets.AWS_GITHUBRUNNER_PAT }}
         fetch-depth: 0
         path: actions
+    
+    - name: AWS Authentication
+      uses: ./.github/actions/authenticate_aws
+      with:
+        USE_OIDC: ${{ inputs.USE_OIDC }}
+        ENVIRONMENT: ${{ inputs.ENVIRONMENT }}
+        AWS_REGION: ${{ secrets.AWS_REGION }}
+        AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
+        AWS_GITHUBRUNNER_USER_ACCESS_KEY: ${{ secrets.AWS_GITHUBRUNNER_USER_ACCESS_KEY }}
+        AWS_GITHUBRUNNER_USER_SECRET_ID: ${{ secrets.AWS_GITHUBRUNNER_USER_SECRET_ID }}
 
     - name: Dump inputs context
       env:
         INPUTS: ${{ toJSON(inputs) }}
       run: echo "$INPUTS"
 
-    - name: Configure AWS credentials
-      uses: aws-actions/configure-aws-credentials@v3-node20
-      id: aws-credentials
-      with:
-          aws-region: ${{ secrets.AWS_REGION }}
-          mask-aws-account-id: 'yes'
+    # - name: Configure AWS credentials
+    #   uses: aws-actions/configure-aws-credentials@v3-node20
+    #   id: aws-credentials
+    #   with:
+    #       aws-region: ${{ secrets.AWS_REGION }}
+    #       mask-aws-account-id: 'yes'
   
     - name: Set global git credentials
       run: git config --global url.https://${{ secrets.AWS_GITHUBRUNNER_PAT }}@github.com/.insteadOf https://github.com/
