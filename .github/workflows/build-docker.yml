@@ -110,6 +110,7 @@ jobs:
         ref: refs/heads/main
         token: ${{ secrets.AWS_GITHUBRUNNER_PAT }}
         fetch-depth: 0
+        path: actions
 
     - name: Export EFS_MOUNT_PATH
       uses: ./actions/.github/actions/export_parameter
