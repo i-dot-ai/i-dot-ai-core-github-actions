@@ -92,15 +92,7 @@ jobs:
 
 
 
-    - name: cookie cut project
-      env:
-        AWS_ACCOUNT_ID: ${{ steps.aws-credentials.outputs.aws-account-id }}
-      run: |
-        ls -ltra
-        pwd
-        cd artifact
-        ls -ltra
-      
+
 
     - name: Login to Amazon ECR
       run: |
@@ -137,6 +129,16 @@ jobs:
 
     - name: ⬇️ Download artifact
       uses: actions/download-artifact@v4
+    
+    - name: cookie cut project
+      env:
+        AWS_ACCOUNT_ID: ${{ steps.aws-credentials.outputs.aws-account-id }}
+      run: |
+        ls -ltra
+        pwd
+        cd artifact
+        ls -ltra
+    
 
     - name: Docker build
       env:
