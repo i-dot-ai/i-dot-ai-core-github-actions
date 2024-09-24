@@ -61,6 +61,11 @@ jobs:
         repository: PMO-Data-Science/10ds-core-github-actions
         ref: refs/heads/main
         token: ${{ secrets.AWS_GITHUBRUNNER_PAT }}
+
+
+
+
+
       
     - name: AWS Authentication
       uses: ./.github/actions/authenticate_aws
@@ -125,6 +130,16 @@ jobs:
           docker buildx create --name "${INSTANCE_NAME}" --driver docker-container
           echo "Instance ${INSTANCE_NAME} is created."
         fi
+
+
+
+    - name: Checkout 10ds actions repo
+      uses: actions/checkout@v4
+      with:
+        repository: PMO-Data-Science/10ds-core-github-actions
+        ref: refs/heads/main
+        token: ${{ secrets.AWS_GITHUBRUNNER_PAT }}
+        
 
     - name: Export EFS_MOUNT_PATH
       uses: ./actions/.github/actions/export_parameter
