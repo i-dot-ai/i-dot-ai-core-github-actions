@@ -150,7 +150,7 @@ jobs:
               {"Key": "GitHubRepository", "Value": "${{ github.repository }}"}
             ]
           ec2-volume-size: 64
-          pre-runner-script: >
+          pre-runner-script: |
             #!/bin/bash
             sudo mkdir ${{ env.EFS_MOUNT_PATH }}
             sudo mount -t efs ${{ env.EFS_ID }}:/ ${{ env.EFS_MOUNT_PATH }}
