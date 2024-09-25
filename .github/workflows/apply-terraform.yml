@@ -74,14 +74,6 @@ jobs:
     - name: Set global git credentials
       run: git config --global url.https://${{ secrets.AWS_GITHUBRUNNER_PAT }}@github.com/.insteadOf https://github.com/
 
-    - name: Checkout i-ai-core-infrastructure
-      uses: actions/checkout@v4
-      with:
-        repository: i-dot-ai/i-ai-core-infrastructure
-        ref: ${{ inputs.CORE_INFRA_REF }}
-        token: ${{ secrets.AWS_GITHUBRUNNER_PAT }}
-        path: i-ai-core-infrastructure
-
     - name: Optionally checkout terraform config variables for public repos
       if: ${{ inputs.PUBLIC_INFRA_DEPLOYMENT == true }}
       uses: actions/checkout@v4
