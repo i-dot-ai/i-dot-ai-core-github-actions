@@ -129,7 +129,7 @@ jobs:
 
     - name: Docker build
       env:
-        AWS_ACCOUNT_ID: ${{ steps.aws-credentials.outputs.aws-account-id }}
+        AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
         APP_NAME: ${{ inputs.APP_NAME }}
         SERVICE: ${{ inputs.SERVICE }}
         CACHE: ${{ env.EFS_MOUNT_PATH }}
@@ -139,7 +139,7 @@ jobs:
 
     - name: Docker Push
       env:
-        AWS_ACCOUNT_ID: ${{ steps.aws-credentials.outputs.aws-account-id }}
+        AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
         APP_NAME: ${{ inputs.APP_NAME }}
         SERVICE: ${{ inputs.SERVICE }}
       run: |
