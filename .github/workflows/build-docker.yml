@@ -71,13 +71,6 @@ jobs:
           aws-region: ${{ secrets.AWS_REGION }}
           mask-aws-account-id: 'yes'
   
-    - name: Checkout i-dot-ai-core-terraform repo
-      uses: actions/checkout@v4
-      with:
-        repository: i-dot-ai/i-ai-core-infrastructure
-        ref: refs/heads/main
-        token: ${{ secrets.AWS_GITHUBRUNNER_PAT }}
-        path: i-dot-ai-core-terraform
 
     - name: Login to Amazon ECR
       run: |
