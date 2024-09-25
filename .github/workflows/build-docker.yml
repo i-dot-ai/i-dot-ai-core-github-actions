@@ -135,7 +135,7 @@ jobs:
         CACHE: ${{ env.EFS_MOUNT_PATH }}
       run: |
         cd main
-        make docker_build_local service=$SERVICE
+        make docker_build service=$SERVICE cache=$CACHE
 
     - name: Docker Push
       env:
