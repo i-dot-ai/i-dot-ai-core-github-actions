@@ -125,7 +125,7 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v4
       with:
-        path: main
+          path: main
 
     - name: Docker build
       env:
@@ -135,7 +135,7 @@ jobs:
         CACHE: ${{ env.EFS_MOUNT_PATH }}
       run: |
         cd main
-        make docker_build service=$SERVICE cache=$CACHE
+        make docker_build_local service=$SERVICE
 
     - name: Docker Push
       env:
