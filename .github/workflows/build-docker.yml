@@ -86,6 +86,11 @@ jobs:
         token: ${{ secrets.AWS_GITHUBRUNNER_PAT }}
         path: i-dot-ai-core-terraform
 
+    - name: Checkout
+      uses: actions/checkout@v4
+      with:
+        path: main
+
     - name: Login to Amazon ECR
       run: |
         aws ecr get-login-password | docker login --username AWS --password-stdin ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com
@@ -116,6 +121,11 @@ jobs:
       with:
           PARAMETER_STORE_VAR_NAME: /github-runner-${{ inputs.ENVIRONMENT }}/efs-mount-path
           ENVIRONMENT_VAR_NAME: EFS_MOUNT_PATH
+
+    - name: Checkout
+      uses: actions/checkout@v4
+      with:
+        path: main
 
     - name: Docker build
       env:
