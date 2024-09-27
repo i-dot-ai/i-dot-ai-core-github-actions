@@ -85,8 +85,8 @@ jobs:
         ref: refs/heads/main
         token: ${{ secrets.AWS_GITHUBRUNNER_PAT }}
         path: i-dot-ai-core-terraform
-          aws-region: ${{ secrets.AWS_REGION }}
-          mask-aws-account-id: 'yes'
+        aws-region: ${{ secrets.AWS_REGION }}
+        mask-aws-account-id: 'yes'
 
     - name: Checkout
       uses: actions/checkout@v4
