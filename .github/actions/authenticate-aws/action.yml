@@ -1,0 +1,50 @@
+name: Configure AWS Credentials
+description: "Configures AWS Credentials via OIDC or Access Keys depending on input."
+inputs:
+    ENVIRONMENT:
+        required: true
+        default: prod
+        description: 'Env to deploy to'
+    APP_NAME:
+        required: false
+        description: 'optional flag for the APP Name'
+    USE_OIDC:
+        description: "Use OIDC for AWS authentication. Supported values 'true' or 'false'"
+        required: false
+        default: 'false'
+    AWS_REGION:
+        description: 'AWS region'
+        required: true
+    AWS_ACCOUNT_ID:
+        description: 'AWS account ID'
+        required: true
+    AWS_GITHUBRUNNER_USER_ACCESS_KEY:
+        description: 'AWS access key ID'
+        required: false
+    AWS_GITHUBRUNNER_USER_SECRET_ID:
+        description: 'AWS secret access key'
+        required: false
+
+runs:
+  using: "composite"
+  steps:
+    - name: Configure AWS credentials with Access Keys
+      uses: aws-actions/configure-aws-credentials@v4
+      if: ${{ inputs.USE_OIDC == 'false' }}
+      with:
+        aws-access-key-id: ${{ inputs.AWS_GITHUBRUNNER_USER_ACCESS_KEY }}
+        aws-secret-access-key: ${{ inputs.AWS_GITHUBRUNNER_USER_SECRET_ID }}
+        aws-region: ${{ inputs.AWS_REGION }}
+        mask-aws-account-id: 'yes'
+
+    - name: Configure AWS credentials with OIDC
+      uses: aws-actions/configure-aws-credentials@v4
+      if: ${{ inputs.USE_OIDC == 'true' }}
+      with:
+        aws-region: ${{ inputs.AWS_REGION }}
+        mask-aws-account-id: 'yes'
+        role-to-assume: arn:aws:iam::${{ inputs.AWS_ACCOUNT_ID }}:role/infra/${{ github.event.repository.name }}-${{ inputs.ENVIRONMENT }}-github-deployment-role
+
+    - name: Check AWS Auth
+      shell: bash
+      run: aws sts get-caller-identity
