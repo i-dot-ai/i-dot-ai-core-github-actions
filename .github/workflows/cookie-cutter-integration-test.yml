@@ -170,22 +170,22 @@ jobs:
         make tf_init env=dev
 
   
-    # - name: Terraform apply
-    #   env: 
-    #     INFRASTRUCTURE_FOLDER: ${{ inputs.INFRASTRUCTURE_FOLDER }}
-    #     ENVIRONMENT: ${{ inputs.ENVIRONMENT }}
-    #   run: |
-    #     cd artifact
-    #     make tf_apply env=dev
-
-
-    - name: Terraform destroy
+    - name: Terraform apply
       env: 
         INFRASTRUCTURE_FOLDER: ${{ inputs.INFRASTRUCTURE_FOLDER }}
         ENVIRONMENT: ${{ inputs.ENVIRONMENT }}
       run: |
         cd artifact
-        make tf_destroy env=dev
+        make tf_apply env=dev
+
+
+    # - name: Terraform destroy
+    #   env: 
+    #     INFRASTRUCTURE_FOLDER: ${{ inputs.INFRASTRUCTURE_FOLDER }}
+    #     ENVIRONMENT: ${{ inputs.ENVIRONMENT }}
+    #   run: |
+    #     cd artifact
+    #     make tf_destroy env=dev
 
 
     - name: Export ecr image attributes
