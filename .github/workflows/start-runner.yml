@@ -54,8 +54,6 @@ jobs:
       - name: Checkout I.AI Core GitHub Actions
         uses: actions/checkout@v4
         with:
-          ref: ${{ inputs.COMMIT_HASH }}
-          fetch-depth: 0
           path: main
 
       - name: Dump inputs context
