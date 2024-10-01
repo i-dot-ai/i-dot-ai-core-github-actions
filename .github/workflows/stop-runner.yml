@@ -38,10 +38,9 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: i-dot-ai/i-dot-ai-core-github-actions
-          ref: ${{ inputs.COMMIT_HASH }}
 
       - name: AWS Authentication
-        uses: ./.github/actions/authenticate_aws
+        uses: ./.github/actions/authenticate-aws
         with:
           USE_OIDC: ${{ inputs.USE_OIDC }}
           ENVIRONMENT: ${{ inputs.ENVIRONMENT }}

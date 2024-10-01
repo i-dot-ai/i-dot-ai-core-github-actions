@@ -55,7 +55,6 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: i-dot-ai/i-dot-ai-core-github-actions
-          ref: ${{ inputs.COMMIT_HASH }}
 
       - name: Dump inputs context
         env:
@@ -89,42 +88,42 @@ jobs:
           fi
 
       - name: Export EC2_ROLE
-        uses: ./.github/actions/export_parameter
+        uses: ./.github/actions/export-parameter
         if: steps.check-persistent-running.outputs.use_persisted == 0
         with:
             PARAMETER_STORE_VAR_NAME: /github-runner-${{ inputs.ENVIRONMENT }}/ec2-role
             ENVIRONMENT_VAR_NAME: EC2_ROLE
 
       - name: Export SECURITY_GROUP_ID
-        uses: ./.github/actions/export_parameter
+        uses: ./.github/actions/export-parameter
         if: steps.check-persistent-running.outputs.use_persisted == 0
         with:
             PARAMETER_STORE_VAR_NAME: /github-runner-${{ inputs.ENVIRONMENT }}/security-group-id
             ENVIRONMENT_VAR_NAME: SECURITY_GROUP_ID
 
       - name: Export SUBNET_ID
-        uses: ./.github/actions/export_parameter
+        uses: ./.github/actions/export-parameter
         if: steps.check-persistent-running.outputs.use_persisted == 0
         with:
             PARAMETER_STORE_VAR_NAME: /github-runner-${{ inputs.ENVIRONMENT }}/subnet-id
             ENVIRONMENT_VAR_NAME: SUBNET_ID
 
       - name: Export AMI_ID
-        uses: ./.github/actions/export_parameter
+        uses: ./.github/actions/export-parameter
         if: steps.check-persistent-running.outputs.use_persisted == 0
         with:
             PARAMETER_STORE_VAR_NAME: /github-runner-${{ inputs.ENVIRONMENT }}/ami-id
             ENVIRONMENT_VAR_NAME: AMI_ID
 
       - name: Export EFS_ID
-        uses: ./.github/actions/export_parameter
+        uses: ./.github/actions/export-parameter
         if: steps.check-persistent-running.outputs.use_persisted == 0
         with:
             PARAMETER_STORE_VAR_NAME: /github-runner-${{ inputs.ENVIRONMENT }}/efs-id
             ENVIRONMENT_VAR_NAME: EFS_ID
 
       - name: Export EFS_MOUNT_PATH
-        uses: ./.github/actions/export_parameter
+        uses: ./.github/actions/export-parameter
         if: steps.check-persistent-running.outputs.use_persisted == 0
         with:
             PARAMETER_STORE_VAR_NAME: /github-runner-${{ inputs.ENVIRONMENT }}/efs-mount-path
