@@ -142,9 +142,7 @@ jobs:
         CACHE: ${{ env.EFS_MOUNT_PATH }}
       run: |
         cd artifact/$APP_NAME
-        pwd
-        ls -ltr
-        make docker_build service=$SERVICE
+        make docker_build service=$SERVICE cache=$CACHE
 
     - name: Docker Push
       env:
