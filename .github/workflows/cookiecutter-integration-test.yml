@@ -140,9 +140,8 @@ jobs:
         APP_NAME: ${{ inputs.APP_NAME }}
         SERVICE: ${{ inputs.SERVICE }}
         CACHE: ${{ env.EFS_MOUNT_PATH }}
-        PROJECT: ${{ inputs.PROJECT }}
       run: |
-        cd artifact/$PROJECT
+        cd artifact/$APP_NAME
         pwd
         ls -ltr
         make docker_build service=$SERVICE
@@ -152,28 +151,27 @@ jobs:
         AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
         APP_NAME: ${{ inputs.APP_NAME }}
         SERVICE: ${{ inputs.SERVICE }}
-        PROJECT: ${{ inputs.PROJECT }}
       run: |
-        cd artifact/$PROJECT
+        cd artifact/$APP_NAME
         make docker_push service=$SERVICE
         IMAGE=$(eval $(make docker_echo value=IMAGE service=$SERVICE) | awk '{print $1;}')
     
     - name: Terraform init
       env:
         INFRASTRUCTURE_FOLDER: ${{ inputs.INFRASTRUCTURE_FOLDER }}
+        APP_NAME: ${{ inputs.APP_NAME }}
         ENVIRONMENT: ${{ inputs.ENVIRONMENT }}
-        PROJECT: ${{ inputs.PROJECT }}
       run: |
-        cd artifact/$PROJECT
+        cd artifact/$APP_NAME
         make tf_init env=dev
   
     - name: Terraform apply
       env: 
         INFRASTRUCTURE_FOLDER: ${{ inputs.INFRASTRUCTURE_FOLDER }}
         ENVIRONMENT: ${{ inputs.ENVIRONMENT }}
-        PROJECT: ${{ inputs.PROJECT }}
+        APP_NAME: ${{ inputs.APP_NAME }}
       run: |
-        cd artifact/$PROJECT
+        cd artifact/$APP_NAME
         make tf_apply env=dev args='-auto-approve'
 
 
@@ -193,7 +191,7 @@ jobs:
         SERVICE: ${{ inputs.SERVICE }}
         PROJECT: ${{ inputs.PROJECT }}
       run: |
-        cd artifact/$PROJECT
+        cd artifact/$APP_NAME
         export REPO=$(eval $(make docker_echo value=ECR_REPO_NAME service=$SERVICE) | awk '{print $1;}')
         echo "repo=$REPO" >> $GITHUB_OUTPUT
         export TAG=$(eval $(make docker_echo value=IMAGE_TAG service=$SERVICE)| awk '{print $1;}')
