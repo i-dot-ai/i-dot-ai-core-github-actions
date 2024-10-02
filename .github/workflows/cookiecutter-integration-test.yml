@@ -32,9 +32,6 @@ on:
         required: false
         type: boolean
         default: false
-      PROJECT:
-        required: false
-        type: string
     secrets:
       AWS_GITHUBRUNNER_PAT:
         required: true
