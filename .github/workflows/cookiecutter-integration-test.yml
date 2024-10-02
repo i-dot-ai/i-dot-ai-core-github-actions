@@ -90,17 +90,7 @@ jobs:
         aws ecr get-login-password | docker login --username AWS --password-stdin ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com
       shell: bash
 
-    - name: Create Docker cache container
-      env:
-        INSTANCE_NAME: ${{ inputs.DOCKER_BUILD_INSTANCE }}
-      run: |
-        if docker buildx ls --format "{{.Name}}" | grep -w "${INSTANCE_NAME}"; then
-          echo "Instance ${INSTANCE_NAME} found."
-        else
-          echo "Instance ${INSTANCE_NAME} not found."
-          docker buildx create --name "${INSTANCE_NAME}" --driver docker-container
-          echo "Instance ${INSTANCE_NAME} is created."
-        fi
+
     - name: Checkout 10ds actions repo
       uses: actions/checkout@v4
       with:
@@ -121,7 +111,8 @@ jobs:
     - name: 📂 List all directories
       run: |
           echo "Listing all directories in the current path:"
-          find . -type d
+          cd artifact
+          ls -ltr
 
     # - name: cookie cut project
     #   env:
@@ -134,6 +125,18 @@ jobs:
     #     ls -ltra
     
 
+    - name: Create Docker cache container
+      env:
+        INSTANCE_NAME: ${{ inputs.DOCKER_BUILD_INSTANCE }}
+      run: |
+        if docker buildx ls --format "{{.Name}}" | grep -w "${INSTANCE_NAME}"; then
+          echo "Instance ${INSTANCE_NAME} found."
+        else
+          echo "Instance ${INSTANCE_NAME} not found."
+          docker buildx create --name "${INSTANCE_NAME}" --driver docker-container
+          echo "Instance ${INSTANCE_NAME} is created."
+        fi
+
     - name: Docker build
       env:
         AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
@@ -143,7 +146,9 @@ jobs:
         PROJECT: ${{ inputs.PROJECT }}
       run: |
         cd artifact/$PROJECT
-        make docker_build_local service=$SERVICE
+        pwd
+        ls -ltr
+        make docker_build service=$SERVICE
 
     - name: Docker Push
       env:
