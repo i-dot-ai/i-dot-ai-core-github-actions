@@ -32,6 +32,9 @@ on:
         required: false
         type: boolean
         default: false
+      PROJECT:
+        required: false
+        type: string
     secrets:
       AWS_GITHUBRUNNER_PAT:
         required: true
@@ -114,16 +117,21 @@ jobs:
 
     - name: ⬇️ Download artifact
       uses: actions/download-artifact@v4
-
-    - name: cookie cut project
-      env:
-        AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
+    
+    - name: 📂 List all directories
       run: |
-        echo $AWS_ACCOUNT_ID
-        ls -ltra
-        pwd
-        cd artifact
-        ls -ltra
+          echo "Listing all directories in the current path:"
+          find . -type d
+
+    # - name: cookie cut project
+    #   env:
+    #     AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
+    #   run: |
+    #     echo $AWS_ACCOUNT_ID
+    #     ls -ltra
+    #     pwd
+    #     cd artifact
+    #     ls -ltra
     
 
     - name: Docker build
@@ -132,16 +140,19 @@ jobs:
         APP_NAME: ${{ inputs.APP_NAME }}
         SERVICE: ${{ inputs.SERVICE }}
         CACHE: ${{ env.EFS_MOUNT_PATH }}
+        PROJECT: ${{ inputs.PROJECT }}
       run: |
-        cd artifact
+        cd artifact/$PROJECT
         make docker_build_local service=$SERVICE
+
     - name: Docker Push
       env:
         AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
         APP_NAME: ${{ inputs.APP_NAME }}
         SERVICE: ${{ inputs.SERVICE }}
+        PROJECT: ${{ inputs.PROJECT }}
       run: |
-        cd artifact
+        cd artifact/$PROJECT
         make docker_push service=$SERVICE
         IMAGE=$(eval $(make docker_echo value=IMAGE service=$SERVICE) | awk '{print $1;}')
     
@@ -149,17 +160,19 @@ jobs:
       env:
         INFRASTRUCTURE_FOLDER: ${{ inputs.INFRASTRUCTURE_FOLDER }}
         ENVIRONMENT: ${{ inputs.ENVIRONMENT }}
+        PROJECT: ${{ inputs.PROJECT }}
       run: |
-        cd artifact    
+        cd artifact/$PROJECT
         make tf_init env=dev
   
     - name: Terraform apply
       env: 
         INFRASTRUCTURE_FOLDER: ${{ inputs.INFRASTRUCTURE_FOLDER }}
         ENVIRONMENT: ${{ inputs.ENVIRONMENT }}
+        PROJECT: ${{ inputs.PROJECT }}
       run: |
-        cd artifact
-        make tf_apply env=dev
+        cd artifact/$PROJECT
+        make tf_apply env=dev args='-auto-approve'
 
 
     # - name: Terraform destroy
@@ -168,7 +181,7 @@ jobs:
     #     ENVIRONMENT: ${{ inputs.ENVIRONMENT }}
     #   run: |
     #     cd artifact
-    #     make tf_destroy env=dev
+    #     tf_destroy env=dev  args='-auto-approve'
 
 
     - name: Export ecr image attributes
@@ -176,8 +189,9 @@ jobs:
       env:
         APP_NAME: ${{ inputs.APP_NAME }}
         SERVICE: ${{ inputs.SERVICE }}
+        PROJECT: ${{ inputs.PROJECT }}
       run: |
-        cd artifact
+        cd artifact/$PROJECT
         export REPO=$(eval $(make docker_echo value=ECR_REPO_NAME service=$SERVICE) | awk '{print $1;}')
         echo "repo=$REPO" >> $GITHUB_OUTPUT
         export TAG=$(eval $(make docker_echo value=IMAGE_TAG service=$SERVICE)| awk '{print $1;}')
