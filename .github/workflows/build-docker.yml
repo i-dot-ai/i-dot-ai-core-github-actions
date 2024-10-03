@@ -48,18 +48,13 @@ jobs:
     runs-on: ${{ inputs.RUNNER_LABEL }}
 
     steps:
-    - name: Checkout
-      uses: actions/checkout@v4
-      with:
-        repository: i-dot-ai/i-dot-ai-core-github-actions
-
     - name: Dump inputs context
       env:
         INPUTS: ${{ toJSON(inputs) }}
       run: echo "$INPUTS"
 
     - name: AWS Authentication
-      uses: ./.github/actions/authenticate-aws
+      uses: i-dot-ai/i-dot-ai-core-github-actions/.github/actions/authenticate-aws
       with:
           USE_OIDC: ${{ inputs.USE_OIDC }}
           ENVIRONMENT: ${{ inputs.ENVIRONMENT }}
@@ -106,7 +101,7 @@ jobs:
         repository: i-dot-ai/i-dot-ai-core-github-actions
 
     - name: Export EFS_MOUNT_PATH
-      uses: ./.github/actions/export-parameter
+      uses: i-dot-ai/i-dot-ai-core-github-actions/.github/actions/export-parameter
       with:
           PARAMETER_STORE_VAR_NAME: /github-runner-${{ inputs.ENVIRONMENT }}/efs-mount-path
           ENVIRONMENT_VAR_NAME: EFS_MOUNT_PATH
