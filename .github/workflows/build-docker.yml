@@ -48,6 +48,13 @@ jobs:
     runs-on: ${{ inputs.RUNNER_LABEL }}
 
     steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      with:
+        ref: ${{ inputs.COMMIT_HASH }}
+        fetch-depth: 0
+        path: main
+
     - name: Dump inputs context
       env:
         INPUTS: ${{ toJSON(inputs) }}
