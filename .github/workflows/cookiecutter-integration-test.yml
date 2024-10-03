@@ -168,6 +168,8 @@ jobs:
         INFRASTRUCTURE_FOLDER: ${{ inputs.INFRASTRUCTURE_FOLDER }}
         ENVIRONMENT: ${{ inputs.ENVIRONMENT }}
         APP_NAME: ${{ inputs.APP_NAME }}
+        TF_LOGS: "INFO"
+        TF_CLI_ARGS: "-no-color"
       run: |
         cd artifact/$APP_NAME
         make tf_set_or_create_workspace env=dev
