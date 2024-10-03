@@ -51,11 +51,6 @@ jobs:
       ec2-instance-id: ${{ steps.start-ec2-runner.outputs.ec2-instance-id }}
       use_persisted: ${{ steps.check-persistent-running.outputs.use_persisted }}
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          repository: i-dot-ai/i-dot-ai-core-github-actions
-
       - name: Dump inputs context
         env:
           INPUTS: ${{ toJSON(inputs) }}
