@@ -55,21 +55,13 @@ jobs:
         fetch-depth: 0
         path: main
 
-    - name: Checkout 10ds actions repo
-      uses: actions/checkout@v4
-      with:
-        repository: PMO-Data-Science/10ds-core-github-actions
-        ref: refs/heads/main
-        token: ${{ secrets.AWS_GITHUBRUNNER_PAT }}
-        fetch-depth: 0
-
     - name: Dump inputs context
       env:
         INPUTS: ${{ toJSON(inputs) }}
       run: echo "$INPUTS"
 
     - name: AWS Authentication
-      uses: ./.github/actions/authenticate_aws
+      uses: i-dot-ai/i-dot-ai-core-github-actions/.github/actions/authenticate-aws@main
       with:
           USE_OIDC: ${{ inputs.USE_OIDC }}
           ENVIRONMENT: ${{ inputs.ENVIRONMENT }}
@@ -110,16 +102,13 @@ jobs:
           echo "Instance ${INSTANCE_NAME} is created."
         fi
 
-    - name: Checkout 10ds actions repo
+    - name: Checkout
       uses: actions/checkout@v4
       with:
-        repository: PMO-Data-Science/10ds-core-github-actions
-        ref: refs/heads/main
-        token: ${{ secrets.AWS_GITHUBRUNNER_PAT }}
-        fetch-depth: 0
+        repository: i-dot-ai/i-dot-ai-core-github-actions
 
     - name: Export EFS_MOUNT_PATH
-      uses: ./.github/actions/export_parameter
+      uses: i-dot-ai/i-dot-ai-core-github-actions/.github/actions/export-parameter@main
       with:
           PARAMETER_STORE_VAR_NAME: /github-runner-${{ inputs.ENVIRONMENT }}/efs-mount-path
           ENVIRONMENT_VAR_NAME: EFS_MOUNT_PATH

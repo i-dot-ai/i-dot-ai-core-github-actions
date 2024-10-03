@@ -75,20 +75,13 @@ jobs:
     - name: Set global git credentials
       run: git config --global url.https://${{ secrets.AWS_GITHUBRUNNER_PAT }}@github.com/.insteadOf https://github.com/
 
-    - name: Checkout 10ds actions repo
-      uses: actions/checkout@v4
-      with:
-        repository: PMO-Data-Science/10ds-core-github-actions
-        ref: refs/heads/main
-        token: ${{ secrets.AWS_GITHUBRUNNER_PAT }}
-
     - name: Dump inputs context
       env:
         INPUTS: ${{ toJSON(inputs) }}
       run: echo "$INPUTS"
 
     - name: AWS Authentication
-      uses: ./.github/actions/authenticate_aws
+      uses: i-dot-ai/i-dot-ai-core-github-actions/.github/actions/authenticate-aws@main
       with:
         USE_OIDC: ${{ inputs.USE_OIDC }}
         ENVIRONMENT: ${{ inputs.ENVIRONMENT }}
