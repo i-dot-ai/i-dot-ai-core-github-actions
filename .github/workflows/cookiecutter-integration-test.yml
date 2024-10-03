@@ -172,6 +172,7 @@ jobs:
         TF_CLI_ARGS: "-no-color"
       run: |
         cd artifact/$APP_NAME
+        tfParams=()
         make tf_set_or_create_workspace env=dev
         make tf_apply env=dev args='-auto-approve' > tf_apply_log.log
 
