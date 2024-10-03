@@ -170,7 +170,7 @@ jobs:
         APP_NAME: ${{ inputs.APP_NAME }}
       run: |
         cd artifact/$APP_NAME
-        make tf_set_or_create_workspace
+        make tf_set_or_create_workspace env=dev
         make tf_apply env=dev args='-auto-approve' > tf_apply_log.log
 
 
