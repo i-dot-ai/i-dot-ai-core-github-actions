@@ -35,7 +35,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: AWS Authentication
-        uses: i-dot-ai/i-dot-ai-core-github-actions/.github/actions/authenticate-aws
+        uses: i-dot-ai/i-dot-ai-core-github-actions/.github/actions/authenticate-aws@main
         with:
           USE_OIDC: ${{ inputs.USE_OIDC }}
           ENVIRONMENT: ${{ inputs.ENVIRONMENT }}
