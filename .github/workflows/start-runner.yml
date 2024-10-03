@@ -62,7 +62,7 @@ jobs:
         run: echo "$INPUTS"
 
       - name: AWS Authentication
-        uses: i-dot-ai/i-dot-ai-core-github-actions/.github/actions/authenticate-aws
+        uses: i-dot-ai/i-dot-ai-core-github-actions/.github/actions/authenticate-aws@main
         with:
           USE_OIDC: ${{ inputs.USE_OIDC }}
           ENVIRONMENT: ${{ inputs.ENVIRONMENT }}
@@ -88,42 +88,42 @@ jobs:
           fi
 
       - name: Export EC2_ROLE
-        uses: i-dot-ai/i-dot-ai-core-github-actions/.github/actions/export-parameter
+        uses: i-dot-ai/i-dot-ai-core-github-actions/.github/actions/export-parameter@main
         if: steps.check-persistent-running.outputs.use_persisted == 0
         with:
             PARAMETER_STORE_VAR_NAME: /github-runner-${{ inputs.ENVIRONMENT }}/ec2-role
             ENVIRONMENT_VAR_NAME: EC2_ROLE
 
       - name: Export SECURITY_GROUP_ID
-        uses: i-dot-ai/i-dot-ai-core-github-actions/.github/actions/export-parameter
+        uses: i-dot-ai/i-dot-ai-core-github-actions/.github/actions/export-parameter@main
         if: steps.check-persistent-running.outputs.use_persisted == 0
         with:
             PARAMETER_STORE_VAR_NAME: /github-runner-${{ inputs.ENVIRONMENT }}/security-group-id
             ENVIRONMENT_VAR_NAME: SECURITY_GROUP_ID
 
       - name: Export SUBNET_ID
-        uses: i-dot-ai/i-dot-ai-core-github-actions/.github/actions/export-parameter
+        uses: i-dot-ai/i-dot-ai-core-github-actions/.github/actions/export-parameter@main
         if: steps.check-persistent-running.outputs.use_persisted == 0
         with:
             PARAMETER_STORE_VAR_NAME: /github-runner-${{ inputs.ENVIRONMENT }}/subnet-id
             ENVIRONMENT_VAR_NAME: SUBNET_ID
 
       - name: Export AMI_ID
-        uses: i-dot-ai/i-dot-ai-core-github-actions/.github/actions/export-parameter
+        uses: i-dot-ai/i-dot-ai-core-github-actions/.github/actions/export-parameter@main
         if: steps.check-persistent-running.outputs.use_persisted == 0
         with:
             PARAMETER_STORE_VAR_NAME: /github-runner-${{ inputs.ENVIRONMENT }}/ami-id
             ENVIRONMENT_VAR_NAME: AMI_ID
 
       - name: Export EFS_ID
-        uses: i-dot-ai/i-dot-ai-core-github-actions/.github/actions/export-parameter
+        uses: i-dot-ai/i-dot-ai-core-github-actions/.github/actions/export-parameter@main
         if: steps.check-persistent-running.outputs.use_persisted == 0
         with:
             PARAMETER_STORE_VAR_NAME: /github-runner-${{ inputs.ENVIRONMENT }}/efs-id
             ENVIRONMENT_VAR_NAME: EFS_ID
 
       - name: Export EFS_MOUNT_PATH
-        uses: i-dot-ai/i-dot-ai-core-github-actions/.github/actions/export-parameter
+        uses: i-dot-ai/i-dot-ai-core-github-actions/.github/actions/export-parameter@main
         if: steps.check-persistent-running.outputs.use_persisted == 0
         with:
             PARAMETER_STORE_VAR_NAME: /github-runner-${{ inputs.ENVIRONMENT }}/efs-mount-path
