@@ -174,7 +174,7 @@ jobs:
         cd artifact/$APP_NAME
         tfParams=()
         make tf_set_or_create_workspace env=dev
-        make tf_apply env=dev args='-auto-approve' > tf_apply_log.log
+        make tf_apply env=dev args='-auto-approve'
 
 
     # - name: Terraform destroy
