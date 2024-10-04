@@ -43,8 +43,8 @@ on:
         required: true
 
 jobs:
-  build-and-push-to-ecr:
-    name: Build and push to ECR
+  integration-test:
+    name: build-deploy
     runs-on: ${{ inputs.RUNNER_LABEL }}
 
     steps:
