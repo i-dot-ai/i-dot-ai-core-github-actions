@@ -122,7 +122,7 @@ jobs:
     #     ls -ltra
     
 
-    - name: Create Docker cache container
+    - name: Create Docker Cache Container
       env:
         INSTANCE_NAME: ${{ inputs.DOCKER_BUILD_INSTANCE }}
       run: |
@@ -134,6 +134,17 @@ jobs:
           echo "Instance ${INSTANCE_NAME} is created."
         fi
 
+
+    - name: Install Application
+      env:
+        AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
+        APP_NAME: ${{ inputs.APP_NAME }}
+        SERVICE: ${{ inputs.SERVICE }}
+        CACHE: ${{ env.EFS_MOUNT_PATH }}
+      run: |
+        cd artifact/$APP_NAME
+        make install
+
     - name: Docker build
       env:
         AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
@@ -144,37 +155,37 @@ jobs:
         cd artifact/$APP_NAME
         make docker_build service=$SERVICE cache=$CACHE
 
-    - name: Docker Push
-      env:
-        AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
-        APP_NAME: ${{ inputs.APP_NAME }}
-        SERVICE: ${{ inputs.SERVICE }}
-      run: |
-        cd artifact/$APP_NAME
-        make docker_push service=$SERVICE
-        IMAGE=$(eval $(make docker_echo value=IMAGE service=$SERVICE) | awk '{print $1;}')
+    # - name: Docker Push
+    #   env:
+    #     AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
+    #     APP_NAME: ${{ inputs.APP_NAME }}
+    #     SERVICE: ${{ inputs.SERVICE }}
+    #   run: |
+    #     cd artifact/$APP_NAME
+    #     make docker_push service=$SERVICE
+    #     IMAGE=$(eval $(make docker_echo value=IMAGE service=$SERVICE) | awk '{print $1;}')
     
-    - name: Terraform init
-      env:
-        INFRASTRUCTURE_FOLDER: ${{ inputs.INFRASTRUCTURE_FOLDER }}
-        APP_NAME: ${{ inputs.APP_NAME }}
-        ENVIRONMENT: ${{ inputs.ENVIRONMENT }}
-      run: |
-        cd artifact/$APP_NAME
-        make tf_init env=dev
+    # - name: Terraform init
+    #   env:
+    #     INFRASTRUCTURE_FOLDER: ${{ inputs.INFRASTRUCTURE_FOLDER }}
+    #     APP_NAME: ${{ inputs.APP_NAME }}
+    #     ENVIRONMENT: ${{ inputs.ENVIRONMENT }}
+    #   run: |
+    #     cd artifact/$APP_NAME
+    #     make tf_init env=dev
   
-    - name: Terraform apply
-      env: 
-        INFRASTRUCTURE_FOLDER: ${{ inputs.INFRASTRUCTURE_FOLDER }}
-        ENVIRONMENT: ${{ inputs.ENVIRONMENT }}
-        APP_NAME: ${{ inputs.APP_NAME }}
-        TF_LOGS: "INFO"
-        TF_CLI_ARGS: "-no-color"
-      run: |
-        cd artifact/$APP_NAME
-        tfParams=()
-        make tf_set_or_create_workspace env=dev
-        make tf_apply env=dev args='-auto-approve'
+    # - name: Terraform apply
+    #   env: 
+    #     INFRASTRUCTURE_FOLDER: ${{ inputs.INFRASTRUCTURE_FOLDER }}
+    #     ENVIRONMENT: ${{ inputs.ENVIRONMENT }}
+    #     APP_NAME: ${{ inputs.APP_NAME }}
+    #     TF_LOGS: "INFO"
+    #     TF_CLI_ARGS: "-no-color"
+    #   run: |
+    #     cd artifact/$APP_NAME
+    #     tfParams=()
+    #     make tf_set_or_create_workspace env=dev
+    #     make tf_apply env=dev args='-auto-approve'
 
 
     # - name: Terraform destroy
