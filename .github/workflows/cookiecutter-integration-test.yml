@@ -77,6 +77,10 @@ jobs:
         INPUTS: ${{ toJSON(inputs) }}
       run: echo "$INPUTS"
 
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.12'  # Replace with your desired Python version
 
     - name: Set global git credentials
       run: git config --global url.https://${{ secrets.AWS_GITHUBRUNNER_PAT }}@github.com/.insteadOf https://github.com/
