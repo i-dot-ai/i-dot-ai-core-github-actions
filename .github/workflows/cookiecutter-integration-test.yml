@@ -206,6 +206,7 @@ jobs:
       env: 
         INFRASTRUCTURE_FOLDER: ${{ inputs.INFRASTRUCTURE_FOLDER }}
         ENVIRONMENT: ${{ inputs.ENVIRONMENT }}
+        APP_NAME: ${{ inputs.APP_NAME }}
       run: |
         cd artifact/$APP_NAME
         tf_destroy env=dev  args='-auto-approve'
