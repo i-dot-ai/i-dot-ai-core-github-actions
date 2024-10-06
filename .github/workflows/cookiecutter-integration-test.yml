@@ -44,7 +44,7 @@ on:
 
 jobs:
   integration-test:
-    name: build-deploy
+    name: build-deploy-desroy
     runs-on: ${{ inputs.RUNNER_LABEL }}
 
     steps:
@@ -186,21 +186,21 @@ jobs:
         cd artifact/$APP_NAME
         make tf_init env=dev
   
-    # - name: Terraform apply
-    #   env: 
-    #     INFRASTRUCTURE_FOLDER: ${{ inputs.INFRASTRUCTURE_FOLDER }}
-    #     ENVIRONMENT: ${{ inputs.ENVIRONMENT }}
-    #     APP_NAME: ${{ inputs.APP_NAME }}
-    #     TF_LOGS: "INFO"
-    #     TF_CLI_ARGS: "-no-color"
-    #   run: |
-    #     cd artifact/$APP_NAME
-    #     tfParams=()
-    #     make tf_set_or_create_workspace env=dev
-    #     make tf_apply env=dev args='-auto-approve'
+    - name: Terraform apply
+      env: 
+        INFRASTRUCTURE_FOLDER: ${{ inputs.INFRASTRUCTURE_FOLDER }}
+        ENVIRONMENT: ${{ inputs.ENVIRONMENT }}
+        APP_NAME: ${{ inputs.APP_NAME }}
+        TF_LOGS: "INFO"
+        TF_CLI_ARGS: "-no-color"
+      run: |
+        cd artifact/$APP_NAME
+        tfParams=()
+        make tf_set_or_create_workspace env=dev
+        make tf_apply env=dev args='-auto-approve'
 
-    # - name: 🕒 Delay for 5 Mins
-    #   run: sleep 300  # Delay for 5 mins
+    - name: 🕒 Waiting for 3 mins
+      run: sleep 180  # Delay for 3 mins
 
     - name: Terraform destroy
       env: 
