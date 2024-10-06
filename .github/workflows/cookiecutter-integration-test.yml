@@ -199,15 +199,15 @@ jobs:
     #     make tf_set_or_create_workspace env=dev
     #     make tf_apply env=dev args='-auto-approve'
 
-    - name: 🕒 Delay for 5 Mins
-      run: sleep 300  # Delay for 5 mins
+    # - name: 🕒 Delay for 5 Mins
+    #   run: sleep 300  # Delay for 5 mins
 
     - name: Terraform destroy
       env: 
         INFRASTRUCTURE_FOLDER: ${{ inputs.INFRASTRUCTURE_FOLDER }}
         ENVIRONMENT: ${{ inputs.ENVIRONMENT }}
       run: |
-        cd artifact
+        cd artifact/$APP_NAME
         tf_destroy env=dev  args='-auto-approve'
 
 
