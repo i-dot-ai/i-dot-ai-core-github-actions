@@ -186,27 +186,29 @@ jobs:
         cd artifact/$APP_NAME
         make tf_init env=dev
   
-    - name: Terraform apply
-      env: 
-        INFRASTRUCTURE_FOLDER: ${{ inputs.INFRASTRUCTURE_FOLDER }}
-        ENVIRONMENT: ${{ inputs.ENVIRONMENT }}
-        APP_NAME: ${{ inputs.APP_NAME }}
-        TF_LOGS: "INFO"
-        TF_CLI_ARGS: "-no-color"
-      run: |
-        cd artifact/$APP_NAME
-        tfParams=()
-        make tf_set_or_create_workspace env=dev
-        make tf_apply env=dev args='-auto-approve'
-
-
-    # - name: Terraform destroy
+    # - name: Terraform apply
     #   env: 
     #     INFRASTRUCTURE_FOLDER: ${{ inputs.INFRASTRUCTURE_FOLDER }}
     #     ENVIRONMENT: ${{ inputs.ENVIRONMENT }}
+    #     APP_NAME: ${{ inputs.APP_NAME }}
+    #     TF_LOGS: "INFO"
+    #     TF_CLI_ARGS: "-no-color"
     #   run: |
-    #     cd artifact
-    #     tf_destroy env=dev  args='-auto-approve'
+    #     cd artifact/$APP_NAME
+    #     tfParams=()
+    #     make tf_set_or_create_workspace env=dev
+    #     make tf_apply env=dev args='-auto-approve'
+
+    - name: 🕒 Delay for 5 Mins
+      run: sleep 300  # Delay for 5 mins
+
+    - name: Terraform destroy
+      env: 
+        INFRASTRUCTURE_FOLDER: ${{ inputs.INFRASTRUCTURE_FOLDER }}
+        ENVIRONMENT: ${{ inputs.ENVIRONMENT }}
+      run: |
+        cd artifact
+        tf_destroy env=dev  args='-auto-approve'
 
 
     - name: Export ecr image attributes
