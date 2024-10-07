@@ -44,16 +44,10 @@ on:
 
 jobs:
   integration-test:
-    name: build-deploy-desroy
+    name: build-deploy-destroy
     runs-on: ${{ inputs.RUNNER_LABEL }}
 
     steps:
-    # - name: Checkout
-    #   uses: actions/checkout@v4
-    #   with:
-    #     ref: ${{ inputs.COMMIT_HASH }}
-    #     fetch-depth: 0
-    #     path: main
 
     - name: Checkout 10ds actions repo
       uses: actions/checkout@v4
@@ -80,7 +74,7 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
-        python-version: '3.12'  # Replace with your desired Python version
+        python-version: '3.12'  
 
     - name: Set global git credentials
       run: git config --global url.https://${{ secrets.AWS_GITHUBRUNNER_PAT }}@github.com/.insteadOf https://github.com/
@@ -114,17 +108,6 @@ jobs:
           echo "Listing all directories in the current path:"
           cd artifact
           ls -ltr
-
-    # - name: cookie cut project
-    #   env:
-    #     AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
-    #   run: |
-    #     echo $AWS_ACCOUNT_ID
-    #     ls -ltra
-    #     pwd
-    #     cd artifact
-    #     ls -ltra
-    
 
     - name: Create Docker Cache Container
       env:
@@ -217,7 +200,6 @@ jobs:
       env:
         APP_NAME: ${{ inputs.APP_NAME }}
         SERVICE: ${{ inputs.SERVICE }}
-        PROJECT: ${{ inputs.PROJECT }}
       run: |
         cd artifact/$APP_NAME
         export REPO=$(eval $(make docker_echo value=ECR_REPO_NAME service=$SERVICE) | awk '{print $1;}')
