@@ -12,17 +12,6 @@ on:
       INFRASTRUCTURE_FOLDER:
         required: true
         type: string
-      DOCKER_BUILD_INSTANCE:
-        required: false
-        default: container
-        type: string
-      COMMIT_HASH:
-        required: false
-        type: string
-        default: ${{ github.sha }}
-      SERVICE:
-        required: false
-        type: string
       ENVIRONMENT:
         required: false
         type: string

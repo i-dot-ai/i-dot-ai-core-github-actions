@@ -12,14 +12,6 @@ on:
       INFRASTRUCTURE_FOLDER:
         required: true
         type: string
-      DOCKER_BUILD_INSTANCE:
-        required: false
-        default: container
-        type: string
-      COMMIT_HASH:
-        required: false
-        type: string
-        default: ${{ github.sha }}
       SERVICE:
         required: false
         type: string
@@ -59,7 +51,7 @@ jobs:
           AWS_GITHUBRUNNER_USER_ACCESS_KEY: ${{ secrets.AWS_GITHUBRUNNER_USER_ACCESS_KEY }}
           AWS_GITHUBRUNNER_USER_SECRET_ID: ${{ secrets.AWS_GITHUBRUNNER_USER_SECRET_ID }}
 
-    - name: Dump inputs context
+    - name: Dump Inputs Context
       env:
         INPUTS: ${{ toJSON(inputs) }}
       run: echo "$INPUTS"
@@ -69,17 +61,17 @@ jobs:
       run: git config --global url.https://${{ secrets.AWS_GITHUBRUNNER_PAT }}@github.com/.insteadOf https://github.com/
 
 
-    - name: ⬇️ Download artifact
+    - name: ⬇️ Download Artifact
       uses: actions/download-artifact@v4
     
-    - name: 📂 List all directories
+    - name: 📂 List all projects
       run: |
           echo "Listing all directories in the current path:"
           cd artifact
           ls -ltr
 
     
-    - name: Terraform init
+    - name: Terraform Init
       env:
         INFRASTRUCTURE_FOLDER: ${{ inputs.INFRASTRUCTURE_FOLDER }}
         APP_NAME: ${{ inputs.APP_NAME }}
@@ -91,7 +83,7 @@ jobs:
     - name: 🕒 Waiting for 1 mins
       run: sleep 60  
 
-    - name: Terraform destroy
+    - name: Terraform Destroy
       env: 
         INFRASTRUCTURE_FOLDER: ${{ inputs.INFRASTRUCTURE_FOLDER }}
         ENVIRONMENT: ${{ inputs.ENVIRONMENT }}
