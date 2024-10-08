@@ -160,39 +160,39 @@ jobs:
         make docker_push service=$SERVICE
         IMAGE=$(eval $(make docker_echo value=IMAGE service=$SERVICE) | awk '{print $1;}')
     
-    - name: Terraform init
-      env:
-        INFRASTRUCTURE_FOLDER: ${{ inputs.INFRASTRUCTURE_FOLDER }}
-        APP_NAME: ${{ inputs.APP_NAME }}
-        ENVIRONMENT: ${{ inputs.ENVIRONMENT }}
-      run: |
-        cd artifact/$APP_NAME
-        make tf_init env=dev
+    # - name: Terraform init
+    #   env:
+    #     INFRASTRUCTURE_FOLDER: ${{ inputs.INFRASTRUCTURE_FOLDER }}
+    #     APP_NAME: ${{ inputs.APP_NAME }}
+    #     ENVIRONMENT: ${{ inputs.ENVIRONMENT }}
+    #   run: |
+    #     cd artifact/$APP_NAME
+    #     make tf_init env=dev
   
-    - name: Terraform apply
-      env: 
-        INFRASTRUCTURE_FOLDER: ${{ inputs.INFRASTRUCTURE_FOLDER }}
-        ENVIRONMENT: ${{ inputs.ENVIRONMENT }}
-        APP_NAME: ${{ inputs.APP_NAME }}
-        TF_LOGS: "INFO"
-        TF_CLI_ARGS: "-no-color"
-      run: |
-        cd artifact/$APP_NAME
-        tfParams=()
-        make tf_set_or_create_workspace env=dev
-        make tf_apply env=dev args='-auto-approve'
+    # - name: Terraform apply
+    #   env: 
+    #     INFRASTRUCTURE_FOLDER: ${{ inputs.INFRASTRUCTURE_FOLDER }}
+    #     ENVIRONMENT: ${{ inputs.ENVIRONMENT }}
+    #     APP_NAME: ${{ inputs.APP_NAME }}
+    #     TF_LOGS: "INFO"
+    #     TF_CLI_ARGS: "-no-color"
+    #   run: |
+    #     cd artifact/$APP_NAME
+    #     tfParams=()
+    #     make tf_set_or_create_workspace env=dev
+    #     make tf_apply env=dev args='-auto-approve'
 
-    - name: 🕒 Waiting for 3 mins
-      run: sleep 180  # Delay for 3 mins
+    # - name: 🕒 Waiting for 3 mins
+    #   run: sleep 180  # Delay for 3 mins
 
-    - name: Terraform destroy
-      env: 
-        INFRASTRUCTURE_FOLDER: ${{ inputs.INFRASTRUCTURE_FOLDER }}
-        ENVIRONMENT: ${{ inputs.ENVIRONMENT }}
-        APP_NAME: ${{ inputs.APP_NAME }}
-      run: |
-        cd artifact/$APP_NAME
-        make tf_destroy env=dev  args='-auto-approve'
+    # - name: Terraform destroy
+    #   env: 
+    #     INFRASTRUCTURE_FOLDER: ${{ inputs.INFRASTRUCTURE_FOLDER }}
+    #     ENVIRONMENT: ${{ inputs.ENVIRONMENT }}
+    #     APP_NAME: ${{ inputs.APP_NAME }}
+    #   run: |
+    #     cd artifact/$APP_NAME
+    #     make tf_destroy env=dev  args='-auto-approve'
 
 
     - name: Export ecr image attributes
