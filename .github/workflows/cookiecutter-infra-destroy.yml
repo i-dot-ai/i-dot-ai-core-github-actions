@@ -43,8 +43,8 @@ on:
         required: true
 
 jobs:
-  infra-apply:
-    name: infra-apply
+  infra-destroy:
+    name: infra-destroy
     runs-on: ${{ inputs.RUNNER_LABEL }}
 
     steps:
@@ -87,17 +87,17 @@ jobs:
       run: |
         cd artifact/$APP_NAME
         make tf_init env=dev
-  
-    - name: Terraform apply
+
+    - name: 🕒 Waiting for 1 mins
+      run: sleep 60  
+
+    - name: Terraform destroy
       env: 
         INFRASTRUCTURE_FOLDER: ${{ inputs.INFRASTRUCTURE_FOLDER }}
         ENVIRONMENT: ${{ inputs.ENVIRONMENT }}
         APP_NAME: ${{ inputs.APP_NAME }}
-        TF_LOGS: "INFO"
-        TF_CLI_ARGS: "-no-color"
       run: |
         cd artifact/$APP_NAME
-        tfParams=()
-        make tf_set_or_create_workspace env=dev
-        make tf_apply env=dev args='-auto-approve'
+        make tf_destroy env=dev  args='-auto-approve'
+
 
