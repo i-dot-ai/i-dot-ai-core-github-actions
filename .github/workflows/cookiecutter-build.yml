@@ -44,7 +44,7 @@ on:
 
 jobs:
   integration-test:
-    name: build-deploy-destroy
+    name: build
     runs-on: ${{ inputs.RUNNER_LABEL }}
 
     steps:
