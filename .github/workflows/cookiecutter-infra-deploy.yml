@@ -1,4 +1,4 @@
-name: Build dash
+name: cookiecutter-deploy
 
 on:
   workflow_call:

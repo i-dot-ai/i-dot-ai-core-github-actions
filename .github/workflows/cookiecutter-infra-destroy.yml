@@ -1,4 +1,4 @@
-name: Build dash
+name: cookiecutter-destroy
 
 on:
   workflow_call:
