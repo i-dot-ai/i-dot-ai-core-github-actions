@@ -1,0 +1,92 @@
+name: cookiecutter-deploy
+
+on:
+  workflow_call:
+    inputs:
+      APP_NAME:
+        required: true
+        type: string
+      RUNNER_LABEL:
+        required: true
+        type: string
+      INFRASTRUCTURE_FOLDER:
+        required: true
+        type: string
+      ENVIRONMENT:
+        required: false
+        type: string
+        default: prod
+      USE_OIDC:
+        description: 'Use OIDC for AWS authentication'
+        required: false
+        type: boolean
+        default: false
+    secrets:
+      AWS_GITHUBRUNNER_PAT:
+        required: true
+      AWS_GITHUBRUNNER_PAT_USER:
+        required: true
+      AWS_REGION:
+        required: true
+      AWS_ACCOUNT_ID:
+        required: true
+
+jobs:
+  infra-apply:
+    name: infra-apply
+    runs-on: ${{ inputs.RUNNER_LABEL }}
+
+    steps:
+
+    - name: AWS Authentication
+      uses: ./.github/actions/authenticate_aws
+      with:
+          USE_OIDC: ${{ inputs.USE_OIDC }}
+          ENVIRONMENT: ${{ inputs.ENVIRONMENT }}
+          AWS_REGION: ${{ secrets.AWS_REGION }}
+          AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
+          AWS_GITHUBRUNNER_USER_ACCESS_KEY: ${{ secrets.AWS_GITHUBRUNNER_USER_ACCESS_KEY }}
+          AWS_GITHUBRUNNER_USER_SECRET_ID: ${{ secrets.AWS_GITHUBRUNNER_USER_SECRET_ID }}
+
+    - name: Dump inputs context
+      env:
+        INPUTS: ${{ toJSON(inputs) }}
+      run: echo "$INPUTS"
+
+
+    - name: Set global git credentials
+      run: git config --global url.https://${{ secrets.AWS_GITHUBRUNNER_PAT }}@github.com/.insteadOf https://github.com/
+
+
+    - name: ⬇️ Download artifact
+      uses: actions/download-artifact@v4
+    
+    - name: 📂 List all directories
+      run: |
+          echo "Listing all directories in the current path:"
+          cd artifact
+          ls -ltr
+
+    
+    - name: Terraform init
+      env:
+        INFRASTRUCTURE_FOLDER: ${{ inputs.INFRASTRUCTURE_FOLDER }}
+        APP_NAME: ${{ inputs.APP_NAME }}
+        ENVIRONMENT: ${{ inputs.ENVIRONMENT }}
+      run: |
+        cd artifact/$APP_NAME
+        make tf_init env=dev
+  
+    - name: Terraform apply
+      env: 
+        INFRASTRUCTURE_FOLDER: ${{ inputs.INFRASTRUCTURE_FOLDER }}
+        ENVIRONMENT: ${{ inputs.ENVIRONMENT }}
+        APP_NAME: ${{ inputs.APP_NAME }}
+        TF_LOGS: "INFO"
+        TF_CLI_ARGS: "-no-color"
+      run: |
+        cd artifact/$APP_NAME
+        tfParams=()
+        make tf_set_or_create_workspace env=dev
+        make tf_apply env=dev args='-auto-approve'
+
