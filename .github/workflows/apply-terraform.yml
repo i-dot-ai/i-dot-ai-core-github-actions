@@ -16,6 +16,10 @@ on:
         required: false
         default: prod
         type: string
+      RELEASE_ENVIRONMENT:
+          required: false
+          default: prod
+          type: string
       INFRASTRUCTURE_FOLDER:
         required: false
         default: "infrastructure"
@@ -124,7 +128,7 @@ jobs:
     - name: Terraform init
       env:
         INFRASTRUCTURE_FOLDER: ${{ inputs.INFRASTRUCTURE_FOLDER }}
-        ENVIRONMENT: ${{ inputs.ENVIRONMENT }}
+        ENVIRONMENT: ${{ inputs.RELEASE_ENVIRONMENT }}
       run: |
         cd main
         if [[ $INFRASTRUCTURE_FOLDER ]]; then
@@ -136,7 +140,7 @@ jobs:
     - name: Terraform apply
       env:
         INFRASTRUCTURE_FOLDER: ${{ inputs.INFRASTRUCTURE_FOLDER }}
-        ENVIRONMENT: ${{ inputs.ENVIRONMENT }}
+        ENVIRONMENT: ${{ inputs.RELEASE_ENVIRONMENT }}
         IMAGE_TAG: ${{ inputs.IMAGE_TAG }}
         TF_LOGS: "INFO"
         TF_CLI_ARGS: "-no-color"
@@ -155,7 +159,7 @@ jobs:
     - name: Copy terraform logs to s3
       if: always()
       env:
-        ENVIRONMENT: ${{ inputs.ENVIRONMENT }}
+        ENVIRONMENT: ${{ inputs.RELEASE_ENVIRONMENT }}
         APP_NAME: ${{ inputs.APP_NAME }}
       run: |
         cd main
@@ -164,7 +168,7 @@ jobs:
 
     - name: Tag built image with deployment environment
       env:
-        ENVIRONMENT: ${{ inputs.ENVIRONMENT }}
+        ENVIRONMENT: ${{ inputs.RELEASE_ENVIRONMENT }}
         APP_NAME: ${{ inputs.APP_NAME }}
         INFRASTRUCTURE_FOLDER: ${{ inputs.INFRASTRUCTURE_FOLDER }}
         ECR_REPO: ${{ inputs.ECR_REPO }}
