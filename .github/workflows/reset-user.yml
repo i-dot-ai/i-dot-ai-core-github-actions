@@ -93,6 +93,17 @@ jobs:
       with:
           path: main
 
+    - name: Export user-pool-id
+      uses: i-dot-ai/i-dot-ai-core-github-actions/.github/actions/export-parameter@main
+      with: 
+        PARAMETER_STORE_VAR_NAME:  /i-dot-ai-${{ github.event.inputs.environment }}-${{ inputs.APP_NAME }}/cognito/user-pool-id 
+        ENVIRONMENT_VAR_NAME: USER_POOL_ID
+
+    - name: Disable and delete user from Cognito
+      run: |
+        aws cognito-idp admin-disable-user --user-pool-id ${{ env.USER_POOL_ID }} --username ${{ github.event.inputs.email }}
+        aws cognito-idp admin-delete-user --user-pool-id ${{ env.USER_POOL_ID }} --username ${{ github.event.inputs.email }}
+    
 
     - name: Terraform init
       env:
