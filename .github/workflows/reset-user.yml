@@ -13,17 +13,6 @@ on:
         required: false
         default: prod
         type: string
-      # CORE_INFRA_REF:
-      #   type: string
-      #   required: false
-      #   default: refs/heads/main
-      # INFRA_CONFIG_REF:
-      #   type: string
-      #   required: false
-      #   default: refs/heads/main
-      # IMAGE_TAG:
-      #   type: string
-      #   required: false
       EMAIL_ADDRESS:
           type: string
           required: true
@@ -78,15 +67,6 @@ jobs:
     - name: Check AWS Auth
       shell: bash
       run: aws sts get-caller-identity
-
-    # - name: Checkout i-ai-core-infrastructure
-    #   uses: actions/checkout@v4
-    #   with:
-    #     repository: i-dot-ai/i-ai-core-infrastructure
-    #     ref: ${{ inputs.CORE_INFRA_REF }}
-    #     token: ${{ secrets.AWS_GITHUBRUNNER_PAT }}
-    #     path: i-ai-core-infrastructure
-
 
     - name: Checkout
       uses: actions/checkout@v4
