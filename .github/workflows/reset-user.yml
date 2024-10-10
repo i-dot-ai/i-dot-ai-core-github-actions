@@ -111,3 +111,10 @@ jobs:
       run: |
         cd main
         make tf_init env=${{ inputs.ENVIRONMENT }}
+    
+    - name: Reset Users
+      env:
+        ENVIRONMENT: ${{ inputs.ENVIRONMENT }}
+      run: |
+        cd main
+        make tf_reset_user env=${{ inputs.ENVIRONMENT }}
