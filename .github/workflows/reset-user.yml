@@ -1,0 +1,100 @@
+name: Reset User
+
+on:
+  workflow_call:
+    inputs:
+      APP_NAME:
+        required: true
+        type: string
+      RUNNER_LABEL:
+        required: true
+        type: string
+      ENVIRONMENT:
+        required: false
+        default: prod
+        type: string
+      EMAIL_ADDRESS:
+          type: string
+          required: true
+      USE_OIDC:
+          type: string
+          required: false
+
+    secrets:
+      AWS_GITHUBRUNNER_PAT:
+        required: true
+      AWS_GITHUBRUNNER_PAT_USER:
+        required: true
+      AWS_REGION:
+        required: true
+      AWS_ACCOUNT_ID:
+        required: true
+
+jobs:
+  reset-user:
+    runs-on: ${{ inputs.RUNNER_LABEL }}
+    environment: ${{ inputs.ENVIRONMENT }}
+
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+
+    - name: Checkout
+      uses: actions/checkout@v4
+      with:
+        path: main
+
+    - name: Set global git credentials
+      run: git config --global url.https://${{ secrets.AWS_GITHUBRUNNER_PAT }}@github.com/.insteadOf https://github.com/
+
+    - name: Dump Inputs Context
+      env:
+        INPUTS: ${{ toJSON(inputs) }}
+      run: echo "$INPUTS"
+
+    - name: AWS Authentication
+      uses: i-dot-ai/i-dot-ai-core-github-actions/.github/actions/authenticate-aws@main
+      with:
+        USE_OIDC: ${{ inputs.USE_OIDC }}
+        ENVIRONMENT: ${{ inputs.ENVIRONMENT }}
+        AWS_REGION: ${{ secrets.AWS_REGION }}
+        AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
+        AWS_GITHUBRUNNER_USER_ACCESS_KEY: ${{ secrets.AWS_GITHUBRUNNER_USER_ACCESS_KEY }}
+        AWS_GITHUBRUNNER_USER_SECRET_ID: ${{ secrets.AWS_GITHUBRUNNER_USER_SECRET_ID }}
+
+    - name: Check AWS Auth
+      shell: bash
+      run: aws sts get-caller-identity
+
+    - name: Checkout
+      uses: actions/checkout@v4
+      with:
+          path: main
+
+    - name: Export user-pool-id
+      uses: i-dot-ai/i-dot-ai-core-github-actions/.github/actions/export-parameter@main
+      with: 
+        PARAMETER_STORE_VAR_NAME:  /i-dot-ai-${{ github.event.inputs.environment }}-${{ inputs.APP_NAME }}/cognito/user-pool-id 
+        ENVIRONMENT_VAR_NAME: USER_POOL_ID
+
+    - name: Disable and delete user from Cognito
+      run: |
+        aws cognito-idp admin-disable-user --user-pool-id ${{ env.USER_POOL_ID }} --username ${{ github.event.inputs.email }}
+        aws cognito-idp admin-delete-user --user-pool-id ${{ env.USER_POOL_ID }} --username ${{ github.event.inputs.email }}
+    
+
+    - name: Terraform init
+      env:
+        ENVIRONMENT: ${{ inputs.ENVIRONMENT }}
+      run: |
+        cd main
+        make tf_init env=${{ inputs.ENVIRONMENT }}
+    
+    - name: Reset Users
+      env:
+        ENVIRONMENT: ${{ inputs.ENVIRONMENT }}
+      run: |
+        cd main
+        make tf_reset_user env=${{ inputs.ENVIRONMENT }}
