@@ -24,6 +24,10 @@ inputs:
     AWS_GITHUBRUNNER_USER_SECRET_ID:
         description: 'AWS secret access key'
         required: false
+outputs:
+  aws-account-id:
+    description: "AWS Account ID"
+    value: ${{ inputs.AWS_ACCOUNT_ID }}
 
 runs:
   using: "composite"
