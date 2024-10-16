@@ -8,8 +8,9 @@ on:
   workflow_call:
     inputs:
       RUNNER_LABEL:
-        required: true
+        required: false
         type: string
+        default: ubuntu-latest
       SUCCESS_PAYLOAD:
         required: true
         type: string
