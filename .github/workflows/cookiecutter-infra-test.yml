@@ -24,7 +24,7 @@ jobs:
     - name: Check endpoint response
       id: health_check
       run: |
-        response=$(curl -s -o /dev/null -w "%{http_code}" https://${{inputs.APP_NAME}}-${{inputs.ENVIRONMENT}}.ai.cabinetoffice.gov.uk)
+        response=$(curl -s -o /dev/null -w "%{http_code}" https://${{inputs.APP_NAME}}.ai.cabinetoffice.gov.uk)
         echo "Status code: $response"
         
         if [ "$response" -eq 200 ]; then
