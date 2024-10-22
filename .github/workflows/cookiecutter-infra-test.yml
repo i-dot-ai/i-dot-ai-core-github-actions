@@ -1,0 +1,41 @@
+name: cookiecutter-deploy
+
+on:
+  workflow_call:
+    inputs:
+      APP_NAME:
+        required: true
+        type: string
+      RUNNER_LABEL:
+        required: true
+        type: string
+      ENVIRONMENT:
+        required: false
+        type: string
+        default: prod
+
+jobs:
+  infra-test:
+    name: infra-test
+    runs-on: ${{ inputs.RUNNER_LABEL }}
+
+    steps:
+
+    - name: Check endpoint response
+      id: health_check
+      run: |
+        response=$(curl -s -o /dev/null -w "%{http_code}" https://${{inputs.APP_NAME}}-${{inputs.ENVIRONMENT}}.ai.cabinetoffice.gov.uk)
+        echo "Status code: $response"
+        
+        if [ "$response" -eq 200 ]; then
+          echo "API is healthy!"
+          exit 0
+        else
+          echo "API returned non-200 status code: $response"
+          exit 1
+        fi
+
+    - name: Notify on failure
+      if: failure()
+      run: |
+        echo "ECS health check failed!"
