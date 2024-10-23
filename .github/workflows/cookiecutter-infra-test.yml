@@ -13,6 +13,20 @@ on:
         required: false
         type: string
         default: prod
+      USE_OIDC:
+        description: 'Use OIDC for AWS authentication'
+        required: false
+        type: boolean
+        default: false
+    secrets:
+      AWS_GITHUBRUNNER_PAT:
+        required: true
+      AWS_GITHUBRUNNER_PAT_USER:
+        required: true
+      AWS_REGION:
+        required: true
+      AWS_ACCOUNT_ID:
+        required: true
 
 jobs:
   infra-test:
@@ -20,16 +34,19 @@ jobs:
     runs-on: ${{ inputs.RUNNER_LABEL }}
 
     steps:
+    - name: AWS Authentication
+      uses: ./.github/actions/authenticate_aws
+      with:
+        USE_OIDC: ${{ inputs.USE_OIDC }}
+        ENVIRONMENT: ${{ inputs.ENVIRONMENT }}
+        AWS_REGION: ${{ secrets.AWS_REGION }}
+        AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
+        AWS_GITHUBRUNNER_USER_ACCESS_KEY: ${{ secrets.AWS_GITHUBRUNNER_USER_ACCESS_KEY }}
+        AWS_GITHUBRUNNER_USER_SECRET_ID: ${{ secrets.AWS_GITHUBRUNNER_USER_SECRET_ID }}
+
     - name: Check endpoint response
       id: health_check
-      run: |
-        if [[ "$(curl --insecure -s -o /dev/null -w ''%{http_code}'' https://${{inputs.APP_NAME}}.ai.cabinetoffice.gov.uk)" != "200" ]]; then
-          echo "API is healthy!"
-          exit 0
-        else
-          echo "API returned non-200 status code: $response"
-          exit 1
-        fi
+      run: aws ecs wait services-stable
 
     - name: Notify on failure
       if: failure()
