@@ -49,7 +49,7 @@ jobs:
 
     - name: Check endpoint response
       id: health_check
-      run: aws ecs wait services-stable --cluster i-dot-ai-${{inputs.ENVIRONMENT}}-cluster --services i-dot-ai-${{inputs.ENVIRONMENT}}-${{inputs.APP_NAME}}-${{inputs.SERVICE}}-ecs-service
+      run: aws ecs wait services-stable --cluster i-dot-ai-${{inputs.ENVIRONMENT}}-ecs-cluster --services i-dot-ai-${{inputs.ENVIRONMENT}}-${{inputs.APP_NAME}}-${{inputs.SERVICE}}-ecs-service
 
     - name: Notify on failure
       if: failure()
