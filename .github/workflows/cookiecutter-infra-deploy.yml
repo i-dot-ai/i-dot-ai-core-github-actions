@@ -75,7 +75,7 @@ jobs:
         ENVIRONMENT: ${{ inputs.ENVIRONMENT }}
       run: |
         cd artifact/$APP_NAME
-        make tf_init env=dev
+        make tf_init env=${{inputs.ENVIRONMENT}}
   
     - name: Terraform apply
       env: 
@@ -87,6 +87,6 @@ jobs:
       run: |
         cd artifact/$APP_NAME
         tfParams=()
-        make tf_set_or_create_workspace env=dev
-        make tf_apply env=dev args='-auto-approve'
+        make tf_set_or_create_workspace env=${{inputs.ENVIRONMENT}}
+        make tf_apply env=${{inputs.ENVIRONMENT}} args='-auto-approve'
 
