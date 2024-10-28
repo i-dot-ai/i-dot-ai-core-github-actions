@@ -78,7 +78,7 @@ jobs:
         ENVIRONMENT: ${{ inputs.ENVIRONMENT }}
       run: |
         cd artifact/$APP_NAME
-        make tf_init env=$ENVIRONMENT}
+        make tf_init env=$ENVIRONMENT
 
     - name: 🕒 Waiting for 1 mins
       run: sleep 60  
