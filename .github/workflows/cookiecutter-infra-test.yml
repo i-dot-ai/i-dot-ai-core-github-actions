@@ -49,4 +49,8 @@ jobs:
 
     - name: Check endpoint response
       id: health_check
-      run: aws ecs wait services-stable --cluster i-dot-ai-dev-ecs-cluster --services i-dot-ai-dev-${{inputs.APP_NAME}}-${{inputs.SERVICE}}-ecs-service
+      env:
+        ENVIRONMENT: ${{inputs.ENVIRONMENT}}
+        APP_NAME: ${{inputs.APP_NAME}}
+        SERVICE: ${{inputs.SERVICE}}
+      run: aws ecs wait services-stable --cluster i-dot-ai-$ENVIRONMENT-ecs-cluster --services i-dot-ai-$ENVIRONMENT-$APP_NAME-$SERVICE-ecs-service

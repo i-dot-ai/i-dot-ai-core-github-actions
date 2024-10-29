@@ -35,9 +35,7 @@ jobs:
   infra-apply:
     name: infra-apply
     runs-on: ${{ inputs.RUNNER_LABEL }}
-
     steps:
-
     - name: AWS Authentication
       uses: ./.github/actions/authenticate_aws
       with:
@@ -53,10 +51,8 @@ jobs:
         INPUTS: ${{ toJSON(inputs) }}
       run: echo "$INPUTS"
 
-
     - name: Set global git credentials
       run: git config --global url.https://${{ secrets.AWS_GITHUBRUNNER_PAT }}@github.com/.insteadOf https://github.com/
-
 
     - name: ⬇️ Download artifact
       uses: actions/download-artifact@v4
@@ -66,7 +62,6 @@ jobs:
           echo "Listing all directories in the current path:"
           cd artifact
           ls -ltr
-
     
     - name: Terraform init
       env:
@@ -75,7 +70,7 @@ jobs:
         ENVIRONMENT: ${{ inputs.ENVIRONMENT }}
       run: |
         cd artifact/$APP_NAME
-        make tf_init env=dev
+        make tf_init env=$ENVIRONMENT
   
     - name: Terraform apply
       env: 
@@ -87,6 +82,6 @@ jobs:
       run: |
         cd artifact/$APP_NAME
         tfParams=()
-        make tf_set_or_create_workspace env=dev
-        make tf_apply env=dev args='-auto-approve'
+        make tf_set_or_create_workspace env=$ENVIRONMENT
+        make tf_apply env=$ENVIRONMENT args='-auto-approve'
 

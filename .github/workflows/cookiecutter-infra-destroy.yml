@@ -78,7 +78,7 @@ jobs:
         ENVIRONMENT: ${{ inputs.ENVIRONMENT }}
       run: |
         cd artifact/$APP_NAME
-        make tf_init env=dev
+        make tf_init env=$ENVIRONMENT
 
     - name: 🕒 Waiting for 1 mins
       run: sleep 60  
@@ -90,6 +90,6 @@ jobs:
         APP_NAME: ${{ inputs.APP_NAME }}
       run: |
         cd artifact/$APP_NAME
-        make tf_destroy env=dev  args='-auto-approve'
+        make tf_destroy env=$ENVIRONMENT  args='-auto-approve'
 
 
