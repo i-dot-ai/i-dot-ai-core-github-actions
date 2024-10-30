@@ -86,7 +86,7 @@ jobs:
         run: |
           CHANGES=0
           if [ -f .cruft.json ]; then
-            if ! cruft check --checkout EN-669/cruft_action; then
+            if ! cruft check; then
               CHANGES=1
             fi
           else
@@ -98,7 +98,7 @@ jobs:
       - name: Run update if available
         if: steps.check.outputs.has_changes == '1'
         run: |
-          cruft update --skip-apply-ask --refresh-private-variables --checkout EN-669/cruft_action
+          cruft update --skip-apply-ask --refresh-private-variables
           git restore --staged .
 
       - name: Create pull request
