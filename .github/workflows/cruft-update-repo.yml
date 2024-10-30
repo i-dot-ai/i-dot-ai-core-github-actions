@@ -66,7 +66,7 @@ jobs:
             commit-message: "chore: reject new Cruft update"
             title: cruft - Reject detected infrastructure changes
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
@@ -103,7 +103,7 @@ jobs:
 
       - name: Create pull request
         if: steps.check.outputs.has_changes == '1'
-        uses: peter-evans/create-pull-request@v7
+        uses: peter-evans/create-pull-request@5e914681df9dc83aa4e4905692ca88beb2f9e91f # v7.0.5
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           add-paths: ${{ matrix.add-paths }}
