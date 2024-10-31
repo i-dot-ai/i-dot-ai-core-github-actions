@@ -5,7 +5,9 @@ on:
     secrets:
       AWS_GITHUBRUNNER_PAT:
         required: true
-  
+      COOKIECUTTER_SSH_PRIVATE_KEY:
+        required: true 
+
 jobs:
   check_existing_prs:
     runs-on: ubuntu-latest
