@@ -70,8 +70,15 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Set global git credentials
+      - name: Configure Cookiecutter Access - HTTPS
         run: git config --global url.https://${{ secrets.AWS_GITHUBRUNNER_PAT }}@github.com/.insteadOf https://github.com/
+    
+      - name: Configure Cookiecutter Access - SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.COOKIECUTTER_SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan github.com >> ~/.ssh/known_hosts
 
       - uses: actions/setup-python@v5
         with:
