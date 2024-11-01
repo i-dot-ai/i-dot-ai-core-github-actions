@@ -12,9 +12,9 @@ jobs:
   check_existing_prs:
     runs-on: ubuntu-latest
     outputs:
-      both_prs_already_open: ${{ steps.check_prs_open.outputs.result }}
+      pr_already_open: ${{ steps.check_prs_open.outputs.result }}
     steps:
-      - name: Check if Accept & Reject PRs already open
+      - name: Check if Accept PR already open
         uses: actions/github-script@v7
         id: check_prs_open
         with:
@@ -28,25 +28,20 @@ jobs:
             });
 
             let detectedAcceptPR = false;
-            let detectedRejectPR = false;
 
             openPullReqs.data.forEach(pr => {
               if (pr.title.includes("accept-pr")) {
                 console.log(pr.html_url);
                 detectedAcceptPR = true;
               }
-              if (pr.title.includes("reject-pr")) {
-                console.log(pr.html_url);
-                detectedRejectPR = true;
-              }
             });
 
-            result = detectedAcceptPR && detectedRejectPR;
-            console.log(`Accept and Reject PRs already open: ${result}`);
+            result = detectedAcceptPR;
+            console.log(`Accept PR already open: ${result}`);
             return result;
 
   update:
-    if: needs.check_existing_prs.outputs.both_prs_already_open == 'false'
+    if: needs.check_existing_prs.outputs.pr_already_open == 'false'
     needs:
       - check_existing_prs
     name: ${{ matrix.type }}
@@ -61,12 +56,6 @@ jobs:
             branch: cruft/update
             commit-message: "chore: accept new Cruft update"
             title: cruft - Accept detected infrastructure changes
-          - type: reject-pr
-            add-paths: .cruft.json
-            body: Use this PR to reject the detected changes into this repository.
-            branch: cruft/reject
-            commit-message: "chore: reject new Cruft update"
-            title: cruft - Reject detected infrastructure changes
     steps:
       - uses: actions/checkout@v4
         with:
@@ -127,7 +116,5 @@ jobs:
             Changes have been detected in the base template and they should be considered for merging.
             
             ${{ matrix.body }}
-
-            If this PR is merged, its corresponding accept/reject PR (which was raised at the same time) should be closed without merging it.
             
             See the README/guides in the [Cookiecutter](https://github.com/i-dot-ai/i-dot-ai-cookiecutter/README.md), or contact the infrastructure team for further guidance.
