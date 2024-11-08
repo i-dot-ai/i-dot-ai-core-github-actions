@@ -70,7 +70,7 @@ jobs:
           cd artifact
           ls -ltr
 
-    
+
     - name: Terraform Init
       env:
         INFRASTRUCTURE_FOLDER: ${{ inputs.INFRASTRUCTURE_FOLDER }}
@@ -92,4 +92,6 @@ jobs:
         cd artifact/$APP_NAME
         make tf_destroy env=$ENVIRONMENT  args='-auto-approve'
 
-
+    - name: Destroy db secrets
+      id: destroy-db-secrets
+      run: aws secretsmanager delete-secret --force-delete-without-recovery --secret-id i-dot-ai-$ENVIRONMENT-$=APP_NAME-db-master-credentials
