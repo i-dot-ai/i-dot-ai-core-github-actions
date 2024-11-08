@@ -89,4 +89,7 @@ jobs:
 
     - name: Destroy db secrets
       id: destroy-db-secrets
-      run: aws secretsmanager delete-secret --force-delete-without-recovery --secret-id i-dot-ai-$ENVIRONMENT-$=APP_NAME-db-master-credentials
+      env:
+        ENVIRONMENT: ${{ inputs.ENVIRONMENT }}
+        APP_NAME: ${{ inputs.APP_NAME }}
+      run: aws secretsmanager delete-secret --force-delete-without-recovery --secret-id i-dot-ai-$ENVIRONMENT-$APP_NAME-db-master-credentials
