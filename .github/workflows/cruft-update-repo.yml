@@ -76,7 +76,7 @@ jobs:
           python-version: "3.12"
 
       - name: Install Cruft
-        run: pip3 install cruft
+        run: pip3 install cruft-iai
 
       - name: Check if update is available
         continue-on-error: false
@@ -84,7 +84,7 @@ jobs:
         run: |
           CHANGES=0
           if [ -f .cruft.json ]; then
-            if ! cruft check; then
+            if ! cruft-iai check; then
               CHANGES=1
             fi
           else
@@ -96,7 +96,7 @@ jobs:
       - name: Run update if available
         if: steps.check.outputs.has_changes == '1'
         run: |
-          cruft update --skip-apply-ask --refresh-private-variables
+          cruft-iai update --skip-apply-ask --refresh-private-variables
           git restore --staged .
 
       - name: Create pull request
