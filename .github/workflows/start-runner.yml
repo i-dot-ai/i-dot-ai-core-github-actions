@@ -60,7 +60,7 @@ jobs:
         run: echo "$INPUTS"
 
       - name: AWS Authentication
-        uses: i-dot-ai/i-dot-ai-core-github-actions/.github/actions/authenticate-aws@EN-784/deploy_roles_org_prefix
+        uses: i-dot-ai/i-dot-ai-core-github-actions/.github/actions/authenticate-aws@main
         with:
           APP_NAME: ${{ inputs.APP_NAME }}
           USE_OIDC: ${{ inputs.USE_OIDC }}
