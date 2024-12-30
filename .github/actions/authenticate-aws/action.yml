@@ -7,7 +7,7 @@ inputs:
         description: 'Env to deploy to'
     APP_NAME:
         required: false
-        description: 'optional flag for the APP Name'
+        description: 'optional flag for the app name, used to override the role name if required'
     USE_OIDC:
         description: "Use OIDC for AWS authentication. Supported values 'true' or 'false'"
         required: false
@@ -43,7 +43,7 @@ runs:
       with:
         aws-region: ${{ inputs.AWS_REGION }}
         mask-aws-account-id: 'yes'
-        role-to-assume: arn:aws:iam::${{ inputs.AWS_ACCOUNT_ID }}:role/infra/${{ github.event.repository.name }}-${{ inputs.ENVIRONMENT }}-github-deployment-role
+        role-to-assume: arn:aws:iam::${{ inputs.AWS_ACCOUNT_ID }}:role/infra/i-dot-ai-${{ inputs.ENVIRONMENT }}-${{ inputs.APP_NAME || github.event.repository.name }}-ci-deployment-role
 
     - name: Check AWS Auth
       shell: bash
