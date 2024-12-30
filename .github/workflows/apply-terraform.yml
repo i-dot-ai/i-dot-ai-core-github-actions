@@ -81,7 +81,7 @@ jobs:
       run: echo "$INPUTS"
 
     - name: AWS Authentication
-      uses: i-dot-ai/i-dot-ai-core-github-actions/.github/actions/authenticate-aws@main
+      uses: i-dot-ai/i-dot-ai-core-github-actions/.github/actions/authenticate-aws@EN-784/deploy_roles_org_prefix
       with:
         USE_OIDC: ${{ inputs.USE_OIDC }}
         ENVIRONMENT: ${{ inputs.ENVIRONMENT }}
