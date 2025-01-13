@@ -63,6 +63,7 @@ jobs:
     - name: AWS Authentication
       uses: i-dot-ai/i-dot-ai-core-github-actions/.github/actions/authenticate-aws@main
       with:
+          APP_NAME: ${{ inputs.APP_NAME }}
           USE_OIDC: ${{ inputs.USE_OIDC }}
           ENVIRONMENT: ${{ inputs.ENVIRONMENT }}
           AWS_REGION: ${{ secrets.AWS_REGION }}
