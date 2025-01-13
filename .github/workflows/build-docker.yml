@@ -9,8 +9,8 @@ on:
       RUNNER_LABEL:
         required: true
         type: string
-      INFRASTRUCTURE_FOLDER:
-        required: true
+      INFRASTRUCTURE_FOLDER: # Deprecated - to be removed
+        required: false
         type: string
       DOCKER_BUILD_INSTANCE:
         required: false
