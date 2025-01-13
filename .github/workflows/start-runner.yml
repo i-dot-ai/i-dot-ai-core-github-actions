@@ -26,9 +26,9 @@ on:
         type: string
     secrets:
       AWS_GITHUBRUNNER_USER_ACCESS_KEY:
-        required: true
+        required: false
       AWS_GITHUBRUNNER_USER_SECRET_ID:
-        required: true
+        required: false
       AWS_GITHUBRUNNER_PAT:
         required: true
       AWS_REGION:
