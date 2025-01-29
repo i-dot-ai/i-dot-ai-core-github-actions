@@ -78,6 +78,23 @@ jobs:
       - name: Install Cruft
         run: pip3 install cruft-iai
 
+      - name: Install Wiggle
+        run: |
+          # Disable man-db update to significantly reduce build time.
+          # https://askubuntu.com/questions/272248/processing-triggers-for-man-db
+          sudo sh -c "echo 'set man-db/auto-update false' | debconf-communicate"
+          sudo rm /var/lib/man-db/auto-update
+
+          # Main Install block
+          sudo apt-get update && sudo apt-get install -y --no-install-recommends wiggle=1.3-1
+
+          computed_hash=$(shasum -a 256 /usr/bin/wiggle | awk '{print $1}')
+
+          if [ $computed_hash != "6deff2fb20db0c9069998cf2a85af29fc1921e82e223e8f194948d2543c65165" ]; then
+            echo "Hash mismatch. Does not match $computed_hash"
+            exit 1
+          fi
+
       - name: Check if update is available
         continue-on-error: false
         id: check
@@ -98,6 +115,34 @@ jobs:
         run: |
           cruft-iai update --skip-apply-ask --refresh-private-variables
           git restore --staged .
+
+      - name: Handle rejection files 
+        if: steps.check.outputs.has_changes == '1'
+        run: |
+          rejected_file_list=$(git status --porcelain | sed s/^...// | grep .rej)
+          errored_files=()
+          for rej_file in $rejected_file_list; do
+            original_file=$(echo $rej_file | sed 's/\.rej$//')
+
+            echo "Patching $rej_file into $original_file"
+
+            wiggle --merge --replace $original_file $rej_file
+
+            # Handle Wiggle merge failures
+            if [ $? == 2 ]; then 
+                echo "ERROR: $original_file"
+                errored_files+=($original_file)
+                continue
+            else
+              rm $rej_file
+              rm "$original_file.porig"
+              echo "Patched $original_file"
+            fi
+          done
+          if [ ${#errored_files[@]} -gt 0 ]; then
+              echo "Some files failed to merge! They must be rectified manually."
+              echo "Files with errors: ${errored_files[@]}"
+          fi
 
       - name: Create pull request
         if: steps.check.outputs.has_changes == '1'
