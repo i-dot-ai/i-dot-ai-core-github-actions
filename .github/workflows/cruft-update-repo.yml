@@ -80,11 +80,11 @@ jobs:
 
       - name: Install Wiggle
         run: |
-          sudo apt-get update && sudo apt-get install -y --no-install-recommends wiggle
+          sudo apt-get update && sudo apt-get install -y --no-install-recommends wiggle=1.3-1
 
           computed_hash=$(shasum -a 256 /usr/bin/wiggle | awk '{print $1}')
 
-          if [ $computed_hash != "1b62a32801135785a5f0ddaacb782a465cb91b7df636d5d8802aee7627282d05" ]; then
+          if [ $computed_hash != "6deff2fb20db0c9069998cf2a85af29fc1921e82e223e8f194948d2543c65165" ]; then
             echo "Hash mismatch. Does not match $computed_hash"
             exit 1
           fi
