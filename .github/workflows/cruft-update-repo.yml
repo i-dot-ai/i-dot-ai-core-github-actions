@@ -78,6 +78,17 @@ jobs:
       - name: Install Cruft
         run: pip3 install cruft-iai
 
+      - name: Install Wiggle
+        run: |
+          apt-get update && apt-get install -y --no-install-recommends wiggle
+
+          computed_hash=$(shasum -a 256 /usr/bin/wiggle | awk '{print $1}')
+
+          if [ $computed_hash != "1b62a32801135785a5f0ddaacb782a465cb91b7df636d5d8802aee7627282d05" ]; then
+            echo "Hash mismatch. Does not match $computed_hash"
+            exit 1
+          fi
+
       - name: Check if update is available
         continue-on-error: false
         id: check
