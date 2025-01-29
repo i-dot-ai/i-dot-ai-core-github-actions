@@ -99,6 +99,34 @@ jobs:
           cruft-iai update --skip-apply-ask --refresh-private-variables
           git restore --staged .
 
+      - name: Handle rejection files 
+        if: steps.check.outputs.has_changes == '1'
+        run: |
+          rejected_file_list=$(git status --porcelain | sed s/^...// | grep .rej)
+          errored_files=()
+          for rej_file in $rejected_file_list; do
+            original_file=$(echo $rej_file | sed 's/\.rej$//')
+
+            echo "Patching $rej_file into $original_file"
+
+            wiggle --merge --replace $original_file $rej_file
+
+            # Handle Wiggle merge failures
+            if [ $? == 2 ]; then 
+                echo "ERROR: $original_file"
+                errored_files+=($original_file)
+                continue
+            else
+              rm $rej_file
+              rm "$original_file.porig"
+              echo "Patched $original_file"
+            fi
+          done
+          if [ ${#errored_files[@]} -gt 0 ]; then
+              echo "Some files failed to merge! They must be rectified manually."
+              echo "Files with errors: ${errored_files[@]}"
+          fi
+
       - name: Create pull request
         if: steps.check.outputs.has_changes == '1'
         uses: peter-evans/create-pull-request@5e914681df9dc83aa4e4905692ca88beb2f9e91f # v7.0.5
