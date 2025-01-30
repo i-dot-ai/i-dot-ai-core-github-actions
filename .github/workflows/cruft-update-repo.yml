@@ -121,6 +121,8 @@ jobs:
         run: |
           rejected_file_list=$(git status --porcelain | sed s/^...// | grep .rej)
           errored_files=()
+
+          set +e
           for rej_file in $rejected_file_list; do
             original_file=$(echo $rej_file | sed 's/\.rej$//')
 
