@@ -119,10 +119,11 @@ jobs:
       - name: Handle rejection files 
         if: steps.check.outputs.has_changes == '1'
         run: |
+          set +e
+
           rejected_file_list=$(git status --porcelain | sed s/^...// | grep .rej)
           errored_files=()
 
-          set +e
           for rej_file in $rejected_file_list; do
             original_file=$(echo $rej_file | sed 's/\.rej$//')
 
