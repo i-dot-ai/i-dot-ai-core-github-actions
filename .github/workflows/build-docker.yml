@@ -32,6 +32,9 @@ on:
         required: false
         type: boolean
         default: false
+      PUBLIC_ECR:
+        type: boolean
+        default: false
     secrets:
       AWS_GITHUBRUNNER_PAT:
         required: true
@@ -86,11 +89,26 @@ jobs:
       with:
         path: main
 
-    - name: Login to Amazon ECR
+    # - name: Login to Amazon ECR
+    #   run: |
+    #     aws ecr get-login-password | docker login --username AWS --password-stdin ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com
+    #   shell: bash
+
+     
+    - name: Login to Amazon ECR (Private)
+      if: ${{ inputs.PUBLIC_ECR == false}}
       run: |
         aws ecr get-login-password | docker login --username AWS --password-stdin ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com
       shell: bash
-
+  
+    # Public ECR login step – runs if PUBLIC_ECR is 'true'
+    - name: Login to Amazon ECR (Public)
+      if: ${{ inputs.PUBLIC_ECR == true }}
+      run: |
+        aws ecr-public get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin public.ecr.aws/y9b8l3q4
+      shell: bash
+      
+      
     - name: Create Docker cache container
       env:
         INSTANCE_NAME: ${{ inputs.DOCKER_BUILD_INSTANCE }}
