@@ -41,6 +41,10 @@ on:
         description: 'Version Tag of the image for Public ECR push'
         required: false
         type: string
+      USE_PUBLIC_URL:
+        description: 'Use Public URL for ECR'
+        required: false
+        type: string
     secrets:
       AWS_GITHUBRUNNER_PAT:
         required: true
@@ -103,7 +107,7 @@ jobs:
     - name: Login to Amazon ECR (Public)
       if: ${{ inputs.PUBLIC_ECR == true }}
       run: |
-        aws ecr-public get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin public.ecr.aws/y9b8l3q4
+        aws ecr-public get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin ${{ inputs.USE_PUBLIC_URL }}
       shell: bash
       
       
