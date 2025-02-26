@@ -35,13 +35,16 @@ on:
       PUBLIC_ECR:
         type: boolean
         default: false
+      AWS_REGION:
+        required: true
+        type: string
+        default: "us-east-1"
     secrets:
       AWS_GITHUBRUNNER_PAT:
         required: true
       AWS_GITHUBRUNNER_PAT_USER:
         required: true
-      AWS_REGION:
-        required: true
+
       AWS_ACCOUNT_ID:
         required: true
 
@@ -69,7 +72,7 @@ jobs:
           APP_NAME: ${{ inputs.APP_NAME }}
           USE_OIDC: ${{ inputs.USE_OIDC }}
           ENVIRONMENT: ${{ inputs.ENVIRONMENT }}
-          AWS_REGION: ${{ secrets.AWS_REGION }}
+          AWS_REGION: ${{ inputs.AWS_REGION }}
           AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
           AWS_GITHUBRUNNER_USER_ACCESS_KEY: ${{ secrets.AWS_GITHUBRUNNER_USER_ACCESS_KEY }}
           AWS_GITHUBRUNNER_USER_SECRET_ID: ${{ secrets.AWS_GITHUBRUNNER_USER_SECRET_ID }}
@@ -81,7 +84,7 @@ jobs:
         ref: refs/heads/main
         token: ${{ secrets.AWS_GITHUBRUNNER_PAT }}
         path: i-dot-ai-core-terraform
-        aws-region: ${{ secrets.AWS_REGION }}
+        aws-region: ${{ inputs.AWS_REGION }}
         mask-aws-account-id: 'yes'
 
     - name: Checkout
@@ -91,21 +94,21 @@ jobs:
 
     # - name: Login to Amazon ECR
     #   run: |
-    #     aws ecr get-login-password | docker login --username AWS --password-stdin ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com
+    #     aws ecr get-login-password | docker login --username AWS --password-stdin ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ input.AWS_REGION }}.amazonaws.com
     #   shell: bash
 
      
     - name: Login to Amazon ECR (Private)
       if: ${{ inputs.PUBLIC_ECR == false}}
       run: |
-        aws ecr get-login-password | docker login --username AWS --password-stdin ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com
+        aws ecr get-login-password | docker login --username AWS --password-stdin ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ inputs.AWS_REGION }}.amazonaws.com
       shell: bash
   
     # Public ECR login step – runs if PUBLIC_ECR is 'true'
     - name: Login to Amazon ECR (Public)
       if: ${{ inputs.PUBLIC_ECR == true }}
       run: |
-        aws ecr-public get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin public.ecr.aws/y9b8l3q4
+        aws ecr-public get-login-password --region ${{ inputs.AWS_REGION }} | docker login --username AWS --password-stdin public.ecr.aws/y9b8l3q4
       shell: bash
       
       
