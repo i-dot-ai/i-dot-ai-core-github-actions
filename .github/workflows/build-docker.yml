@@ -162,7 +162,7 @@ jobs:
         CACHE: "/mnt/efs"
       run: |
         cd main
-        make docker_build service=$SERVICE cache=$CACHE
+        make docker_build_public_image service=$SERVICE cache=$CACHE
 
     - name: Docker build (Public)
       env:
@@ -172,7 +172,7 @@ jobs:
           CACHE: "/mnt/efs"
       run: |
         cd main
-        make docker_build_public_image service=$SERVICE cache=$CACHE
+        make docker_build service=$SERVICE cache=$CACHE
     
     - name: Docker Push (Private)
       if: ${{ inputs.PUBLIC_ECR == false}}
