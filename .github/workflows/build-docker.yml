@@ -36,7 +36,6 @@ on:
         type: boolean
         default: false
       AWS_REGION:
-        required: true
         type: string
         default: "us-east-1"
     secrets:
