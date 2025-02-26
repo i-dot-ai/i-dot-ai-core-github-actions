@@ -155,6 +155,7 @@ jobs:
 
     
     - name: Docker build (Private)
+      if: ${{ inputs.PUBLIC_ECR == false}}
       env:
         AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
         APP_NAME: ${{ inputs.APP_NAME }}
@@ -162,9 +163,10 @@ jobs:
         CACHE: "/mnt/efs"
       run: |
         cd main
-        make docker_build_public_image service=$SERVICE cache=$CACHE
+        make docker_build service=$SERVICE cache=$CACHE
 
     - name: Docker build (Public)
+      if: ${{ inputs.PUBLIC_ECR == true}}
       env:
           AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
           APP_NAME: ${{ inputs.APP_NAME }}
@@ -172,7 +174,7 @@ jobs:
           CACHE: "/mnt/efs"
       run: |
         cd main
-        make docker_build service=$SERVICE cache=$CACHE
+        make docker_build_public_image service=$SERVICE cache=$CACHE version=$VERSION
     
     - name: Docker Push (Private)
       if: ${{ inputs.PUBLIC_ECR == false}}
