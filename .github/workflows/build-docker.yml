@@ -128,11 +128,11 @@ jobs:
       with:
         repository: i-dot-ai/i-dot-ai-core-github-actions
 
-    # - name: Export EFS_MOUNT_PATH
-    #   uses: i-dot-ai/i-dot-ai-core-github-actions/.github/actions/export-parameter@main
-    #   with:
-    #       PARAMETER_STORE_VAR_NAME: /github-runner-${{ inputs.ENVIRONMENT }}/efs-mount-path
-    #       ENVIRONMENT_VAR_NAME: EFS_MOUNT_PATH
+    - name: Export EFS_MOUNT_PATH
+      uses: i-dot-ai/i-dot-ai-core-github-actions/.github/actions/export-parameter@main
+      with:
+          PARAMETER_STORE_VAR_NAME: /github-runner-${{ inputs.ENVIRONMENT }}/efs-mount-path
+          ENVIRONMENT_VAR_NAME: EFS_MOUNT_PATH
 
     - name: Checkout
       uses: actions/checkout@v4
@@ -145,7 +145,7 @@ jobs:
         AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
         APP_NAME: ${{ inputs.APP_NAME }}
         SERVICE: ${{ inputs.SERVICE }}
-        CACHE: "/mnt/efs"
+        CACHE: ${{ env.EFS_MOUNT_PATH }}
       run: |
         cd main
         make docker_build service=$SERVICE cache=$CACHE
@@ -157,7 +157,7 @@ jobs:
           APP_NAME: ${{ inputs.APP_NAME }}
           SERVICE: ${{ inputs.SERVICE }}
           VERSION: ${{ inputs.VERSION }}
-          CACHE: "/mnt/efs"
+          CACHE: ${{ env.EFS_MOUNT_PATH }}
       run: |
         cd main
         make docker_build_public_image service=$SERVICE cache=$CACHE version=$VERSION
