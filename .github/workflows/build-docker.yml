@@ -141,7 +141,7 @@ jobs:
         AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
         APP_NAME: ${{ inputs.APP_NAME }}
         SERVICE: ${{ inputs.SERVICE }}
-        CACHE: "/mnt/efs"
+        CACHE: ${{ env.EFS_MOUNT_PATH }}
       run: |
         cd main
         make docker_build service=$SERVICE cache=$CACHE
@@ -153,7 +153,7 @@ jobs:
           APP_NAME: ${{ inputs.APP_NAME }}
           SERVICE: ${{ inputs.SERVICE }}
           VERSION: ${{ inputs.VERSION }}
-          CACHE: "/mnt/efs"
+          CACHE: ${{ env.EFS_MOUNT_PATH }}
       run: |
         cd main
         make docker_build_public_image service=$SERVICE cache=$CACHE version=$VERSION
