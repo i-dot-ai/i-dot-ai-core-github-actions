@@ -38,6 +38,10 @@ on:
       AWS_REGION:
         type: string
         default: "us-east-1"
+      VERSION:
+        required: false
+        type: string
+        default: "us-east-1"
     secrets:
       AWS_GITHUBRUNNER_PAT:
         required: true
@@ -149,7 +153,8 @@ jobs:
         cd main
         make docker_build service=$SERVICE cache=$CACHE
 
-    - name: Docker Push
+    - name: Docker Push (Private)
+      if: ${{ inputs.PUBLIC_ECR == false}}
       env:
         AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
         APP_NAME: ${{ inputs.APP_NAME }}
@@ -157,6 +162,18 @@ jobs:
       run: |
         cd main
         make docker_push service=$SERVICE
+        IMAGE=$(eval $(make docker_echo value=IMAGE service=$SERVICE) | awk '{print $1;}')
+
+    - name: Docker Push (Public)
+      if: ${{ inputs.PUBLIC_ECR == true}}
+      env:
+        AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
+        APP_NAME: ${{ inputs.APP_NAME }}
+        SERVICE: ${{ inputs.SERVICE }}
+        VERSION: ${{ inputs.VERSION }}
+      run: |
+        cd main
+        make docker_push_public_ecr service=$SERVICE version=$VERSION
         IMAGE=$(eval $(make docker_echo value=IMAGE service=$SERVICE) | awk '{print $1;}')
 
     - name: Export ecr image attributes
