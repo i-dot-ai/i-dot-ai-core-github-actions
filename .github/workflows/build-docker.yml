@@ -75,7 +75,7 @@ jobs:
           APP_NAME: ${{ inputs.APP_NAME }}
           USE_OIDC: ${{ inputs.USE_OIDC }}
           ENVIRONMENT: ${{ inputs.ENVIRONMENT }}
-          AWS_REGION: ${{ inputs.AWS_REGION }}
+          AWS_REGION: ${{ secrets.AWS_REGION }}
           AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
           AWS_GITHUBRUNNER_USER_ACCESS_KEY: ${{ secrets.AWS_GITHUBRUNNER_USER_ACCESS_KEY }}
           AWS_GITHUBRUNNER_USER_SECRET_ID: ${{ secrets.AWS_GITHUBRUNNER_USER_SECRET_ID }}
@@ -87,8 +87,7 @@ jobs:
         ref: refs/heads/main
         token: ${{ secrets.AWS_GITHUBRUNNER_PAT }}
         path: i-dot-ai-core-terraform
-        aws-region: ${{ inputs.AWS_REGION }}
-        mask-aws-account-id: 'yes'
+
 
     - name: Checkout
       uses: actions/checkout@v4
@@ -98,13 +97,13 @@ jobs:
     - name: Login to Amazon ECR (Private)
       if: ${{ inputs.PUBLIC_ECR == false}}
       run: |
-        aws ecr get-login-password | docker login --username AWS --password-stdin ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ inputs.AWS_REGION }}.amazonaws.com
+        aws ecr get-login-password | docker login --username AWS --password-stdin ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com
       shell: bash
   
     - name: Login to Amazon ECR (Public)
       if: ${{ inputs.PUBLIC_ECR == true }}
       run: |
-        aws ecr-public get-login-password --region ${{ inputs.AWS_REGION }} | docker login --username AWS --password-stdin public.ecr.aws/y9b8l3q4
+        aws ecr-public get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin public.ecr.aws/y9b8l3q4
       shell: bash
       
       
