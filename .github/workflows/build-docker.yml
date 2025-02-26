@@ -143,15 +143,15 @@ jobs:
       with:
           path: main
 
-    - name: Docker build
-      env:
-        AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
-        APP_NAME: ${{ inputs.APP_NAME }}
-        SERVICE: ${{ inputs.SERVICE }}
-        CACHE: "/mnt/efs"
-      run: |
-        cd main
-        make docker_build service=$SERVICE cache=$CACHE
+    # - name: Docker build
+    #   env:
+    #     AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
+    #     APP_NAME: ${{ inputs.APP_NAME }}
+    #     SERVICE: ${{ inputs.SERVICE }}
+    #     CACHE: "/mnt/efs"
+    #   run: |
+    #     cd main
+    #     make docker_build service=$SERVICE cache=$CACHE
 
     
     - name: Docker build (Private)
