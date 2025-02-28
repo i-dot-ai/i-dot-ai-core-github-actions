@@ -38,6 +38,10 @@ on:
         required: true
       AWS_ACCOUNT_ID:
         required: true
+      DOCKERHUB_USERNAME:
+        required: false
+      DOCKERHUB_TOKEN:
+        required: false
 
 jobs:
   integration-test:
@@ -133,6 +137,13 @@ jobs:
       run: |
         cd artifact/$APP_NAME
         make install
+
+    - name: Login to Docker Hub
+      uses: docker/login-action@v3
+      if: ${{ secrets.DOCKERHUB_USERNAME && secrets.DOCKERHUB_TOKEN }}
+      with:
+        username: ${{ secrets.DOCKERHUB_USERNAME }}
+        password: ${{ secrets.DOCKERHUB_TOKEN }}
 
     - name: Docker build
       env:
