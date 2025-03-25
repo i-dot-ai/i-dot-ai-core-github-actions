@@ -75,8 +75,8 @@ jobs:
         cd artifact/$APP_NAME
         make tf_init env=$ENVIRONMENT
 
-    - name: 🕒 Waiting for 5 mins
-      run: sleep 300
+    - name: 🕒 Waiting for 1 min
+      run: sleep 60
 
     - name: Terraform Destroy
       env: 
