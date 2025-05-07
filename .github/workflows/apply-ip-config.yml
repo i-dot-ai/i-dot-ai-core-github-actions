@@ -93,9 +93,9 @@ jobs:
       run: |
         cd main
         if [[ "$INSTANCE" == "universal" ]]; then
-          make tf_apply instance=$INSTANCE
+          make tf_auto_apply instance=$INSTANCE
         else
-          make tf_apply instance=infra env=$INSTANCE
+          make tf_auto_apply instance=infra env=$INSTANCE
         fi
 
     - name: Copy terraform logs to s3
