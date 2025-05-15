@@ -148,7 +148,7 @@ jobs:
       with:
           repository: i-dot-ai/planning-extract
           token: ${{ secrets.AWS_GITHUBRUNNER_PAT }}
-          path: main
+          path: planning-extract
 
     - name: Debug - Print paths and directory contents
       run: |
@@ -156,10 +156,11 @@ jobs:
         echo "GITHUB_WORKSPACE: $GITHUB_WORKSPACE"
         echo "Contents of current directory:"
         ls -la
-        echo "Contents of planning-extract directory:"
+        echo "Contents of main directory:"
         ls -la main
-        echo "Full directory structure:"
-        find . -type d -maxdepth 3 | sort
+        echo "Contents of planning-extract directory:"
+        ls -la planning-extract
+
 
     - name: Check if Docker Hub credentials exist
       id: check-creds
