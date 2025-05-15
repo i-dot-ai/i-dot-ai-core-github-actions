@@ -158,9 +158,6 @@ jobs:
         ls -la
         echo "Contents of main directory:"
         ls -la main
-        echo "Contents of planning-extract directory:"
-        ls -la planning-extract
-
 
     - name: Check if Docker Hub credentials exist
       id: check-creds
