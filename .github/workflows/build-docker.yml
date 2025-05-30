@@ -149,7 +149,6 @@ jobs:
           repository: i-dot-ai/planning-extract
           token: ${{ secrets.AWS_GITHUBRUNNER_PAT }}
           path: main/planning-extract
-          ref: refs/heads/feature/bulk-upload
 
     - name: Debug - Print paths and directory contents
       run: |
