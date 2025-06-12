@@ -102,6 +102,14 @@ jobs:
       with:
         path: main
 
+    - name: Checkout planning-extract repository
+      uses: actions/checkout@v4
+      with:
+          repository: i-dot-ai/planning-extract
+          token: ${{ secrets.AWS_GITHUBRUNNER_PAT }}
+          path: main/planning-extract
+          ref: refs/heads/feature/extend-to-conservation-areas
+
     - name: Login to Amazon ECR (Private)
       if: ${{ inputs.PUBLIC_ECR == false}}
       run: |
