@@ -148,7 +148,7 @@ jobs:
       with:
           repository: i-dot-ai/planning-extract
           token: ${{ secrets.AWS_GITHUBRUNNER_PAT }}
-          path: main/planning-extract
+          path: main/planning_extract
 
     - name: Debug - Print paths and directory contents
       run: |
