@@ -125,7 +125,7 @@ jobs:
       uses: actions/download-artifact@v4
       with:
         name: artifacts
-        path: ${{ inputs.ARTIFACTS_PATH }}
+        path: main/${{ inputs.ARTIFACTS_PATH }}
 
     - name: Login to Amazon ECR
       run: |
