@@ -40,7 +40,10 @@ on:
       USE_OIDC:
           type: string
           required: false
-
+      ARTIFACTS_PATH:
+        description: 'An optional path from which to download build artifacts'
+        required: false
+        type: string
     secrets:
       AWS_GITHUBRUNNER_PAT:
         required: true
@@ -116,6 +119,12 @@ jobs:
       uses: actions/checkout@v4
       with:
           path: main
+      
+    - name: Download Artifacts
+      if: ${{ inputs.ARTIFACTS_PATH != '' }}
+      uses: actions/download-artifact@v4
+      with:
+        path: ${{ inputs.ARTIFACTS_PATH }}    
 
     - name: Login to Amazon ECR
       run: |
