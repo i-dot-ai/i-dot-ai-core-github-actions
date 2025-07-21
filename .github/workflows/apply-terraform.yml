@@ -120,11 +120,12 @@ jobs:
       with:
           path: main
       
-    - name: Download Artifacts
+    - name: Optionally Download Artifacts
       if: ${{ inputs.ARTIFACTS_PATH != '' }}
       uses: actions/download-artifact@v4
       with:
-        path: ${{ inputs.ARTIFACTS_PATH }}    
+        name: artifacts
+        path: ${{ inputs.ARTIFACTS_PATH }}
 
     - name: Login to Amazon ECR
       run: |
