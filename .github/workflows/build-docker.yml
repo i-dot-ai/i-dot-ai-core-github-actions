@@ -3,6 +3,9 @@ name: Build dash
 on:
   workflow_call:
     inputs:
+      DOCKER_BUILD_ARGS:
+        required: false
+        type: string
       APP_NAME:
         required: true
         type: string
@@ -167,9 +170,10 @@ jobs:
         APP_NAME: ${{ inputs.APP_NAME }}
         SERVICE: ${{ inputs.SERVICE }}
         CACHE: ${{ env.EFS_MOUNT_PATH }}
+        DOCKER_BUILD_ARGS: DOCKER_BUILD_ARGS
       run: |
         cd main
-        make docker_build service=$SERVICE cache=$CACHE
+        make docker_build service=$SERVICE cache=$CACHE DOCKER_BUILD_ARGS=$DOCKER_BUILD_ARGS
 
     - name: Docker build (Public)
       if: ${{ inputs.PUBLIC_ECR == true}}
