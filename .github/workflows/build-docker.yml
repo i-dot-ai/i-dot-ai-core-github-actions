@@ -172,6 +172,7 @@ jobs:
         CACHE: ${{ env.EFS_MOUNT_PATH }}
       run: |
         cd main
+        echo cache is $CACHE
         make docker_build service=$SERVICE cache=$CACHE
 
     - name: Docker build (Public)
