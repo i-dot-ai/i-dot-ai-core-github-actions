@@ -91,20 +91,6 @@ jobs:
           AWS_GITHUBRUNNER_USER_ACCESS_KEY: ${{ secrets.AWS_GITHUBRUNNER_USER_ACCESS_KEY }}
           AWS_GITHUBRUNNER_USER_SECRET_ID: ${{ secrets.AWS_GITHUBRUNNER_USER_SECRET_ID }}
 
-    - name: Checkout i-dot-ai-core-terraform repo
-      uses: actions/checkout@v4
-      with:
-        repository: i-dot-ai/i-ai-core-infrastructure
-        ref: refs/heads/main
-        token: ${{ secrets.AWS_GITHUBRUNNER_PAT }}
-        path: i-dot-ai-core-terraform
-
-
-    - name: Checkout
-      uses: actions/checkout@v4
-      with:
-        path: main
-
     - name: Login to Amazon ECR (Private)
       if: ${{ inputs.PUBLIC_ECR == false}}
       run: |
@@ -130,22 +116,11 @@ jobs:
           echo "Instance ${INSTANCE_NAME} is created."
         fi
 
-    - name: Checkout
-      uses: actions/checkout@v4
-      with:
-        repository: i-dot-ai/i-dot-ai-core-github-actions
-
     - name: Export EFS_MOUNT_PATH
       uses: i-dot-ai/i-dot-ai-core-github-actions/.github/actions/export-parameter@main
       with:
           PARAMETER_STORE_VAR_NAME: /github-runner-${{ inputs.ENVIRONMENT }}/efs-mount-path
           ENVIRONMENT_VAR_NAME: EFS_MOUNT_PATH
-
-    - name: Checkout
-      uses: actions/checkout@v4
-      with:
-          path: main
-
 
     - name: Check if Docker Hub credentials exist
       id: check-creds
