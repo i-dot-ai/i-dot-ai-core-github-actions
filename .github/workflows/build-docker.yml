@@ -63,6 +63,9 @@ jobs:
   build-and-push-to-ecr:
     name: Build and push to ECR
     runs-on: ${{ inputs.RUNNER_LABEL }}
+    env:
+      BUILDKIT_PROGRESS: plain
+      BUILDKIT_DEBUG: 1 
 
     steps:
     - name: Checkout
