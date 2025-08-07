@@ -112,7 +112,7 @@ jobs:
           echo "Instance ${INSTANCE_NAME} found."
         else
           echo "Instance ${INSTANCE_NAME} not found."
-          docker buildx create --name "${INSTANCE_NAME}" --driver docker-container
+          docker buildx create --name "${INSTANCE_NAME}" --driver docker-container --buildkitd-flags='--root /mnt/efs/buildkit'
           echo "Instance ${INSTANCE_NAME} is created."
         fi
 
