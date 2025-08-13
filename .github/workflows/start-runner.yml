@@ -12,7 +12,7 @@ on:
         type: string
       RUNNER_SIZE:
         type: string
-        default: regular
+        default: large
       USE_CUSTOM_RUNNER:
         type: string
         default: "0"
