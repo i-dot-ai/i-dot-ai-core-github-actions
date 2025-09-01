@@ -3,7 +3,6 @@ description: "Checks the status of an ECS Service post terraform deploy"
 inputs:
     ENVIRONMENT:
         required: true
-        default: prod
         description: 'Env of the task'
     APP_NAME:
         required: true
@@ -26,7 +25,7 @@ runs:
       if aws ecs wait services-stable --cluster $CLUSTER_NAME --services $SERVICE_NAME; then
         echo "Deployment status: "
         DEPLOYMENT_STATUS=$(aws ecs describe-services --cluster $CLUSTER_NAME --services $SERVICE_NAME --query 'services[0].deployments[*].{Status:status,CreatedAt:createdAt}')
-        echo "Status successfully started: $DEPLOYMENT_STATUS"
+        echo "Task successfully started: $DEPLOYMENT_STATUS"
       else
         echo "Service not healthy"
           FAILURE_INFO=$(aws ecs describe-services --cluster $CLUSTER_NAME  --services $SERVICE_NAME --query 'services[0].deployments[*].{Status:status,CreatedAt:createdAt,Reason:failureReason,TaskDefinition:taskDefinition}' --output json)
