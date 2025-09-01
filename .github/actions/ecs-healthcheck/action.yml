@@ -1,0 +1,34 @@
+name: Check ECS Service Health
+description: "Checks the status of an ECS Service post terraform deploy"
+inputs:
+    ENVIRONMENT:
+        required: true
+        description: 'Env of the task'
+    APP_NAME:
+        required: true
+        description: 'ECS Service Name to poll against'
+
+runs:
+  using: "composite"
+  steps:
+  - name: Check ECS endpoint response
+    env:
+      ENVIRONMENT: ${{ inputs.ENVIRONMENT }}
+      APP_NAME: ${{ inputs.APP_NAME }}
+    shell: bash
+    run: |
+      CLUSTER_NAME=i-dot-ai-$ENVIRONMENT-ecs-cluster
+      SERVICE_NAME=i-dot-ai-$ENVIRONMENT-$APP_NAME-ecs-service
+
+      echo "Checking ECS health for: $SERVICE_NAME in $ENVIRONMENT..."
+
+      if aws ecs wait services-stable --cluster $CLUSTER_NAME --services $SERVICE_NAME; then
+        echo "Deployment status: "
+        DEPLOYMENT_STATUS=$(aws ecs describe-services --cluster $CLUSTER_NAME --services $SERVICE_NAME --query 'services[0].deployments[*].{Status:status,CreatedAt:createdAt}')
+        echo "Task successfully started: $DEPLOYMENT_STATUS"
+      else
+        echo "Service not healthy"
+          FAILURE_INFO=$(aws ecs describe-services --cluster $CLUSTER_NAME  --services $SERVICE_NAME --query 'services[0].deployments[*].{Status:status,CreatedAt:createdAt,Reason:failureReason,TaskDefinition:taskDefinition}' --output json)
+        echo "$FAILURE_INFO" | jq -r '.[] | "Status: \(.Status), Created: \(.CreatedAt), Reason: \(.Reason // "No reason provided")"'
+        exit 1
+      fi
