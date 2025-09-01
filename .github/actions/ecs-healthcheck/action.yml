@@ -1,10 +1,10 @@
-name: Configure AWS Credentials
-description: "Configures AWS Credentials via OIDC or Access Keys depending on input."
+name: Check ECS Service Health
+description: "Checks the status of an ECS Service post terraform deploy"
 inputs:
     ENVIRONMENT:
         required: true
         default: prod
-        description: 'Env to deploy to'
+        description: 'Env of the task'
     APP_NAME:
         required: true
         description: 'ECS Service Name to poll against'
