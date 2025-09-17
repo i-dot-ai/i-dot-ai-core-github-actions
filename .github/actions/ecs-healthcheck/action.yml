@@ -27,13 +27,13 @@ runs:
 
       echo "Checking ECS health for: $SERVICE_NAME in $ENVIRONMENT..."
 
-      if aws ecs wait services-stable --cluster $CLUSTER_NAME --services $SERVICE_NAME; then
+      if timeout $TIMEOUT_LIMIT aws ecs wait services-stable --cluster $CLUSTER_NAME --services $SERVICE_NAME; then
         echo "Deployment status: "
-        DEPLOYMENT_STATUS=$(timeout $TIMEOUT_LIMIT aws ecs describe-services --cluster $CLUSTER_NAME --services $SERVICE_NAME --query 'services[0].deployments[*].{Status:status,CreatedAt:createdAt}')
+        DEPLOYMENT_STATUS=$(aws ecs describe-services --cluster $CLUSTER_NAME --services $SERVICE_NAME --query 'services[0].deployments[*].{Status:status,CreatedAt:createdAt}')
         echo "Task successfully started: $DEPLOYMENT_STATUS"
       else
         echo "Service not healthy"
-          FAILURE_INFO=$(timeout $TIMEOUT_LIMIT aws ecs describe-services --cluster $CLUSTER_NAME  --services $SERVICE_NAME --query 'services[0].deployments[*].{Status:status,CreatedAt:createdAt,Reason:failureReason,TaskDefinition:taskDefinition}' --output json)
+          FAILURE_INFO=$(aws ecs describe-services --cluster $CLUSTER_NAME  --services $SERVICE_NAME --query 'services[0].deployments[*].{Status:status,CreatedAt:createdAt,Reason:failureReason,TaskDefinition:taskDefinition}' --output json)
         echo "$FAILURE_INFO" | jq -r '.[] | "Status: \(.Status), Created: \(.CreatedAt), Reason: \(.Reason // "No reason provided")"'
         exit 1
       fi
