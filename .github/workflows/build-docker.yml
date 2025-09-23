@@ -45,6 +45,11 @@ on:
         description: 'ECR Public URL'
         required: false
         type: string
+      PLANNING_EXTRACT_TAG:
+        description: 'Tag/branch/ref for planning-extract repository checkout'
+        required: false
+        type: string
+        default: main
     secrets:
       AWS_GITHUBRUNNER_PAT:
         required: true
@@ -147,6 +152,7 @@ jobs:
       uses: actions/checkout@v4
       with:
           repository: i-dot-ai/planning-extract
+          ref: ${{ inputs.PLANNING_EXTRACT_TAG }}
           token: ${{ secrets.AWS_GITHUBRUNNER_PAT }}
           path: main/planning_extract
 
@@ -154,6 +160,7 @@ jobs:
       run: |
         echo "Current working directory: $(pwd)"
         echo "GITHUB_WORKSPACE: $GITHUB_WORKSPACE"
+        echo "Planning-extract ref: ${{ inputs.PLANNING_EXTRACT_TAG }}"
         echo "Contents of current directory:"
         ls -la
         echo "Contents of main directory:"
