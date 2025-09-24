@@ -38,9 +38,7 @@ jobs:
   infra-destroy:
     name: infra-destroy
     runs-on: ${{ inputs.RUNNER_LABEL }}
-
     steps:
-
     - name: AWS Authentication
       uses: ./.github/actions/authenticate_aws
       with:
@@ -56,10 +54,8 @@ jobs:
         INPUTS: ${{ toJSON(inputs) }}
       run: echo "$INPUTS"
 
-
     - name: Set global git credentials
       run: git config --global url.https://${{ secrets.AWS_GITHUBRUNNER_PAT }}@github.com/.insteadOf https://github.com/
-
 
     - name: ⬇️ Download Artifact
       uses: actions/download-artifact@v4
@@ -70,7 +66,6 @@ jobs:
           cd artifact
           ls -ltr
 
-    
     - name: Terraform Init
       env:
         INFRASTRUCTURE_FOLDER: ${{ inputs.INFRASTRUCTURE_FOLDER }}
@@ -80,8 +75,8 @@ jobs:
         cd artifact/$APP_NAME
         make tf_init env=$ENVIRONMENT
 
-    - name: 🕒 Waiting for 1 mins
-      run: sleep 60  
+    - name: 🕒 Waiting for 1 min
+      run: sleep 60
 
     - name: Terraform Destroy
       env: 
@@ -92,4 +87,9 @@ jobs:
         cd artifact/$APP_NAME
         make tf_destroy env=$ENVIRONMENT  args='-auto-approve'
 
-
+    - name: Destroy db secrets
+      id: destroy-db-secrets
+      env:
+        ENVIRONMENT: ${{ inputs.ENVIRONMENT }}
+        APP_NAME: ${{ inputs.APP_NAME }}
+      run: aws secretsmanager delete-secret --force-delete-without-recovery --secret-id i-dot-ai-$ENVIRONMENT-$APP_NAME-db-master-credentials
