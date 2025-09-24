@@ -61,6 +61,7 @@ on:
 
 jobs:
   release-terraform:
+    if: github.repository == 'i-dot-ai/${{ github.repository }}'
     runs-on: ${{ inputs.RUNNER_LABEL }}
     environment: ${{ inputs.ENVIRONMENT }}
 

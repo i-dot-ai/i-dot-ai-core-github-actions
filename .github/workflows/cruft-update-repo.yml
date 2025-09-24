@@ -10,6 +10,7 @@ on:
 
 jobs:
   check_existing_prs:
+    if: github.repository == 'i-dot-ai/${{ github.repository }}'
     runs-on: ubuntu-latest
     outputs:
       pr_already_open: ${{ steps.check_prs_open.outputs.result }}
