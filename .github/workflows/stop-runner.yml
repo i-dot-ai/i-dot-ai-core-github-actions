@@ -35,6 +35,7 @@ on:
 
 jobs:
   stop-runner:
+    if: github.repository == 'i-dot-ai/${{ github.repository }}'
     runs-on: ubuntu-latest
     steps:
       - name: AWS Authentication

@@ -63,6 +63,7 @@ jobs:
   release-terraform:
     runs-on: ${{ inputs.RUNNER_LABEL }}
     environment: ${{ inputs.ENVIRONMENT }}
+    if: github.repository == 'i-dot-ai/${{ github.repository }}'
 
     permissions:
       id-token: write

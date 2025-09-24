@@ -48,6 +48,7 @@ on:
 
 jobs:
   start-runner: # This job runs on the github actions runner, and all it is doing is setting up our own runner on AWS 
+    if: github.repository == 'i-dot-ai/${{ github.repository }}'
     runs-on: ubuntu-latest
     outputs:
       label: ${{ steps.get-runner-label.outputs.label }}
