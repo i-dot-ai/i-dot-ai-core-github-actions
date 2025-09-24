@@ -61,9 +61,10 @@ on:
 
 jobs:
   build-and-push-to-ecr:
+    if: github.repository == 'i-dot-ai/${{ github.repository }}'
     name: Build and push to ECR
     runs-on: ${{ inputs.RUNNER_LABEL }}
-    if: github.repository == 'i-dot-ai/${{ github.repository }}'
+
 
     steps:
     - name: Checkout
