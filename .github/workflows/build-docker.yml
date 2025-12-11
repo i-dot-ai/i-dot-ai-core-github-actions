@@ -58,6 +58,14 @@ on:
         required: false
       DOCKERHUB_TOKEN:
         required: false
+      CONTENTFUL_SPACE:
+        required: false
+      CONTENTFUL_ACCESS_TOKEN:
+        required: false
+      PREVIEW_ACCESS_TOKEN:
+        required: false
+      CMS_REPO_TOKEN:
+        required: false
 
 jobs:
   build-and-push-to-ecr:
@@ -144,9 +152,14 @@ jobs:
         APP_NAME: ${{ inputs.APP_NAME }}
         SERVICE: ${{ inputs.SERVICE }}
         CACHE: ${{ env.EFS_MOUNT_PATH }}
+        BUILD_ARGS: >-
+          --build-arg CONTENTFUL_SPACE=${{ secrets.CONTENTFUL_SPACE }}
+          --build-arg CONTENTFUL_ACCESS_TOKEN=${{ secrets.CONTENTFUL_ACCESS_TOKEN }}
+          --build-arg PREVIEW_ACCESS_TOKEN=${{ secrets.PREVIEW_ACCESS_TOKEN }}
+          --build-arg CMS_REPO_TOKEN=${{ secrets.CMS_REPO_TOKEN }}
       run: |
         cd main
-        make docker_build service=$SERVICE cache=$CACHE
+        make docker_build service=$SERVICE cache=$CACHE BUILD_ARGS="$BUILD_ARGS"
 
     - name: Docker build (Public)
       if: ${{ inputs.PUBLIC_ECR == true}}
@@ -156,9 +169,14 @@ jobs:
           SERVICE: ${{ inputs.SERVICE }}
           VERSION: ${{ inputs.VERSION }}
           CACHE: ${{ env.EFS_MOUNT_PATH }}
+          BUILD_ARGS: >-
+            --build-arg CONTENTFUL_SPACE=${{ secrets.CONTENTFUL_SPACE }}
+            --build-arg CONTENTFUL_ACCESS_TOKEN=${{ secrets.CONTENTFUL_ACCESS_TOKEN }}
+            --build-arg PREVIEW_ACCESS_TOKEN=${{ secrets.PREVIEW_ACCESS_TOKEN }}
+            --build-arg CMS_REPO_TOKEN=${{ secrets.CMS_REPO_TOKEN }}
       run: |
         cd main
-        make docker_build_public_image service=$SERVICE cache=$CACHE version=$VERSION
+        make docker_build_public_image service=$SERVICE cache=$CACHE version=$VERSION BUILD_ARGS="$BUILD_ARGS"
     
     - name: Docker Push (Private)
       if: ${{ inputs.PUBLIC_ECR == false}}
