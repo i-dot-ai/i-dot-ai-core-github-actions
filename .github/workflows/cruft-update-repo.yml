@@ -84,7 +84,7 @@ jobs:
           # Disable man-db update to significantly reduce build time.
           # https://askubuntu.com/questions/272248/processing-triggers-for-man-db
           sudo sh -c "echo 'set man-db/auto-update false' | debconf-communicate"
-          sudo rm /var/lib/man-db/auto-update
+          sudo rm -f /var/lib/man-db/auto-update
 
           # Main Install block
           sudo apt-get update && sudo apt-get install -y --no-install-recommends wiggle=1.3-1
