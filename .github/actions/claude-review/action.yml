@@ -12,6 +12,9 @@ inputs:
   OVERRIDE_PROMPT:
     description: 'Override the Claude Code Prompt'
     required: false
+  LLM_GATEWAY_URL:
+    description: 'LLM Gateway for your Claude access'
+    required: true
 
 runs:
   using: composite
@@ -21,7 +24,7 @@ runs:
       with:
         anthropic_api_key: ${{ inputs.ANTHROPIC_API_KEY }}
         timeout_minutes: ${{ inputs.TIMEOUT_DURATION }}
-        claude_args: "--base-url ${{ inputs.LLM_GATEWAY_URL }}"
+        ANTHROPIC_BASE_URL: $${ inputs.LLM_GATEWAY_URL }}
         prompt: |
           ${{ inputs.OVERRIDE_PROMPT != '' && inputs.OVERRIDE_PROMPT || format('Please review this pull request and provide concise feedback.
           Focus on:
