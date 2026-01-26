@@ -12,3 +12,37 @@ inputs:
   OVERRIDE_PROMPT:
     description: 'Override the Claude Code Prompt'
     required: false
+
+runs:
+  using: composite
+  steps:
+    - name: Automatic PR Review
+      uses: anthropics/claude-code-action@v1
+      shell: bash
+      with:
+        anthropic_api_key: ${{ inputs.anthropic-api-key }}
+        timeout_minutes: ${{ inputs.timeout-minutes }}
+        prompt: |
+          ${{ inputs.custom-prompt != '' && inputs.custom-prompt || format('Please review this pull request and provide concise feedback.
+          Focus on:
+          - Code quality and best practices
+          - Potential bugs or issues
+          - Performance and scaling considerations
+          - Check the consistency of this PR with coding patterns used across the rest of the codebase
+          - Ensuring that simple solutions are used wherever possible
+          {0}
+          Do:
+          - Provide a very brief summary of the changes.
+          - Provide targeted, actionable, feedback with specific suggestions for improvement.
+          - Use inline comments to highlight specific areas of concern.
+          - Use relevant emojis to help structure the feedback and make it more engaging.
+          Do not:
+          - Feel forced to provide feedback, if it looks good and none is needed, don''t provide feedback.
+          - Repeat yourself.
+
+          For any comments you make requesting actions, use a CONSIDER, TRY, DO and NIT tag at the start of the comment to classify it.
+          - 🔴 DO: Mandatory feedback that is actionable and specific.
+          - 🟡 TRY: Request a specific exploratory next step or alternative approach that should be attempted.
+          - 🔵 CONSIDER: Share ideas or alternative ways of thinking. Not compulsory.
+          - ⚪️ NIT: Small nitpicks or suggestions for improvement.', inputs.review-focus != '' && format('
+          - {0}', inputs.review-focus) || '') }}
