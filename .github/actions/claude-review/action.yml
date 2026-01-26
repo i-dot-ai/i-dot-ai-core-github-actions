@@ -22,7 +22,7 @@ runs:
         anthropic_api_key: ${{ inputs.ANTHROPIC_API_KEY }}
         timeout_minutes: ${{ inputs.TIMEOUT_DURATION }}
         prompt: |
-          ${{ inputs.custom-prompt != '' && inputs.custom-prompt || format('Please review this pull request and provide concise feedback.
+          ${{ inputs.OVERRIDE_PROMPT != '' && inputs.OVERRIDE_PROMPT || format('Please review this pull request and provide concise feedback.
           Focus on:
           - Code quality and best practices
           - Potential bugs or issues
