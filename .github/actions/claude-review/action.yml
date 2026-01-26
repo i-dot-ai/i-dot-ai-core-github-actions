@@ -18,7 +18,6 @@ runs:
   steps:
     - name: Automatic PR Review
       uses: anthropics/claude-code-action@v1
-      shell: bash
       with:
         anthropic_api_key: ${{ inputs.anthropic-api-key }}
         timeout_minutes: ${{ inputs.timeout-minutes }}
