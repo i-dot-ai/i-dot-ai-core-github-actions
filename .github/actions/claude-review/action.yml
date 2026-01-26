@@ -20,7 +20,7 @@ runs:
   using: composite
   steps:
     - name: Automatic PR Review
-      uses: anthropics/claude-code-action@GuitaristForEver:feat/native-gateway-inputs
+      uses: anthropics/claude-code-action@feat/native-gateway-inputs
       with:
         anthropic_api_key: ${{ inputs.ANTHROPIC_API_KEY }}
         timeout_minutes: ${{ inputs.TIMEOUT_DURATION }}
