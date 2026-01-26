@@ -1,0 +1,14 @@
+name: 'Claude Code PR Review'
+description: 'Executes Claude Code to review PRs'
+
+inputs:
+  ANTHROPIC_API_KEY:
+    required: true
+    description: "API Key for Claude to use"
+  TIMEOUT_DURATION:
+    description: 'Max time Claude takes to review a PR. Default is 20 minutes'
+    required: false
+    default: '20' 
+  OVERRIDE_PROMPT:
+    description: 'Override the Claude Code Prompt'
+    required: false
