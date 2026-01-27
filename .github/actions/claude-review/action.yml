@@ -20,11 +20,12 @@ runs:
   using: composite
   steps:
     - name: Automatic PR Review
-      uses: anthropics/claude-code-action@feat/native-gateway-inputs
+      uses: anthropics/claude-code-action@main
+      env:
+        ANTHROPIC_BASE_URL: $${ inputs.LLM_GATEWAY_URL }}
       with:
         anthropic_api_key: ${{ inputs.ANTHROPIC_API_KEY }}
         timeout_minutes: ${{ inputs.TIMEOUT_DURATION }}
-        base_url: $${ inputs.LLM_GATEWAY_URL }}
         show_full_output: true
         prompt: |
           ${{ inputs.OVERRIDE_PROMPT != '' && inputs.OVERRIDE_PROMPT || format('Please review this pull request and provide concise feedback.
