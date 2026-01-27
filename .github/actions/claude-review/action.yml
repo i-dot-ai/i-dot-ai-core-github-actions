@@ -15,6 +15,10 @@ inputs:
   LLM_GATEWAY_URL:
     description: 'LLM Gateway for your Claude access'
     required: true
+  MODEL:
+    description: 'Claude Model to use'
+    required: false
+    default: 'bedrock-claude-4.5-sonnet'
 
 runs:
   using: composite
@@ -27,6 +31,7 @@ runs:
         anthropic_api_key: ${{ inputs.ANTHROPIC_API_KEY }}
         timeout_minutes: ${{ inputs.TIMEOUT_DURATION }}
         show_full_output: true
+        model: ${{ inputs.MODEL }}
         prompt: |
           ${{ inputs.OVERRIDE_PROMPT != '' && inputs.OVERRIDE_PROMPT || format('Please review this pull request and provide concise feedback.
           Focus on:
