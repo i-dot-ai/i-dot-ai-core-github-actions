@@ -27,11 +27,12 @@ runs:
       uses: anthropics/claude-code-action@main
       env:
         ANTHROPIC_BASE_URL: ${{ inputs.LLM_GATEWAY_URL }}
+        MODEL: ${{ inputs.MODEL }}
       with:
         anthropic_api_key: ${{ inputs.ANTHROPIC_API_KEY }}
         timeout_minutes: ${{ inputs.TIMEOUT_DURATION }}
         show_full_output: true
-        model: ${{ inputs.MODEL }}
+        claude_args: "--model ${{ env.MODEL }}
         prompt: |
           ${{ inputs.OVERRIDE_PROMPT != '' && inputs.OVERRIDE_PROMPT || format('Please review this pull request and provide concise feedback.
           Focus on:
