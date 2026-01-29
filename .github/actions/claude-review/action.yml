@@ -19,12 +19,15 @@ inputs:
     description: 'Claude Model to use'
     required: false
     default: 'bedrock-claude-4.5-sonnet'
+  GITHUB_TOKEN: 
+    description: 'GitHub token for API access'
+    required: true
 
 runs:
   using: composite
   steps:
     - name: Automatic PR Review
-      uses: anthropics/claude-code-action@main
+      uses: anthropics/claude-code-action@v1
       env:
         ANTHROPIC_BASE_URL: ${{ inputs.LLM_GATEWAY_URL }}
         MODEL: ${{ inputs.MODEL }}
