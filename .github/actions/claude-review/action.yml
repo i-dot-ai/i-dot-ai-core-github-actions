@@ -37,6 +37,7 @@ runs:
         show_full_output: true
         claude_args: "--model ${{ env.MODEL }} "
         github_token: ${{ secrets.GITHUB_TOKEN }}
+        CLAUDE_CODE_VERSION: "2.1.20"
         prompt: |
           ${{ inputs.OVERRIDE_PROMPT != '' && inputs.OVERRIDE_PROMPT || format('Please review this pull request and provide concise feedback.
           Focus on:
