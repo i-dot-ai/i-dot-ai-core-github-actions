@@ -2,9 +2,6 @@ name: 'Claude Code PR Review'
 description: 'Executes Claude Code to review PRs'
 
 inputs:
-  ANTHROPIC_API_KEY:
-    required: true
-    description: "API Key for Claude to use"
   TIMEOUT_DURATION:
     description: 'Max time Claude takes to review a PR. Default is 20 minutes'
     required: false
@@ -19,6 +16,10 @@ inputs:
     description: 'Claude Model to use'
     required: false
     default: 'bedrock-claude-4.5-sonnet'
+secrets:
+  ANTHROPIC_API_KEY:
+    required: true
+    description: "API Key for Claude to use"
   GITHUB_TOKEN: 
     description: 'GitHub token for API access'
     required: true
@@ -33,11 +34,11 @@ runs:
         MODEL: ${{ inputs.MODEL }}
         CLAUDE_CODE_DISABLE_EXPERIMENTAL_BETAS: 1
       with:
-        anthropic_api_key: ${{ inputs.ANTHROPIC_API_KEY }}
+        anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
         timeout_minutes: ${{ inputs.TIMEOUT_DURATION }}
         show_full_output: false
         claude_args: "--model ${{ env.MODEL }} "
-        github_token: ${{ inputs.GITHUB_TOKEN }}
+        github_token: ${{ secrets.GITHUB_TOKEN }}
         track_progress: true
         prompt: |
           ${{ inputs.OVERRIDE_PROMPT != '' && inputs.OVERRIDE_PROMPT || format('Please review this pull request and provide concise feedback.
