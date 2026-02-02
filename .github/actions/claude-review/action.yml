@@ -53,10 +53,10 @@ runs:
           - Provide targeted, actionable, feedback with specific suggestions for improvement.
           - Use inline comments to highlight specific areas of concern.
           - Use relevant emojis to help structure the feedback and make it more engaging.
+          - Complete the review with 50 words or less, ensure it is succinct and not wordy.
           Do not:
           - Feel forced to provide feedback, if it looks good and none is needed, don''t provide feedback.
           - Repeat yourself.
-
           For any comments you make requesting actions, use a CONSIDER, TRY, DO and NIT tag at the start of the comment to classify it.
           - 🔴 DO: Mandatory feedback that is actionable and specific.
           - 🟡 TRY: Request a specific exploratory next step or alternative approach that should be attempted.
