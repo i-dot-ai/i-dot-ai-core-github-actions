@@ -35,9 +35,10 @@ runs:
       with:
         anthropic_api_key: ${{ inputs.ANTHROPIC_API_KEY }}
         timeout_minutes: ${{ inputs.TIMEOUT_DURATION }}
-        show_full_output: true
+        show_full_output: false
         claude_args: "--model ${{ env.MODEL }} "
         github_token: ${{ inputs.GITHUB_TOKEN }}
+        track_progress: true
         prompt: |
           ${{ inputs.OVERRIDE_PROMPT != '' && inputs.OVERRIDE_PROMPT || format('Please review this pull request and provide concise feedback.
           Focus on:
