@@ -137,6 +137,9 @@ jobs:
         username: ${{ secrets.DOCKERHUB_USERNAME }}
         password: ${{ secrets.DOCKERHUB_TOKEN }}
 
+    - name: Set global git credentials
+      run: git config --global url.https://${{ secrets.AWS_GITHUBRUNNER_PAT }}@github.com/.insteadOf https://github.com/
+
     - name: Docker build (Private)
       if: ${{ inputs.PUBLIC_ECR == false}}
       env:
@@ -144,6 +147,7 @@ jobs:
         APP_NAME: ${{ inputs.APP_NAME }}
         SERVICE: ${{ inputs.SERVICE }}
         CACHE: ${{ env.EFS_MOUNT_PATH }}
+        GITHUB_TOKEN: ${{ secrets.AWS_GITHUBRUNNER_PAT }}
       run: |
         cd main
         make docker_build service=$SERVICE cache=$CACHE
@@ -156,6 +160,7 @@ jobs:
           SERVICE: ${{ inputs.SERVICE }}
           VERSION: ${{ inputs.VERSION }}
           CACHE: ${{ env.EFS_MOUNT_PATH }}
+          GITHUB_TOKEN: ${{ secrets.AWS_GITHUBRUNNER_PAT }}
       run: |
         cd main
         make docker_build_public_image service=$SERVICE cache=$CACHE version=$VERSION
