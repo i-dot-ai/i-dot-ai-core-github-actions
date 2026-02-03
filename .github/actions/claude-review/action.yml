@@ -16,13 +16,13 @@ inputs:
     description: 'Claude Model to use'
     required: false
     default: 'bedrock-claude-4.5-sonnet'
-secrets:
-  ANTHROPIC_API_KEY:
-    required: true
-    description: "API Key for Claude to use"
-  GITHUB_TOKEN: 
-    description: 'GitHub token for API access'
-    required: true
+  secrets:
+    ANTHROPIC_API_KEY:
+      required: true
+      description: "API Key for Claude to use"
+    GITHUB_TOKEN: 
+      description: 'GitHub token for API access'
+      required: true
 
 runs:
   using: composite
