@@ -16,9 +16,6 @@ on:
       EMAIL_ADDRESS:
           type: string
           required: true
-      USE_OIDC:
-          type: string
-          required: false
 
     secrets:
       AWS_GITHUBRUNNER_PAT:
@@ -57,12 +54,9 @@ jobs:
     - name: AWS Authentication
       uses: i-dot-ai/i-dot-ai-core-github-actions/.github/actions/authenticate-aws@main
       with:
-        USE_OIDC: ${{ inputs.USE_OIDC }}
         ENVIRONMENT: ${{ inputs.ENVIRONMENT }}
         AWS_REGION: ${{ secrets.AWS_REGION }}
         AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
-        AWS_GITHUBRUNNER_USER_ACCESS_KEY: ${{ secrets.AWS_GITHUBRUNNER_USER_ACCESS_KEY }}
-        AWS_GITHUBRUNNER_USER_SECRET_ID: ${{ secrets.AWS_GITHUBRUNNER_USER_SECRET_ID }}
 
     - name: Check AWS Auth
       shell: bash

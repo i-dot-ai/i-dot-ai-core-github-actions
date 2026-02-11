@@ -9,13 +9,9 @@ on:
       RUNNER_LABEL:
         required: true
         type: string
-      USE_OIDC:
-        type: string
-        required: false
       INSTANCE:
         type: string
         required: false
-
     secrets:
       AWS_GITHUBRUNNER_PAT:
         required: true
@@ -58,23 +54,17 @@ jobs:
       uses: i-dot-ai/i-dot-ai-core-github-actions/.github/actions/authenticate-aws@main
       with:
         APP_NAME: ${{ inputs.APP_NAME }}
-        USE_OIDC: ${{ inputs.USE_OIDC }}
         AWS_REGION: ${{ secrets.AWS_REGION }}
         AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
-        AWS_GITHUBRUNNER_USER_ACCESS_KEY: ${{ secrets.AWS_GITHUBRUNNER_USER_ACCESS_KEY }}
-        AWS_GITHUBRUNNER_USER_SECRET_ID: ${{ secrets.AWS_GITHUBRUNNER_USER_SECRET_ID }}
 
     - name: Check AWS Auth
       shell: bash
       run: aws sts get-caller-identity
 
-
-
     - name: Checkout
       uses: actions/checkout@v4
       with:
           path: main
-
 
     - name: Terraform apply
       env:

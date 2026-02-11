@@ -37,9 +37,6 @@ on:
       ECR_REPO:
           type: string
           required: false
-      USE_OIDC:
-          type: string
-          required: false
       ARTIFACTS_PATH:
         description: 'An optional path from which to download build artifacts'
         required: false
@@ -93,12 +90,9 @@ jobs:
       uses: i-dot-ai/i-dot-ai-core-github-actions/.github/actions/authenticate-aws@main
       with:
         APP_NAME: ${{ inputs.APP_NAME }}
-        USE_OIDC: ${{ inputs.USE_OIDC }}
         ENVIRONMENT: ${{ inputs.ENVIRONMENT }}
         AWS_REGION: ${{ secrets.AWS_REGION }}
         AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
-        AWS_GITHUBRUNNER_USER_ACCESS_KEY: ${{ secrets.AWS_GITHUBRUNNER_USER_ACCESS_KEY }}
-        AWS_GITHUBRUNNER_USER_SECRET_ID: ${{ secrets.AWS_GITHUBRUNNER_USER_SECRET_ID }}
 
     - name: Checkout i-ai-core-infrastructure
       uses: actions/checkout@v4

@@ -27,11 +27,6 @@ on:
         required: false
         type: string
         default: prod
-      USE_OIDC:
-        description: 'Use OIDC for AWS authentication'
-        required: false
-        type: boolean
-        default: false
       PUBLIC_ECR:
         description: 'Use Public ECR to push images'
         required: false
@@ -83,12 +78,9 @@ jobs:
       uses: i-dot-ai/i-dot-ai-core-github-actions/.github/actions/authenticate-aws@main
       with:
           APP_NAME: ${{ inputs.APP_NAME }}
-          USE_OIDC: ${{ inputs.USE_OIDC }}
           ENVIRONMENT: ${{ inputs.ENVIRONMENT }}
           AWS_REGION: ${{ secrets.AWS_REGION }}
           AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
-          AWS_GITHUBRUNNER_USER_ACCESS_KEY: ${{ secrets.AWS_GITHUBRUNNER_USER_ACCESS_KEY }}
-          AWS_GITHUBRUNNER_USER_SECRET_ID: ${{ secrets.AWS_GITHUBRUNNER_USER_SECRET_ID }}
 
     - name: Login to Amazon ECR (Private)
       if: ${{ inputs.PUBLIC_ECR == false}}
@@ -101,8 +93,7 @@ jobs:
       run: |
         aws ecr-public get-login-password --region us-east-1  | docker login --username AWS --password-stdin ${{ inputs.USE_PUBLIC_URL }}
       shell: bash
-      
-      
+
     - name: Create Docker cache container
       env:
         INSTANCE_NAME: ${{ inputs.DOCKER_BUILD_INSTANCE }}

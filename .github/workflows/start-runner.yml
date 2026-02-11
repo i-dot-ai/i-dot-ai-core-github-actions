@@ -16,11 +16,6 @@ on:
       USE_CUSTOM_RUNNER:
         type: string
         default: "0"
-      USE_OIDC:
-        description: 'Use OIDC for AWS authentication'
-        required: true
-        type: boolean
-        default: true
       APP_NAME:
         required: false
         type: string
@@ -60,7 +55,6 @@ jobs:
         uses: i-dot-ai/i-dot-ai-core-github-actions/.github/actions/authenticate-aws@fix/remove-option-for-access-keys
         with:
           APP_NAME: ${{ inputs.APP_NAME }}
-          USE_OIDC: ${{ inputs.USE_OIDC }}
           ENVIRONMENT: ${{ inputs.ENVIRONMENT }}
           AWS_REGION: ${{ secrets.AWS_REGION }}
           AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}

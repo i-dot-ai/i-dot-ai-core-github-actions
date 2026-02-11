@@ -24,11 +24,6 @@ on:
         required: false
         type: string
         default: prod
-      USE_OIDC:
-        description: 'Use OIDC for AWS authentication'
-        required: false
-        type: boolean
-        default: false
     secrets:
       AWS_GITHUBRUNNER_PAT:
         required: true
@@ -58,14 +53,11 @@ jobs:
         token: ${{ secrets.AWS_GITHUBRUNNER_PAT }}
 
     - name: AWS Authentication
-      uses: ./.github/actions/authenticate_aws
+      uses: i-dot-ai/i-dot-ai-core-github-actions/.github/actions/authenticate-aws@main
       with:
-          USE_OIDC: ${{ inputs.USE_OIDC }}
           ENVIRONMENT: ${{ inputs.ENVIRONMENT }}
           AWS_REGION: ${{ secrets.AWS_REGION }}
           AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
-          AWS_GITHUBRUNNER_USER_ACCESS_KEY: ${{ secrets.AWS_GITHUBRUNNER_USER_ACCESS_KEY }}
-          AWS_GITHUBRUNNER_USER_SECRET_ID: ${{ secrets.AWS_GITHUBRUNNER_USER_SECRET_ID }}
 
     - name: Dump inputs context
       env:
