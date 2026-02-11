@@ -27,10 +27,8 @@ on:
         required: true
       AWS_GITHUBRUNNER_USER_ACCESS_KEY: # now obsolete, but needs to remain to ensure backwards compatibility for existing consumers.
         required: false
-        type: string
       AWS_GITHUBRUNNER_USER_SECRET_ID: # now obsolete, but needs to remain to ensure backwards compatibility for existing consumers.
         required: false
-        type: string
 
 jobs:
   apply-ip-config:
