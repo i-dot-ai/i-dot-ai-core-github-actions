@@ -9,7 +9,8 @@ inputs:
         required: false
         description: 'optional flag for the app name, used to override the role name if required'
     USE_OIDC:
-        description: 'Use OIDC for AWS authentication. Supported values true or false'
+        description: 'Use OIDC for AWS authentication'
+        type: boolean
         required: true
         default: true
     AWS_REGION:
