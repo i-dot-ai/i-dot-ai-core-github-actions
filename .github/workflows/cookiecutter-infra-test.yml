@@ -16,6 +16,10 @@ on:
         required: false
         type: string
         default: prod
+      USE_OIDC: # now obsolete, but needs to remain to ensure backwards compatibility for existing consumers.
+        required: false
+        type: boolean
+        default: true
     secrets:
       AWS_GITHUBRUNNER_PAT:
         required: true
