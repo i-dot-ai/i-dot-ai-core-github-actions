@@ -9,34 +9,20 @@ inputs:
         required: false
         description: 'optional flag for the app name, used to override the role name if required'
     USE_OIDC:
-        description: "Use OIDC for AWS authentication. Supported values 'true' or 'false'"
-        required: false
-        default: 'false'
+        description: 'Use OIDC for AWS authentication'
+        type: boolean
+        required: true
+        default: true
     AWS_REGION:
         description: 'AWS region'
         required: true
     AWS_ACCOUNT_ID:
         description: 'AWS account ID'
         required: true
-    AWS_GITHUBRUNNER_USER_ACCESS_KEY:
-        description: 'AWS access key ID'
-        required: false
-    AWS_GITHUBRUNNER_USER_SECRET_ID:
-        description: 'AWS secret access key'
-        required: false
 
 runs:
   using: "composite"
   steps:
-    - name: Configure AWS credentials with Access Keys
-      uses: aws-actions/configure-aws-credentials@v4
-      if: ${{ inputs.USE_OIDC == 'false' }}
-      with:
-        aws-access-key-id: ${{ inputs.AWS_GITHUBRUNNER_USER_ACCESS_KEY }}
-        aws-secret-access-key: ${{ inputs.AWS_GITHUBRUNNER_USER_SECRET_ID }}
-        aws-region: ${{ inputs.AWS_REGION }}
-        mask-aws-account-id: 'yes'
-
     - name: Configure AWS credentials with OIDC
       uses: aws-actions/configure-aws-credentials@v4
       if: ${{ inputs.USE_OIDC == 'true' }}
