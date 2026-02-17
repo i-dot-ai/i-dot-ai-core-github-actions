@@ -11,7 +11,7 @@ inputs:
     USE_OIDC:
         description: 'Use OIDC for AWS authentication'
         type: boolean
-        required: true
+        required: false
         default: true
     AWS_REGION:
         description: 'AWS region'
