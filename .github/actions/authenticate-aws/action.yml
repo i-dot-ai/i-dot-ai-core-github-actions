@@ -19,13 +19,33 @@ inputs:
     AWS_ACCOUNT_ID:
         description: 'AWS account ID'
         required: true
+    AWS_GITHUBRUNNER_USER_ACCESS_KEY: # now obsolete, but needs to remain to ensure backwards compatibility for existing consumers.
+        description: 'AWS access key ID'
+        required: false
+    AWS_GITHUBRUNNER_USER_SECRET_ID: # now obsolete, but needs to remain to ensure backwards compatibility for existing consumers.
+        description: 'AWS secret access key'
+        required: false
+    LEGACY: # This input has been added to facilitate access key auth into AWS accounts outside of i.AI's control.
+        description: 'Use legacy functionality'
+        type: boolean
+        required: false
+        default: false
 
 runs:
   using: "composite"
   steps:
+    - name: Configure AWS credentials with Access Keys
+      uses: aws-actions/configure-aws-credentials@v4
+      if: ${{ inputs.LEGACY == 'true' }}
+      with:
+        aws-access-key-id: ${{ inputs.AWS_GITHUBRUNNER_USER_ACCESS_KEY }}
+        aws-secret-access-key: ${{ inputs.AWS_GITHUBRUNNER_USER_SECRET_ID }}
+        aws-region: ${{ inputs.AWS_REGION }}
+        mask-aws-account-id: 'yes'
+    
     - name: Configure AWS credentials with OIDC
       uses: aws-actions/configure-aws-credentials@v4
-      if: ${{ inputs.USE_OIDC == 'true' }}
+      if: ${{ inputs.USE_OIDC == 'true' && inputs.LEGACY == 'false' }}
       with:
         aws-region: ${{ inputs.AWS_REGION }}
         mask-aws-account-id: 'yes'
