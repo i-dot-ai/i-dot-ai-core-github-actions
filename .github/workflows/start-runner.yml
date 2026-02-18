@@ -65,7 +65,7 @@ jobs:
         run: echo "$INPUTS"
 
       - name: AWS Authentication
-        uses: i-dot-ai/i-dot-ai-core-github-actions/.github/actions/authenticate-aws@hotfix/legacy-action-workaround
+        uses: i-dot-ai/i-dot-ai-core-github-actions/.github/actions/authenticate-aws@main
         with:
           APP_NAME: ${{ inputs.APP_NAME }}
           ENVIRONMENT: ${{ inputs.ENVIRONMENT }}
