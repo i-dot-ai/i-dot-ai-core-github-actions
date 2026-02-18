@@ -23,6 +23,11 @@ on:
         required: false
         type: boolean
         default: true
+      LEGACY: # This input has been added to facilitate access key auth into AWS accounts outside of i.AI's control.
+        description: 'Use legacy functionality'
+        type: boolean
+        required: false
+        default: false
     secrets:
       AWS_GITHUBRUNNER_PAT:
         required: true
@@ -60,12 +65,13 @@ jobs:
         run: echo "$INPUTS"
 
       - name: AWS Authentication
-        uses: i-dot-ai/i-dot-ai-core-github-actions/.github/actions/authenticate-aws@main
+        uses: i-dot-ai/i-dot-ai-core-github-actions/.github/actions/authenticate-aws@hotfix/legacy-action-workaround
         with:
           APP_NAME: ${{ inputs.APP_NAME }}
           ENVIRONMENT: ${{ inputs.ENVIRONMENT }}
           AWS_REGION: ${{ secrets.AWS_REGION }}
           AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
+          LEGACY: ${{ inputs.LEGACY }}
 
       - name: Check for persistent runner
         id: check-persistent-running
