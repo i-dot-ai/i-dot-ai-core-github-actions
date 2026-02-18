@@ -19,6 +19,12 @@ inputs:
     AWS_ACCOUNT_ID:
         description: 'AWS account ID'
         required: true
+    AWS_GITHUBRUNNER_USER_ACCESS_KEY: # now obsolete, but needs to remain to ensure backwards compatibility for existing consumers.
+        description: 'AWS access key ID'
+        required: false
+    AWS_GITHUBRUNNER_USER_SECRET_ID: # now obsolete, but needs to remain to ensure backwards compatibility for existing consumers.
+        description: 'AWS secret access key'
+        required: false
     LEGACY: # This input has been added to facilitate access key auth into AWS accounts outside of i.AI's control.
         description: 'Use legacy functionality'
         type: boolean
