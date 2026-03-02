@@ -16,9 +16,10 @@ jobs:
       - name: Skip - workflow disabled
         run: |
           echo "This workflow has been centrally disabled and will take no action."
-          echo "Contact the infrastructure team if you believe this is in error."
+          echo "Contact the platform team if you need help."
 
   check_existing_prs:
+    # if: github.repository == 'i-dot-ai/${{ github.repository }}'
     if: false
     needs:
       - disabled
@@ -53,6 +54,7 @@ jobs:
             return result;
 
   update:
+    # if: needs.check_existing_prs.outputs.pr_already_open == 'false'
     if: false
     needs:
       - check_existing_prs
