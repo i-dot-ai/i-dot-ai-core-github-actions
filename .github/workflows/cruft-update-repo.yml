@@ -9,8 +9,19 @@ on:
         required: true 
 
 jobs:
+  disabled:
+    name: Workflow disabled
+    runs-on: ubuntu-latest
+    steps:
+      - name: Skip - workflow disabled
+        run: |
+          echo "This workflow has been centrally disabled and will take no action."
+          echo "Contact the infrastructure team if you believe this is in error."
+
   check_existing_prs:
-    if: github.repository == 'i-dot-ai/${{ github.repository }}'
+    if: false
+    needs:
+      - disabled
     runs-on: ubuntu-latest
     outputs:
       pr_already_open: ${{ steps.check_prs_open.outputs.result }}
@@ -42,7 +53,7 @@ jobs:
             return result;
 
   update:
-    if: needs.check_existing_prs.outputs.pr_already_open == 'false'
+    if: false
     needs:
       - check_existing_prs
     name: ${{ matrix.type }}
@@ -86,7 +97,7 @@ jobs:
           sudo sh -c "echo 'set man-db/auto-update false' | debconf-communicate"
           sudo rm -f /var/lib/man-db/auto-update
 
-          # Main Install block
+          # Main Install block
           sudo apt-get update && sudo apt-get install -y --no-install-recommends wiggle=1.3-1
 
           computed_hash=$(shasum -a 256 /usr/bin/wiggle | awk '{print $1}')
@@ -132,7 +143,7 @@ jobs:
 
             wiggle --merge --replace $original_file $rej_file
 
-            # Handle Wiggle merge failures
+            # Handle Wiggle merge failures
             if [ $? == 2 ]; then 
                 echo "ERROR: $original_file"
                 errored_files+=($original_file)
@@ -150,7 +161,7 @@ jobs:
 
       - name: Create pull request
         if: steps.check.outputs.has_changes == '1'
-        uses: peter-evans/create-pull-request@5e914681df9dc83aa4e4905692ca88beb2f9e91f # v7.0.5
+        uses: peter-evans/create-pull-request@5e914681df9dc83aa4e4905692ca88beb2f9e91f # v7.0.5
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           add-paths: ${{ matrix.add-paths }}
