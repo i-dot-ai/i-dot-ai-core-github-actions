@@ -39,6 +39,7 @@ runs:
         claude_args: "--model ${{ env.MODEL }} "
         github_token: ${{ secrets.GITHUB_TOKEN }}
         track_progress: true
+        allowed_bots: aikido-autofix
         prompt: |
           ${{ inputs.OVERRIDE_PROMPT != '' && inputs.OVERRIDE_PROMPT || format('Please review this pull request and provide concise feedback.
           Focus on:
