@@ -39,6 +39,7 @@ on:
       BUILD_DIRECTORY:
         description: "Path to the built static site output directory"
         required: false
+        type: string
         default: "frontend/dist"
     secrets:
       AWS_GITHUBRUNNER_PAT:
