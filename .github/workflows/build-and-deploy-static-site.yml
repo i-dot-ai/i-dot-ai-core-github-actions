@@ -77,6 +77,9 @@ jobs:
     needs:
       - start-runner
     environment: ${{ inputs.ENVIRONMENT }}
+    env:
+      BUILD_ENV_VARS: ${{ secrets.BUILD_ENV_VARS }}
+      CLOUDFRONT_DISTRIBUTION_ID: ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }}
     permissions:
       id-token: write
       contents: read
@@ -93,7 +96,7 @@ jobs:
           node-version: ${{ inputs.NODE_VERSION }}
 
       - name: Create .env file
-        if: ${{ secrets.BUILD_ENV_VARS != '' }}
+        if: ${{ env.BUILD_ENV_VARS != '' }}
         run: |
           echo "${{ secrets.BUILD_ENV_VARS }}" >> .env
         shell: bash
@@ -119,7 +122,7 @@ jobs:
         shell: bash
 
       - name: Invalidate CloudFront cache
-        if: ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID != '' }}
+        if: ${{ env.CLOUDFRONT_DISTRIBUTION_ID != '' }}
         run: |
           aws cloudfront create-invalidation \
             --distribution-id ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }} \
