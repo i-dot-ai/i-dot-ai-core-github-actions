@@ -38,8 +38,7 @@ on:
         default: "cd frontend && npm run build"
       BUILD_DIRECTORY:
         description: "Path to the built static site output directory"
-        required: true
-        type: string
+        required: false
         default: "frontend/dist"
     secrets:
       AWS_GITHUBRUNNER_PAT:
