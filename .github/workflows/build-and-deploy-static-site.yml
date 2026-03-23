@@ -115,8 +115,11 @@ jobs:
           AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
 
       - name: Sync to S3
+        env:
+          BUILD_DIRECTORY: ${{ inputs.BUILD_DIRECTORY }}
+          SITE_PREFIX: ${{ inputs.SITE_PREFIX || github.event.repository.name }}
         run: |
-          aws s3 sync ${{ inputs.BUILD_DIRECTORY }} s3://${{ secrets.DESTINATION_BUCKET }}/${{ inputs.SITE_PREFIX || github.event.repository.name }}/ --delete
+          aws s3 sync $BUILD_DIRECTORY s3://${{ secrets.DESTINATION_BUCKET }}/$SITE_PREFIX/ --delete
         shell: bash
 
       - name: Invalidate CloudFront cache

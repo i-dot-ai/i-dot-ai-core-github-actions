@@ -68,7 +68,9 @@ jobs:
           terraform_version: ${{ needs.determine-terraform-version.outputs.terraform_version }}
 
       - name: Terraform Format Check
-        run: terraform fmt -check -recursive ${{ inputs.TERRAFORM_DIRECTORY }}/
+        env:
+          TERRAFORM_DIRECTORY: ${{ inputs.TERRAFORM_DIRECTORY }}
+        run: terraform fmt -check -recursive $TERRAFORM_DIRECTORY/
 
   terraform-lint:
     name: Terraform Lint (tflint)
