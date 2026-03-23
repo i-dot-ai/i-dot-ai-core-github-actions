@@ -51,9 +51,9 @@ on:
       SLACK_WEBHOOK_URL:
         required: true
       DESTINATION_BUCKET:
-        required: true
+        required: false # if set to true, GitHub's parse-time validation will reject callers that don't have these secrets at their org/repo level. These are set within the i-dot-ai-core-github-actions repo secrets.
       CLOUDFRONT_DISTRIBUTION_ID:
-        required: true
+        required: false # if set to true, GitHub's parse-time validation will reject callers that don't have these secrets at their org/repo level. These are set within the i-dot-ai-core-github-actions repo secrets.
       BUILD_ENV_VARS:
         description: "Optional newline-separated KEY=VALUE pairs to write to a .env file before building"
         required: false
