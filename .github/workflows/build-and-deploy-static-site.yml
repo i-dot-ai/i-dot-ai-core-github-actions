@@ -49,6 +49,10 @@ on:
         description: "Optional newline-separated list of additional URLs to check for HTTP 200 (e.g. sub-pages, static assets)."
         required: false
         type: string
+      BUILD_ENV_VARS:
+        description: "Newline-separated KEY=VALUE pairs written to a .env file before the build step. Use for build-time configuration (e.g. base URLs, feature flags)."
+        required: false
+        type: string
     secrets:
       AWS_GITHUBRUNNER_PAT: # Org level secret
         required: true
@@ -111,9 +115,9 @@ jobs:
           node-version: ${{ inputs.NODE_VERSION }}
 
       - name: Create .env file
-        if: ${{ vars.BUILD_ENV_VARS != '' }}
+        if: ${{ inputs.BUILD_ENV_VARS != '' }}
         run: |
-          echo "${{ vars.BUILD_ENV_VARS }}" >> .env
+          echo "${{ inputs.BUILD_ENV_VARS }}" >> .env
         shell: bash
 
       - name: Install dependencies
