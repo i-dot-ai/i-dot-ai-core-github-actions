@@ -46,6 +46,10 @@ on:
         required: false
         default: false
         type: boolean
+      TF_FILE:
+        description: "Path to the .tf file containing the required_version constraint"
+        required: false
+        type: string
       USE_OIDC: # now obsolete, but needs to remain to ensure backwards compatibility for existing consumers.
         required: false
         type: boolean
@@ -135,6 +139,19 @@ jobs:
       run: |
         aws ecr get-login-password | docker login --username AWS --password-stdin ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com
       shell: bash
+
+    - name: Parse Terraform version
+      if: ${{ inputs.TF_FILE != '' }}
+      id: parse_version
+      uses: ukhsa-collaboration/devops-github-actions/.github/actions/parse-terraform-version@ea0aa2a80fccfb2a19e1c71443a0a60b85f618a8
+      with:
+        tf_file: ${{ inputs.TF_FILE }}
+
+    - name: Setup Terraform
+      if: ${{ inputs.TF_FILE != '' }}
+      uses: hashicorp/setup-terraform@v4
+      with:
+        terraform_version: ${{ steps.parse_version.outputs.tf_version }}
 
     - name: Terraform init
       env:
