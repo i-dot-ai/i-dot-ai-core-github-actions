@@ -13,6 +13,16 @@ on:
         description: "S3 key prefix for this site (must match the key in core-static-site sites.yaml). Defaults to the calling repository's name."
         required: false
         type: string
+      RUN_SMOKE_TEST:
+        description: "Whether to run a smoke test after deployment. Requires SITE_URL to be set as an environment variable in the caller repository."
+        required: false
+        type: boolean
+        default: false
+      SMOKE_TEST_WAIT_SECONDS:
+        description: "Seconds to wait for CloudFront propagation before smoke testing"
+        required: false
+        type: number
+        default: 30
       EC2_INSTANCE_TYPE:
         required: false
         type: string
@@ -42,25 +52,25 @@ on:
         type: string
         default: "frontend/dist"
     secrets:
-      AWS_GITHUBRUNNER_PAT:
+      AWS_GITHUBRUNNER_PAT: # Org level secret
         required: true
-      AWS_REGION:
+      AWS_REGION: # Org level secret
         required: true
-      AWS_ACCOUNT_ID:
+      AWS_ACCOUNT_ID: # Org level secret
         required: true
-      SLACK_WEBHOOK_URL:
+      SLACK_WEBHOOK_URL: # Org level secret
         required: true
-      STATIC_SITE_DEV_DESTINATION_BUCKET:
+      STATIC_SITE_DEV_DESTINATION_BUCKET: # Org level secret
         required: false
-      STATIC_SITE_PREPROD_DESTINATION_BUCKET:
+      STATIC_SITE_PREPROD_DESTINATION_BUCKET: # Org level secret
         required: false
-      STATIC_SITE_PROD_DESTINATION_BUCKET:
+      STATIC_SITE_PROD_DESTINATION_BUCKET: # Org level secret
         required: false
-      STATIC_SITE_DEV_CLOUDFRONT_DISTRIBUTION_ID:
+      STATIC_SITE_DEV_CLOUDFRONT_DISTRIBUTION_ID: # Org level secret
         required: false
-      STATIC_SITE_PREPROD_CLOUDFRONT_DISTRIBUTION_ID:
+      STATIC_SITE_PREPROD_CLOUDFRONT_DISTRIBUTION_ID: # Org level secret
         required: false
-      STATIC_SITE_PROD_CLOUDFRONT_DISTRIBUTION_ID:
+      STATIC_SITE_PROD_CLOUDFRONT_DISTRIBUTION_ID: # Org level secret
         required: false
       BUILD_ENV_VARS:
         description: "Optional newline-separated KEY=VALUE pairs to write to a .env file before building"
@@ -159,10 +169,37 @@ jobs:
             --paths "/${{ inputs.SITE_PREFIX || github.event.repository.name }}/*"
         shell: bash
 
+  smoke-test:
+    needs: build-and-deploy
+    if: inputs.RUN_SMOKE_TEST
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.ENVIRONMENT }}
+    steps:
+      - name: Wait for CloudFront propagation
+        run: sleep ${{ inputs.SMOKE_TEST_WAIT_SECONDS }}
+        shell: bash
+
+      - name: Smoke test site
+        env:
+          SITE_URL: ${{ vars.SITE_URL }}
+        run: |
+          if [ -z "$SITE_URL" ]; then
+            echo "::error::RUN_SMOKE_TEST is enabled but SITE_URL is not set in the '${{ inputs.ENVIRONMENT }}' environment variables."
+            exit 1
+          fi
+          HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" "$SITE_URL")
+          if [ "$HTTP_STATUS" -ne 200 ]; then
+            echo "::error::Smoke test failed: HTTP $HTTP_STATUS from $SITE_URL"
+            exit 1
+          fi
+          echo "Smoke test passed: HTTP $HTTP_STATUS"
+        shell: bash
+
   determine-success:
     needs:
       - start-runner
       - build-and-deploy
+      - smoke-test
     runs-on: ${{ needs.start-runner.outputs.label }}
     if: always()
     outputs:
@@ -170,7 +207,7 @@ jobs:
     steps:
       - id: success
         run: |
-          if [[ "${{ needs.build-and-deploy.result }}" == "success" ]]; then
+          if [[ "${{ needs.build-and-deploy.result }}" == "success" && "${{ needs.smoke-test.result }}" != "failure" ]]; then
               echo "success=true" >> $GITHUB_OUTPUT
           else
               echo "success=false" >> $GITHUB_OUTPUT
@@ -182,6 +219,7 @@ jobs:
     needs:
       - start-runner
       - build-and-deploy
+      - smoke-test
       - determine-success
     if: always()
     with:
@@ -198,6 +236,7 @@ jobs:
     needs:
       - start-runner
       - build-and-deploy
+      - smoke-test
       - determine-success
       - notify-slack
     with:
