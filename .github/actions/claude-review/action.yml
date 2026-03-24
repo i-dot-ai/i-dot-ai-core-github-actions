@@ -33,11 +33,11 @@ runs:
         MODEL: ${{ inputs.MODEL }}
         CLAUDE_CODE_DISABLE_EXPERIMENTAL_BETAS: 1
       with:
-        anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+        anthropic_api_key: ${{ inputs.ANTHROPIC_API_KEY }}
         timeout_minutes: ${{ inputs.TIMEOUT_DURATION }}
         show_full_output: false
         claude_args: "--model ${{ env.MODEL }} "
-        github_token: ${{ secrets.GITHUB_TOKEN }}
+        github_token: ${{ inputs.GITHUB_TOKEN }}
         track_progress: true
         allowed_bots: aikido-autofix
         prompt: |
