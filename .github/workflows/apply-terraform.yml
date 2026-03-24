@@ -203,6 +203,7 @@ jobs:
         aws s3 cp tf_apply_log.log "s3://i-dot-ai-$ENVIRONMENT-github-runner-logs/${FILENAME}"
 
     - name: Tag built image with deployment environment
+      if: ${{ inputs.IMAGE_TAG != '' }}
       env:
         ENVIRONMENT: ${{ inputs.ENVIRONMENT }}
         APP_NAME: ${{ inputs.APP_NAME }}
