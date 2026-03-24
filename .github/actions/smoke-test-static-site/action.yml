@@ -30,10 +30,8 @@ runs:
   steps:
     - name: Install uv
       uses: astral-sh/setup-uv@v7
-
-    - name: Install test dependencies
-      shell: bash
-      run: uv pip install --system -r ${{ github.action_path }}/requirements.txt
+      with:
+        enable-cache: false
 
     - name: Wait for CloudFront propagation
       shell: bash
@@ -47,6 +45,8 @@ runs:
         EXPECTED_SECURITY_HEADERS: ${{ inputs.expected-security-headers }}
         REQUEST_TIMEOUT: ${{ inputs.request-timeout }}
       run: >
+        uv run
+        --with-requirements ${{ github.action_path }}/requirements.txt
         python -m pytest
         ${{ github.action_path }}/smoke_tests/
         -v
