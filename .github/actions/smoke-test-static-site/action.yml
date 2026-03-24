@@ -1,8 +1,8 @@
 name: Smoke Test Static Site
 description: >
   Runs generic smoke tests against a deployed static site (CloudFront + S3).
-  Checks HTTP status codes, security headers, S3 origin header stripping,
-  and gzip compression. Results are published as a GitHub Actions test summary.
+  Checks HTTP status codes, security headers, and S3 origin header stripping.
+  Results are published as a GitHub Actions test summary.
 
 inputs:
   site-url:

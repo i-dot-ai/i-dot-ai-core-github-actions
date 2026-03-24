@@ -8,7 +8,6 @@ Generic smoke tests for static sites deployed behind CloudFront + S3.
 - Non-existent path returns HTTP 404
 - Security headers present (configurable)
 - S3 origin headers stripped (`x-amz-*`, `Server` != `AmazonS3`)
-- Gzip compression enabled (warning only)
 - Additional caller-supplied URLs return HTTP 200
 
 ## Usage in a reusable workflow
