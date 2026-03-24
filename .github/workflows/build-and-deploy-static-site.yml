@@ -50,10 +50,18 @@ on:
         required: true
       SLACK_WEBHOOK_URL:
         required: true
-      DESTINATION_BUCKET:
-        required: false # if set to true, GitHub's parse-time validation will reject callers that don't have these secrets at their org/repo level. These are set within the i-dot-ai-core-github-actions repo secrets.
-      CLOUDFRONT_DISTRIBUTION_ID:
-        required: false # if set to true, GitHub's parse-time validation will reject callers that don't have these secrets at their org/repo level. These are set within the i-dot-ai-core-github-actions repo secrets.
+      STATIC_SITE_DEV_DESTINATION_BUCKET:
+        required: false
+      STATIC_SITE_PREPROD_DESTINATION_BUCKET:
+        required: false
+      STATIC_SITE_PROD_DESTINATION_BUCKET:
+        required: false
+      STATIC_SITE_DEV_CLOUDFRONT_DISTRIBUTION_ID:
+        required: false
+      STATIC_SITE_PREPROD_CLOUDFRONT_DISTRIBUTION_ID:
+        required: false
+      STATIC_SITE_PROD_CLOUDFRONT_DISTRIBUTION_ID:
+        required: false
       BUILD_ENV_VARS:
         description: "Optional newline-separated KEY=VALUE pairs to write to a .env file before building"
         required: false
@@ -77,7 +85,12 @@ jobs:
     environment: ${{ inputs.ENVIRONMENT }}
     env:
       BUILD_ENV_VARS: ${{ secrets.BUILD_ENV_VARS }}
-      CLOUDFRONT_DISTRIBUTION_ID: ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }}
+      STATIC_SITE_DEV_DESTINATION_BUCKET: ${{ secrets.STATIC_SITE_DEV_DESTINATION_BUCKET }}
+      STATIC_SITE_PREPROD_DESTINATION_BUCKET: ${{ secrets.STATIC_SITE_PREPROD_DESTINATION_BUCKET }}
+      STATIC_SITE_PROD_DESTINATION_BUCKET: ${{ secrets.STATIC_SITE_PROD_DESTINATION_BUCKET }}
+      STATIC_SITE_DEV_CLOUDFRONT_DISTRIBUTION_ID: ${{ secrets.STATIC_SITE_DEV_CLOUDFRONT_DISTRIBUTION_ID }}
+      STATIC_SITE_PREPROD_CLOUDFRONT_DISTRIBUTION_ID: ${{ secrets.STATIC_SITE_PREPROD_CLOUDFRONT_DISTRIBUTION_ID }}
+      STATIC_SITE_PROD_CLOUDFRONT_DISTRIBUTION_ID: ${{ secrets.STATIC_SITE_PROD_CLOUDFRONT_DISTRIBUTION_ID }}
     permissions:
       id-token: write
       contents: read
@@ -114,18 +127,35 @@ jobs:
           AWS_REGION: ${{ secrets.AWS_REGION }}
           AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
 
+      - name: Resolve environment-specific secrets
+        run: |
+          ENV_PREFIX=$(echo "${{ inputs.ENVIRONMENT }}" | tr '[:lower:]' '[:upper:]')
+          BUCKET_VAR="STATIC_SITE_${ENV_PREFIX}_DESTINATION_BUCKET"
+          CF_VAR="STATIC_SITE_${ENV_PREFIX}_CLOUDFRONT_DISTRIBUTION_ID"
+          echo "DESTINATION_BUCKET=${!BUCKET_VAR}" >> $GITHUB_ENV
+          echo "CLOUDFRONT_DISTRIBUTION_ID=${!CF_VAR}" >> $GITHUB_ENV
+        shell: bash
+
+      - name: Validate environment-specific secrets
+        run: |
+          if [ -z "${{ env.DESTINATION_BUCKET }}" ] || [ -z "${{ env.CLOUDFRONT_DISTRIBUTION_ID }}" ]; then
+            echo "::error::Missing required secrets for environment '${{ inputs.ENVIRONMENT }}'. Ensure <ENV>_DESTINATION_BUCKET and <ENV>_CLOUDFRONT_DISTRIBUTION_ID are set as organization secrets."
+            exit 1
+          fi
+        shell: bash
+
       - name: Sync to S3
         env:
           BUILD_DIRECTORY: ${{ inputs.BUILD_DIRECTORY }}
           SITE_PREFIX: ${{ inputs.SITE_PREFIX || github.event.repository.name }}
         run: |
-          aws s3 sync $BUILD_DIRECTORY s3://${{ secrets.DESTINATION_BUCKET }}/$SITE_PREFIX/ --delete
+          aws s3 sync $BUILD_DIRECTORY s3://${{ env.DESTINATION_BUCKET }}/$SITE_PREFIX/ --delete
         shell: bash
 
       - name: Invalidate CloudFront cache
         run: |
           aws cloudfront create-invalidation \
-            --distribution-id ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }} \
+            --distribution-id ${{ env.CLOUDFRONT_DISTRIBUTION_ID }} \
             --paths "/${{ inputs.SITE_PREFIX || github.event.repository.name }}/*"
         shell: bash
 
