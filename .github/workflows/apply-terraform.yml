@@ -152,6 +152,7 @@ jobs:
       uses: hashicorp/setup-terraform@v4
       with:
         terraform_version: ${{ steps.parse_version.outputs.tf_version }}
+        terraform_wrapper: false
 
     - name: Terraform init
       env:
