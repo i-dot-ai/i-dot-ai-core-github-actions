@@ -15,13 +15,23 @@ jobs:
       # NODE_VERSION: "22"
       # BUILD_COMMAND: "cd frontend && npm run build"
       # SITE_URL: "https://my-site.example.com"
-    secrets:
-      AWS_GITHUBRUNNER_PAT: ${{ secrets.AWS_GITHUBRUNNER_PAT }}
-      AWS_REGION: ${{ secrets.AWS_REGION }}
-      AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
-      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-      STATIC_SITE_DEV_DESTINATION_BUCKET: ${{ secrets.STATIC_SITE_DEV_DESTINATION_BUCKET }}
-      STATIC_SITE_DEV_CLOUDFRONT_DISTRIBUTION_ID: ${{ secrets.STATIC_SITE_DEV_CLOUDFRONT_DISTRIBUTION_ID }}
+    secrets: inherit
+```
+
+With smoke tests enabled:
+
+```yaml
+jobs:
+  deploy:
+    uses: i-dot-ai/i-dot-ai-core-github-actions/.github/workflows/build-and-deploy-static-site.yml@main
+    with:
+      ENVIRONMENT: dev
+      COMMIT_HASH: ${{ github.sha }}
+      SITE_URL: https://my-site.static.dev.i.ai.gov.uk
+      SMOKE_TEST_URLS: |
+        https://my-site.static.dev.i.ai.gov.uk/about/
+        https://my-site.static.dev.i.ai.gov.uk/docs/
+    secrets: inherit
 ```
 
 ## Required inputs
@@ -64,13 +74,33 @@ These are marked as `required: false` in the workflow definition, but the **buil
 | `EC2_INSTANCE_TYPE` | `t3.large` | Self-hosted runner instance type. `t3.medium` is fine for smaller sites. |
 | `RUNNER_SIZE` | `large` | Runner disk/resource size. |
 | `SITE_URL` | _(none)_ | If provided, enables the smoke test job. |
-| `SMOKE_TEST_WAIT_SECONDS` | `30` | Seconds to wait for CloudFront propagation before the smoke test. |
+| `SMOKE_TEST_URLS` | _(none)_ | Newline-separated list of additional URLs to check for HTTP 200 (e.g. sub-pages, static assets). Only used when `SITE_URL` is set. |
 
 ## Optional secrets
 
 | Secret | Description |
 |---|---|
-| `BUILD_ENV_VARS` | Newline-separated `KEY=VALUE` pairs written to a `.env` file before the build step. Use this for build-time configuration (e.g. API URLs). |
+
+_(None at this time.)_
+
+## Environment variables (`vars`)
+
+The following values should be set as **environment variables** (not secrets) in each GitHub environment of the **caller repository** (Settings > Environments > [env] > Environment variables). Because the `build-and-deploy` job runs with `environment:` set, `vars.*` references automatically resolve to the correct environment.
+
+| Variable | Description |
+|---|---|
+| `BUILD_ENV_VARS` | Newline-separated `KEY=VALUE` pairs written to a `.env` file before the build step. Use this for build-time configuration (e.g. base URLs, feature flags). These values are baked into the static output and are **not secret**. |
+
+## Caller permissions
+
+If you use `SITE_URL` to enable smoke tests, the calling workflow must grant `checks: write` so the JUnit test summary can be published:
+
+```yaml
+permissions:
+  contents: read
+  id-token: write
+  checks: write
+```
 
 ## What each job does
 
@@ -78,6 +108,6 @@ These are marked as `required: false` in the workflow definition, but the **buil
 |---|---|
 | **start-runner** | Provisions a self-hosted EC2 runner. Blocking. |
 | **build-and-deploy** | Checks out code, installs dependencies, builds the site, syncs to S3 with `--delete`, and invalidates CloudFront. **Blocking.** Note: S3 sync uses `--delete`, so files in the S3 prefix that are not in the build output will be removed. |
-| **smoke-test** | Runs only when `SITE_URL` is provided. Curls the URL and expects HTTP 200. A **failed** smoke test marks the workflow as failed. A **skipped** smoke test (no `SITE_URL`) does not. |
+| **smoke-test** | Runs only when `SITE_URL` is provided. Uses the [`smoke-test-static-site`](../.github/actions/smoke-test-static-site/) composite action to run pytest-based checks: homepage returns 200, non-existent path returns 404, security headers present, S3 origin headers stripped, gzip compression, and any `SMOKE_TEST_URLS` return 200. Results are published as a JUnit test summary. A **failed** smoke test marks the workflow as failed. A **skipped** smoke test (no `SITE_URL`) does not. |
 | **notify-slack** | Always runs. Sends a success or failure message to the configured Slack webhook. |
 | **stop-runner** | Tears down the self-hosted runner. Always runs. |

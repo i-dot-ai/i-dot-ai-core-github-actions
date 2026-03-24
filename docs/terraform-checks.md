@@ -11,7 +11,6 @@ jobs:
     # with:
     #   TERRAFORM_DIRECTORY: "infrastructure"
     #   TF_FILE: "infrastructure/provider.tf"
-    #   CHECKOV_SOFT_FAIL: true
 ```
 
 No secrets need to be passed.

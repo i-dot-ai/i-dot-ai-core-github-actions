@@ -13,16 +13,10 @@ on:
         description: "S3 key prefix for this site (must match the key in core-static-site sites.yaml). Defaults to the calling repository's name."
         required: false
         type: string
-      RUN_SMOKE_TEST:
-        description: "Whether to run a smoke test after deployment. Requires SITE_URL to be set as an environment variable in the caller repository."
+      SITE_URL:
+        description: "URL to smoke test after deployment. If omitted, the smoke test is skipped."
         required: false
-        type: boolean
-        default: false
-      SMOKE_TEST_WAIT_SECONDS:
-        description: "Seconds to wait for CloudFront propagation before smoke testing"
-        required: false
-        type: number
-        default: 30
+        type: string
       EC2_INSTANCE_TYPE:
         required: false
         type: string
@@ -51,6 +45,10 @@ on:
         required: false
         type: string
         default: "frontend/dist"
+      SMOKE_TEST_URLS:
+        description: "Optional newline-separated list of additional URLs to check for HTTP 200 (e.g. sub-pages, static assets)."
+        required: false
+        type: string
     secrets:
       AWS_GITHUBRUNNER_PAT: # Org level secret
         required: true
@@ -72,9 +70,6 @@ on:
         required: false
       STATIC_SITE_PROD_CLOUDFRONT_DISTRIBUTION_ID: # Org level secret
         required: false
-      BUILD_ENV_VARS:
-        description: "Optional newline-separated KEY=VALUE pairs to write to a .env file before building"
-        required: false
 
 jobs:
   start-runner:
@@ -94,7 +89,6 @@ jobs:
       - start-runner
     environment: ${{ inputs.ENVIRONMENT }}
     env:
-      BUILD_ENV_VARS: ${{ secrets.BUILD_ENV_VARS }}
       STATIC_SITE_DEV_DESTINATION_BUCKET: ${{ secrets.STATIC_SITE_DEV_DESTINATION_BUCKET }}
       STATIC_SITE_PREPROD_DESTINATION_BUCKET: ${{ secrets.STATIC_SITE_PREPROD_DESTINATION_BUCKET }}
       STATIC_SITE_PROD_DESTINATION_BUCKET: ${{ secrets.STATIC_SITE_PROD_DESTINATION_BUCKET }}
@@ -117,9 +111,9 @@ jobs:
           node-version: ${{ inputs.NODE_VERSION }}
 
       - name: Create .env file
-        if: ${{ env.BUILD_ENV_VARS != '' }}
+        if: ${{ vars.BUILD_ENV_VARS != '' }}
         run: |
-          echo "${{ secrets.BUILD_ENV_VARS }}" >> .env
+          echo "${{ vars.BUILD_ENV_VARS }}" >> .env
         shell: bash
 
       - name: Install dependencies
@@ -171,29 +165,16 @@ jobs:
 
   smoke-test:
     needs: build-and-deploy
-    if: inputs.RUN_SMOKE_TEST
+    if: inputs.SITE_URL != ''
     runs-on: ubuntu-latest
-    environment: ${{ inputs.ENVIRONMENT }}
+    permissions:
+      checks: write
     steps:
-      - name: Wait for CloudFront propagation
-        run: sleep ${{ inputs.SMOKE_TEST_WAIT_SECONDS }}
-        shell: bash
-
-      - name: Smoke test site
-        env:
-          SITE_URL: ${{ vars.SITE_URL }}
-        run: |
-          if [ -z "$SITE_URL" ]; then
-            echo "::error::RUN_SMOKE_TEST is enabled but SITE_URL is not set in the '${{ inputs.ENVIRONMENT }}' environment variables."
-            exit 1
-          fi
-          HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" "$SITE_URL")
-          if [ "$HTTP_STATUS" -ne 200 ]; then
-            echo "::error::Smoke test failed: HTTP $HTTP_STATUS from $SITE_URL"
-            exit 1
-          fi
-          echo "Smoke test passed: HTTP $HTTP_STATUS"
-        shell: bash
+      - name: Run smoke tests
+        uses: i-dot-ai/i-dot-ai-core-github-actions/.github/actions/smoke-test-static-site@main
+        with:
+          site-url: ${{ inputs.SITE_URL }}
+          additional-urls: ${{ inputs.SMOKE_TEST_URLS }}
 
   determine-success:
     needs:
