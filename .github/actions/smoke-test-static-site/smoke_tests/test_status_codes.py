@@ -17,9 +17,15 @@ class TestHomepage:
 
 
 class TestNotFound:
-    """A clearly non-existent path must return HTTP 404."""
+    """A clearly non-existent path must not return HTTP 200.
 
-    def test_nonexistent_path_returns_404(
+    S3 behind CloudFront with OAC returns 403 for missing objects (it won't
+    confirm existence to an unauthorised caller). Sites with a custom error
+    response configured will return 404 instead. Both are acceptable -- the
+    important thing is that non-existent paths are not served as if they exist.
+    """
+
+    def test_nonexistent_path_does_not_return_200(
         self,
         http_session: requests.Session,
         site_url: str,
@@ -27,9 +33,9 @@ class TestNotFound:
     ) -> None:
         nonexistent_url = f"{site_url}/_smoke-test-nonexistent-{int(time.time())}/"
         response = http_session.get(nonexistent_url, timeout=request_timeout)
-        assert response.status_code == 404, (
+        assert response.status_code in (403, 404), (
             f"Non-existent path returned HTTP {response.status_code}, "
-            f"expected 404 - {nonexistent_url}"
+            f"expected 403 or 404 - {nonexistent_url}"
         )
 
 
