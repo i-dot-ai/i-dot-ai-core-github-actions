@@ -121,7 +121,9 @@ jobs:
         shell: bash
 
       - name: Install dependencies
-        run: ${{ inputs.INSTALL_COMMAND }}
+        env:
+          INSTALL_COMMAND: ${{ inputs.INSTALL_COMMAND }}
+        run: $INSTALL_COMMAND
         shell: bash
 
       - name: Build static site
