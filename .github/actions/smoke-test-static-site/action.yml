@@ -35,7 +35,9 @@ runs:
 
     - name: Wait for CloudFront propagation
       shell: bash
-      run: sleep ${{ inputs.propagation-delay }}
+      env:
+        PROPAGATION_DELAY: ${{ inputs.propagation-delay }}
+      run: sleep $PROPAGATION_DELAY
 
     - name: Run smoke tests
       shell: bash
