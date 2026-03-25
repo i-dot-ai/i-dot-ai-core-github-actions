@@ -127,7 +127,9 @@ jobs:
         shell: bash
 
       - name: Build static site
-        run: ${{ inputs.BUILD_COMMAND }}
+        env:
+          BUILD_COMMAND: ${{ inputs.BUILD_COMMAND }}
+        run: $BUILD_COMMAND
         shell: bash
 
       - name: AWS Authentication
@@ -138,8 +140,10 @@ jobs:
           AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
 
       - name: Resolve environment-specific secrets
+        env:
+          ENVIRONMENT: ${{ inputs.ENVIRONMENT }}
         run: |
-          ENV_PREFIX=$(echo "${{ inputs.ENVIRONMENT }}" | tr '[:lower:]' '[:upper:]')
+          ENV_PREFIX=$(echo "$ENVIRONMENT" | tr '[:lower:]' '[:upper:]')
           BUCKET_VAR="STATIC_SITE_${ENV_PREFIX}_DESTINATION_BUCKET"
           CF_VAR="STATIC_SITE_${ENV_PREFIX}_CLOUDFRONT_DISTRIBUTION_ID"
           echo "DESTINATION_BUCKET=${!BUCKET_VAR}" >> $GITHUB_ENV
@@ -147,9 +151,11 @@ jobs:
         shell: bash
 
       - name: Validate environment-specific secrets
+        env:
+          ENVIRONMENT: ${{ inputs.ENVIRONMENT }}
         run: |
           if [ -z "${{ env.DESTINATION_BUCKET }}" ] || [ -z "${{ env.CLOUDFRONT_DISTRIBUTION_ID }}" ]; then
-            echo "::error::Missing required secrets for environment '${{ inputs.ENVIRONMENT }}'. Ensure <ENV>_DESTINATION_BUCKET and <ENV>_CLOUDFRONT_DISTRIBUTION_ID are set as organization secrets."
+            echo "::error::Missing required secrets for environment '$ENVIRONMENT'. Ensure <ENV>_DESTINATION_BUCKET and <ENV>_CLOUDFRONT_DISTRIBUTION_ID are set as organization secrets."
             exit 1
           fi
         shell: bash
