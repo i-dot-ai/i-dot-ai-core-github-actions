@@ -183,7 +183,7 @@ jobs:
       checks: write
     steps:
       - name: Run smoke tests
-        uses: i-dot-ai/i-dot-ai-core-github-actions/.github/actions/smoke-test-static-site@EN-1421/workflow-for-static-content
+        uses: i-dot-ai/i-dot-ai-core-github-actions/.github/actions/smoke-test-static-site@main
         with:
           site-url: ${{ inputs.SITE_URL }}
           additional-urls: ${{ inputs.SMOKE_TEST_URLS }}
