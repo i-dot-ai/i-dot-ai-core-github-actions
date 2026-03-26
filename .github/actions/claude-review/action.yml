@@ -15,7 +15,7 @@ inputs:
   MODEL:
     description: 'Claude Model to use'
     required: false
-    default: 'bedrock-claude-4.5-sonnet'
+    default: 'bedrock-claude-4.6-sonnet'
   ANTHROPIC_API_KEY:
     required: true
     description: "API Key for Claude to use"
