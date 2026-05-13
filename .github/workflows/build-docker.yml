@@ -40,6 +40,11 @@ on:
         description: 'ECR Public URL'
         required: false
         type: string
+      PUSH_IMAGE:
+        description: 'Push the built image to ECR'
+        required: false
+        type: boolean
+        default: true
       USE_OIDC: # now obsolete, but needs to remain to ensure backwards compatibility for existing consumers.
         required: false
         type: boolean
@@ -165,7 +170,7 @@ jobs:
         make docker_build_public_image service=$SERVICE cache=$CACHE version=$VERSION
     
     - name: Docker Push (Private)
-      if: ${{ inputs.PUBLIC_ECR == false}}
+      if: ${{ inputs.PUBLIC_ECR == false && inputs.PUSH_IMAGE }}
       env:
         AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
         APP_NAME: ${{ inputs.APP_NAME }}
@@ -176,7 +181,7 @@ jobs:
         IMAGE=$(eval $(make docker_echo value=IMAGE service=$SERVICE) | awk '{print $1;}')
 
     - name: Docker Push (Public)
-      if: ${{ inputs.PUBLIC_ECR == true}}
+      if: ${{ inputs.PUBLIC_ECR == true && inputs.PUSH_IMAGE }}
       env:
         AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
         APP_NAME: ${{ inputs.APP_NAME }}
