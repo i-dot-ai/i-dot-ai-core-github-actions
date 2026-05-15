@@ -1,0 +1,120 @@
+contract_version: "1.0"
+artefact_type: "REUSABLE_WORKFLOW_CONTRACT"
+contract_id: "publish-context"
+locked_at: "SLICE-004a close"
+linked_lock: "LOCK-004"
+
+description: >-
+  Canonical input and output contract for the publish-context reusable
+  workflow at .github/workflows/publish-context.yaml. Caller workflows in
+  capability repositories invoke this workflow on push-to-main events when
+  context.yaml or context-detail.yaml change. Locked at SLICE-004a close;
+  any change requires a contract dispute.
+
+workflow_call:
+  inputs:
+    capability_id:
+      description: >-
+        Stable capability identifier matching the LOCK-001 schema's
+        capability_id pattern (^CAP-\d{3}$). The workflow MUST refuse if
+        this value disagrees with the capability_id field inside the
+        caller's context.yaml — the capability_id supplied via with: is
+        the source of truth and any disagreement is a hard failure.
+      type: string
+      required: true
+
+    context_index_path:
+      description: >-
+        Path to the Layer 1 record YAML, relative to the caller workspace
+        root. Defaults to context.yaml. Reusable workflows from i-dot-ai-
+        core-github-actions cannot access caller secrets without secrets:
+        inherit so this is a plain input rather than a secret.
+      type: string
+      required: false
+      default: "context.yaml"
+
+    context_detail_path:
+      description: >-
+        Path to the Layer 2 detail YAML. Defaults to context-detail.yaml.
+      type: string
+      required: false
+      default: "context-detail.yaml"
+
+    aws_region:
+      description: >-
+        AWS region of the platform context store. Defaults to eu-west-2 to
+        match SLICE-002a's resource provisioning.
+      type: string
+      required: false
+      default: "eu-west-2"
+
+    environment:
+      description: >-
+        Target environment for publish: dev, preprod, or prod. Maps to the
+        terraform.workspace name and selects which DynamoDB table and S3
+        bucket are written to (write steps land in SLICE-004b/c).
+      type: string
+      required: false
+      default: "prod"
+
+  secrets:
+    inheritance: "secrets: inherit"
+    description: >-
+      Caller MUST invoke this workflow with `secrets: inherit` so that the
+      workflow can assume the caller repository's OIDC-federated IAM role.
+      No new secrets are introduced by this contract; AWS credentials are
+      issued by GitHub OIDC and the caller's existing role trust policy.
+    rationale: >-
+      Reusable workflows in i-dot-ai-core-github-actions follow the
+      existing convention of secrets: inherit (see apply-terraform.yml).
+      Callers do not pass an explicit secret block.
+
+permissions_required:
+  id-token: "write   # required for OIDC AWS credential exchange"
+  contents: "read    # required for actions/checkout"
+
+response_shape:
+  conclusion: "success | failure"
+  step_summary_fields:
+    - "capability_id (echoed from input)"
+    - "schema_version (read from Layer 1 record after canonicalisation)"
+    - "layer1_sha256 (sha256 of the canonical Layer 1 YAML at write time)"
+    - "layer2_sha256 (sha256 of the Layer 2 YAML at write time)"
+    - "detail_ref (canonical s3://bucket/capabilities/<capability_id>/detail.yaml)"
+    - "writes_stubbed (true at SLICE-004a; false from SLICE-004b onwards)"
+  exit_codes:
+    "0":  "All validation steps passed; writes performed (SLICE-004b/c) or stubbed (SLICE-004a)."
+    "non-zero":
+      - "Schema validation failed against LOCK-001 or LOCK-002."
+      - "capability_id mismatch between with: input and YAML body."
+      - "schema_version mismatch between Layer 1 and Layer 2."
+      - "OIDC credential acquisition failed."
+
+workflow_invariants:
+  - "Schema validation step MUST run before any AWS write step. Write steps are stubbed in SLICE-004a but the ordering is established."
+  - "capability_id supplied via with: is the source of truth; the workflow refuses if YAML disagrees."
+  - "detail_ref in the Layer 1 record is rewritten by the workflow to s3://${bucket}/capabilities/${capability_id}/detail.yaml before any later step inspects it."
+  - "last_updated and updated_by are set by the workflow itself, NOT trusted from the input record. last_updated = current UTC ISO 8601 timestamp; updated_by = github.actor or 'github-actions[bot]'."
+  - "schema_version mismatch between Layer 1 and Layer 2 causes workflow failure before any write step runs."
+  - "Workflow MUST NOT echo secrets, AWS credentials, or session tokens to logs."
+  - "Workflow uses scripts/validate_context.py from this repository (canonical validator); MUST NOT inline or duplicate validation logic."
+
+caller_example: |
+  # In a capability repository's .github/workflows/publish-context.yml:
+  name: Publish Context
+  on:
+    push:
+      branches: [main]
+      paths:
+        - 'context.yaml'
+        - 'context-detail.yaml'
+  jobs:
+    publish:
+      uses: i-dot-ai/i-dot-ai-core-github-actions/.github/workflows/publish-context.yaml@v1
+      with:
+        capability_id: CAP-002
+      secrets: inherit
+
+stop_conditions_for_callers:
+  - "If the caller modifies the workflow signature locally, the contract is broken and the caller MUST upstream the change as a contract dispute."
+  - "If the caller passes a capability_id that does not match the YAML body, the workflow refuses; caller fixes one or the other."

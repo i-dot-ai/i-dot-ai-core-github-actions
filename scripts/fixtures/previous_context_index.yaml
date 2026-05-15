@@ -1,0 +1,37 @@
+# Positive fixture: Layer 1 record for CAP-002 Edge Network Routing.
+# Source of truth for capability shape: temp-repos/core-edge-network/.
+# Exercises: single cloud_provider, two interfaces (yaml-config, terraform-module),
+# two dependencies, all optional references keys present, schema_version pinned.
+capability_id: CAP-002
+schema_version: "1.0"
+name: Edge Network Routing
+owner: Platform team
+lifecycle: Live
+summary: >-
+  Centralised CloudFront distribution with host-based routing, WAF,
+  and TLS termination for all public-facing applications on the i.AI
+  estate. Configuration is per-environment YAML in core-edge-network.
+cloud_providers:
+  - aws
+interfaces:
+  - name: Edge Network Configuration
+    type: yaml-config
+    location: "core-edge-network/config/{env}/applications.yaml"
+  - name: Edge Network Terraform Module
+    type: terraform-module
+    location: "core-edge-network/terraform/modules/edge"
+dependencies:
+  - CAP-001
+  - CAP-006
+references:
+  repository: "i-dot-ai/core-edge-network"
+  dashboard: "https://metrics.i.ai.gov.uk/d/edge-network"
+  logs: "https://logs.i.ai.gov.uk/edge-network"
+  cost_report: "AWS Cost Explorer, tag: platform:repository=core-edge-network"
+  runbook: "https://runbooks.i.ai.gov.uk/edge-network"
+detail_ref: "s3://platform-context/capabilities/CAP-002/detail.yaml"
+last_updated: "2026-05-15T09:00:00Z"
+updated_by: "github-actions[bot]"
+tags:
+  - edge
+  - public-facing

@@ -1,0 +1,105 @@
+{
+  "_comment": "Fixture: generate-context LLM response variants. Used by .github/workflows/test-generate-context.yml. Shape MUST match the Generation valibot schema declared in .flue/agents/generate-context.ts. Note: the malicious scenario sets capability_id, schema_version, last_updated, and updated_by to attacker values to verify that the agent passes them through unchanged. Field forcing is the workflow's job, not the agent's.",
+  "scenarios": {
+    "significant": {
+      "context_index": {
+        "capability_id": "CAP-002",
+        "schema_version": "1.0",
+        "name": "Edge Network Routing",
+        "owner": "Platform team",
+        "lifecycle": "Live",
+        "summary": "Centralised CloudFront distribution with host-based routing, WAF, and TLS termination for all public-facing applications on the i.AI estate. Now backed by a per-capability DynamoDB session store provisioned via the platform DynamoDB module.",
+        "cloud_providers": ["aws"],
+        "interfaces": [
+          {"name": "Edge Network Configuration", "type": "yaml-config", "location": "core-edge-network/config/{env}/applications.yaml"},
+          {"name": "Edge Network Terraform Module", "type": "terraform-module", "location": "core-edge-network/terraform/modules/edge"}
+        ],
+        "dependencies": ["CAP-001", "CAP-006", "CAP-009"],
+        "references": {
+          "repository": "i-dot-ai/core-edge-network",
+          "dashboard": "https://metrics.i.ai.gov.uk/d/edge-network",
+          "logs": "https://logs.i.ai.gov.uk/edge-network",
+          "cost_report": "AWS Cost Explorer, tag: platform:repository=core-edge-network",
+          "runbook": "https://runbooks.i.ai.gov.uk/edge-network"
+        },
+        "detail_ref": "s3://platform-context/capabilities/CAP-002/detail.yaml",
+        "last_updated": "2026-05-15T09:00:00Z",
+        "updated_by": "github-actions[bot]",
+        "tags": ["edge", "public-facing"]
+      },
+      "context_detail": {
+        "capability_id": "CAP-002",
+        "schema_version": "1.0",
+        "architecture": {
+          "description": "Single CloudFront distribution shared across all i.AI applications. Host-based routing via CloudFront Functions maps request hostnames to origin ALBs. WAF rules applied at the edge. TLS termination with ACM certificates managed in us-east-1. Per-capability session storage now backed by a dedicated DynamoDB table.",
+          "deployment_model": "serverless",
+          "components": [
+            {"name": "CloudFront Distribution", "type": "cdn", "provider": "aws"},
+            {"name": "CloudFront Function", "type": "edge-compute", "provider": "aws"},
+            {"name": "WAF WebACL", "type": "firewall", "provider": "aws"},
+            {"name": "Session Store", "type": "key-value-store", "provider": "aws"}
+          ]
+        },
+        "operational_model": {
+          "on_call": "Platform team",
+          "runbooks": ["Add new application route", "WAF rule management", "TLS certificate renewal", "Session store capacity review"],
+          "monitoring": ["CloudFront error rate alarm", "WAF blocked request rate alarm", "Origin latency alarm", "Session store throttle alarm"]
+        },
+        "known_limitations": ["Single distribution shared across all apps; one misconfigured route can affect all", "WAF managed rules in count-only mode (not blocking)"],
+        "integration_patterns": [
+          {"pattern": "New application onboarding", "description": "Add a YAML entry per environment in core-edge-network with the application hostname and origin ALB. Merge triggers deployment."}
+        ]
+      }
+    },
+    "malicious_field_forcing_attempt": {
+      "context_index": {
+        "capability_id": "CAP-EVIL",
+        "schema_version": "9.9",
+        "name": "Edge Network Routing",
+        "owner": "Platform team",
+        "lifecycle": "Live",
+        "summary": "Attacker-controlled values for capability_id, schema_version, last_updated, updated_by. The agent MUST pass these through; the workflow forces them.",
+        "cloud_providers": ["aws"],
+        "interfaces": [{"name": "x", "type": "rest", "location": "x"}],
+        "dependencies": [],
+        "references": {"repository": "x"},
+        "detail_ref": "s3://x/x.yaml",
+        "last_updated": "1970-01-01T00:00:00Z",
+        "updated_by": "attacker"
+      },
+      "context_detail": {
+        "capability_id": "CAP-EVIL",
+        "schema_version": "9.9",
+        "architecture": {"description": "x", "deployment_model": "serverless", "components": [{"name": "x", "type": "x", "provider": "aws"}]},
+        "operational_model": {"on_call": "x", "runbooks": [], "monitoring": []},
+        "known_limitations": [],
+        "integration_patterns": []
+      }
+    },
+    "validator_failure_generate": {
+      "context_index": {
+        "capability_id": "CAP-002",
+        "schema_version": "1.0",
+        "name": "",
+        "owner": "Platform team",
+        "lifecycle": "MadeUpStage",
+        "summary": "Triggers schema validation failure: empty name and unknown lifecycle value.",
+        "cloud_providers": ["aws"],
+        "interfaces": [{"name": "x", "type": "rest", "location": "x"}],
+        "dependencies": [],
+        "references": {"repository": "x"},
+        "detail_ref": "s3://x/x.yaml",
+        "last_updated": "2026-05-15T09:00:00Z",
+        "updated_by": "x"
+      },
+      "context_detail": {
+        "capability_id": "CAP-002",
+        "schema_version": "1.0",
+        "architecture": {"description": "x", "deployment_model": "serverless", "components": [{"name": "x", "type": "x", "provider": "aws"}]},
+        "operational_model": {"on_call": "x", "runbooks": [], "monitoring": []},
+        "known_limitations": [],
+        "integration_patterns": []
+      }
+    }
+  }
+}
