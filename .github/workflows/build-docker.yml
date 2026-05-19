@@ -57,6 +57,8 @@ on:
         required: false
       DOCKERHUB_TOKEN:
         required: false
+      SENTRY_AUTH_TOKEN:
+        required: false
       AWS_GITHUBRUNNER_USER_ACCESS_KEY: # now obsolete, but needs to remain to ensure backwards compatibility for existing consumers.
         required: false
       AWS_GITHUBRUNNER_USER_SECRET_ID: # now obsolete, but needs to remain to ensure backwards compatibility for existing consumers.
@@ -147,6 +149,7 @@ jobs:
         SERVICE: ${{ inputs.SERVICE }}
         CACHE: ${{ env.EFS_MOUNT_PATH }}
         GITHUB_TOKEN: ${{ secrets.AWS_GITHUBRUNNER_PAT }}
+        SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
       run: |
         cd main
         make docker_build service=$SERVICE cache=$CACHE
@@ -160,6 +163,7 @@ jobs:
           VERSION: ${{ inputs.VERSION }}
           CACHE: ${{ env.EFS_MOUNT_PATH }}
           GITHUB_TOKEN: ${{ secrets.AWS_GITHUBRUNNER_PAT }}
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
       run: |
         cd main
         make docker_build_public_image service=$SERVICE cache=$CACHE version=$VERSION
