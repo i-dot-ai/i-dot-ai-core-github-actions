@@ -80,9 +80,11 @@ runs:
       uses: actions/setup-node@v4
       env:
         FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+        NODE_AUTH_TOKEN: ${{ inputs.registry-token }}
       with:
         node-version: ${{ inputs.node-version }}
         registry-url: 'https://registry.npmjs.org'
+        always-auth: true
 
     - name: Setup pnpm
       if: inputs.language == 'node'
@@ -184,6 +186,7 @@ runs:
       env:
         GITHUB_TOKEN: ${{ inputs.github-token }}
         NPM_TOKEN: ${{ inputs.registry-token }}
+        NODE_AUTH_TOKEN: ${{ inputs.registry-token }}
         UV_PUBLISH_TOKEN: ${{ inputs.registry-token }}
         LANGUAGE: ${{ inputs.language }}
         PACKAGES_DIR: ${{ inputs.packages-dir }}
