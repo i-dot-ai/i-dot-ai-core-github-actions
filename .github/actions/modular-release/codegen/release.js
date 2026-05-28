@@ -65,7 +65,7 @@ export function buildReleaseConfig(
   templateContents,
   options = {},
 ) {
-  const { repoUrl, packagesDir } = options;
+  const { repoUrl, packagesDir, preReleaseBranch } = options;
 
   if (!repoUrl) throw new Error('repoUrl is required');
   if (!language) throw new Error('language is required');
@@ -73,7 +73,21 @@ export function buildReleaseConfig(
   const packagePath = buildPackagePath(parentKeys, moduleName, packagesDir);
   const fragments = buildLanguageFragments(language, packagePath);
 
+  // Build the branches config. Default is just ['main']. When a pre-release
+  // branch is specified, add it as a prerelease channel so semantic-release
+  // publishes with a pre-release version and a non-latest dist-tag.
+  let branchesValue;
+  if (preReleaseBranch) {
+    branchesValue = JSON.stringify([
+      'main',
+      { name: preReleaseBranch, prerelease: true },
+    ]);
+  } else {
+    branchesValue = "['main']";
+  }
+
   let prepared = templateContents;
+  prepared = replaceTemplateVariables('${BRANCHES}', branchesValue, prepared);
   prepared = replaceTemplateVariables('${MODULE_NAME}', moduleName, prepared);
   prepared = replaceTemplateVariables('${REPO_URL}', repoUrl, prepared);
   prepared = replaceTemplateVariables('${PACKAGE_PATH}', packagePath, prepared);

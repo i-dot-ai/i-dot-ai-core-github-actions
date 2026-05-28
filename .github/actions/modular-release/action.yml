@@ -50,6 +50,20 @@ inputs:
       Defaults to the GitHub server URL plus the calling repository.
     required: false
     default: ''
+  dry-run:
+    description: >
+      When 'true', runs semantic-release in dry-run mode (no tags, no publish,
+      no commits). Useful for testing the pipeline end-to-end without side effects.
+    required: false
+    default: 'false'
+  pre-release-branch:
+    description: >
+      When set, adds the named branch as a pre-release channel in the
+      semantic-release config. Publishes will use a pre-release version
+      (e.g. 1.0.0-my-branch.1) and a non-latest npm dist-tag. Leave empty
+      for production releases from main.
+    required: false
+    default: ''
 
 outputs:
   released-modules:
@@ -128,6 +142,7 @@ runs:
         LANGUAGE: ${{ inputs.language }}
         PACKAGES_DIR: ${{ inputs.packages-dir }}
         REPO_URL_INPUT: ${{ inputs.repo-url }}
+        PRE_RELEASE_BRANCH: ${{ inputs.pre-release-branch }}
       run: |
         repo_url="$REPO_URL_INPUT"
         if [ -z "$repo_url" ]; then
@@ -147,6 +162,9 @@ runs:
         if [ -n "$PACKAGES_DIR" ]; then
           args+=(--packages-dir "$PACKAGES_DIR")
         fi
+        if [ -n "$PRE_RELEASE_BRANCH" ]; then
+          args+=(--pre-release-branch "$PRE_RELEASE_BRANCH")
+        fi
 
         node "$ACTION_PATH/codegen/cli.js" "${args[@]}" > "$config_dir/generated.json"
         cat "$config_dir/generated.json"
@@ -165,8 +183,15 @@ runs:
         PACKAGES_DIR: ${{ inputs.packages-dir }}
         CONFIG_DIR: ${{ steps.codegen.outputs.config-dir }}
         CHANGED: ${{ steps.detect.outputs.modules }}
+        DRY_RUN: ${{ inputs.dry-run }}
       run: |
         set -e
+
+        dry_run_flag=""
+        if [ "$DRY_RUN" = "true" ]; then
+          echo "::notice::Running in dry-run mode — no tags, commits, or publishes will occur."
+          dry_run_flag="--dry-run"
+        fi
 
         released='[]'
         failed='[]'
@@ -174,7 +199,7 @@ runs:
         for module in $CHANGED; do
           echo "::group::Releasing $module"
 
-          if [ "$LANGUAGE" = "node" ] && [ -n "$PACKAGES_DIR" ]; then
+          if [ "$LANGUAGE" = "node" ] && [ -n "$PACKAGES_DIR" ] && [ "$DRY_RUN" != "true" ]; then
             # Pre-publish smoke test: pack the module, install the tarball into
             # an empty environment, and require the package. Catches missing
             # runtime declarations that the workspace install masked.
@@ -187,11 +212,15 @@ runs:
             echo "Smoke install passed for $pkg_name"
           fi
 
-          if npx semantic-release --extends "$CONFIG_DIR/release.${module}.js"; then
-            tag=$(git tag --points-at HEAD | grep -- "-${module}$" | head -1 || true)
-            version="${tag#v}"
-            version="${version%-${module}}"
-            released=$(node -e "const a=$released; a.push({module:'$module', version:'$version', tag:'$tag'}); process.stdout.write(JSON.stringify(a));")
+          if npx semantic-release $dry_run_flag --extends "$CONFIG_DIR/release.${module}.js"; then
+            if [ "$DRY_RUN" = "true" ]; then
+              released=$(node -e "const a=$released; a.push({module:'$module', version:'dry-run', tag:'dry-run'}); process.stdout.write(JSON.stringify(a));")
+            else
+              tag=$(git tag --points-at HEAD | grep -- "-${module}$" | head -1 || true)
+              version="${tag#v}"
+              version="${version%-${module}}"
+              released=$(node -e "const a=$released; a.push({module:'$module', version:'$version', tag:'$tag'}); process.stdout.write(JSON.stringify(a));")
+            fi
           else
             failed=$(node -e "const a=$failed; a.push({module:'$module', error:'semantic-release failed'}); process.stdout.write(JSON.stringify(a));")
           fi

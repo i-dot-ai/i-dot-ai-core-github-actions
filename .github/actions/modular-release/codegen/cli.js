@@ -8,7 +8,8 @@
 //     --output <dir> \
 //     --language <node|python|terraform> \
 //     --repo-url <https://github.com/...> \
-//     [--packages-dir <dir>]
+//     [--packages-dir <dir>] \
+//     [--pre-release-branch <branch-name>]
 //
 // On success, writes the generated module list as JSON to stdout.
 
@@ -44,6 +45,7 @@ function main() {
     language: args['language'],
     repoUrl: args['repo-url'],
     packagesDir: args['packages-dir'],
+    preReleaseBranch: args['pre-release-branch'],
   });
 
   process.stdout.write(JSON.stringify(generated, null, 2));

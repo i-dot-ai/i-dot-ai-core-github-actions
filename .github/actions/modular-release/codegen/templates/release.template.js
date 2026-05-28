@@ -1,5 +1,5 @@
 const Configuration = {
-  branches: ['main'],
+  branches: ${BRANCHES},
   repositoryUrl: '${REPO_URL}',
   tagFormat: 'v${version}-${MODULE_NAME}',
   plugins: [

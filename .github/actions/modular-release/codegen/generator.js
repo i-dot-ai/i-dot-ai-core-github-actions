@@ -6,13 +6,14 @@ import { supportedLanguages } from './constants.js';
 // arguments rather than relying on relative paths from a working directory.
 //
 // Args:
-//   manifestPath:    path to the consumer's modules.yml
-//   templatePath:    path to the release.template.js shipped inside the action
-//   outputDirectory: directory to write release.<module>.js files into
-//                    (typically a runner temp dir, never the consumer repo)
-//   language:        'node' | 'python' | 'terraform'
-//   repoUrl:         consumer repo URL (https://github.com/<owner>/<repo>)
-//   packagesDir:     optional override for the package group directory
+//   manifestPath:       path to the consumer's modules.yml
+//   templatePath:       path to the release.template.js shipped inside the action
+//   outputDirectory:    directory to write release.<module>.js files into
+//                       (typically a runner temp dir, never the consumer repo)
+//   language:           'node' | 'python' | 'terraform'
+//   repoUrl:            consumer repo URL (https://github.com/<owner>/<repo>)
+//   packagesDir:        optional override for the package group directory
+//   preReleaseBranch:   optional branch name to add as a pre-release channel
 //
 // Returns the list of `{ name, parentKeys, configPath }` for downstream
 // dispatch.
@@ -23,6 +24,7 @@ export function generateModuleConfigurations({
   language,
   repoUrl,
   packagesDir,
+  preReleaseBranch,
 }) {
   if (!supportedLanguages.includes(language)) {
     throw new Error(
@@ -40,7 +42,7 @@ export function generateModuleConfigurations({
       language,
       templatePath,
       outputDirectory,
-      { repoUrl, packagesDir },
+      { repoUrl, packagesDir, preReleaseBranch },
     );
     generated.push({ name: key.name, parentKeys: key.parentKeys, configPath });
   }

@@ -41,6 +41,16 @@ on:
         type: string
         required: false
         default: ''
+      dry-run:
+        description: "When 'true', runs semantic-release in dry-run mode (no tags, no publish)"
+        type: boolean
+        required: false
+        default: false
+      pre-release-branch:
+        description: "Branch name to use as a pre-release channel (publishes pre-release versions with a non-latest dist-tag)"
+        type: string
+        required: false
+        default: ''
     secrets:
       registry-token:
         description: 'NPM_TOKEN for Node, PYPI_TOKEN for Python, empty for Terraform'
@@ -87,3 +97,5 @@ jobs:
           repo-url: ${{ inputs.repo-url }}
           registry-token: ${{ secrets.registry-token }}
           github-token: ${{ secrets.github-token }}
+          dry-run: ${{ inputs.dry-run }}
+          pre-release-branch: ${{ inputs.pre-release-branch }}
