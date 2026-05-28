@@ -5,7 +5,7 @@ on:
     paths:
       - '.github/actions/modular-release/**'
       - '.github/workflows/modular-release.yml'
-      - '.github/workflows/test-modular-release.yml'
+      - '.github/workflows/_test-modular-release.yml'
   push:
     branches: [main]
     paths:
