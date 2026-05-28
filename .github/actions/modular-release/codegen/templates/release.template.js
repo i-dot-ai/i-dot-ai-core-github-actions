@@ -1,5 +1,7 @@
 const Configuration = {
-  branches: ${BRANCHES},
+  // TEMP HACK: hard-coded branches for testing pre-release from EN-1538/modular-releases.
+  // Revert to `branches: ${BRANCHES},` before merging to main.
+  branches: ['main', { name: 'EN-1538/modular-releases', prerelease: 'EN-1538' }],
   repositoryUrl: '${REPO_URL}',
   tagFormat: 'v${version}-${MODULE_NAME}',
   plugins: [
