@@ -1,0 +1,208 @@
+name: 'Modular Release'
+description: >
+  Per-module release dispatch for module-library repositories.
+  Reads a modules.yml manifest, detects which modules changed in the merged
+  commit, generates a per-module semantic-release configuration, and runs
+  semantic-release once per changed module. Supports node, python, and
+  terraform consumers.
+
+inputs:
+  modules-manifest:
+    description: 'Path to modules.yml relative to the repository root'
+    required: true
+    default: 'modules.yml'
+  language:
+    description: "One of 'python', 'node', 'terraform'"
+    required: true
+  packages-dir:
+    description: >
+      Directory under the repo root that contains the per-module packages.
+      Used by change-detection and codegen. Defaults to the manifest's
+      group key (the Terraform-style layout).
+    required: false
+    default: ''
+  working-directory:
+    description: 'Directory to run all commands in (defaults to repo root)'
+    required: false
+    default: '.'
+  node-version:
+    description: 'Node.js version used to run semantic-release'
+    required: false
+    default: '20'
+  pnpm-version:
+    description: 'pnpm version (Node consumers only)'
+    required: false
+    default: '9'
+  python-version:
+    description: 'Python version (Python consumers only)'
+    required: false
+    default: '3.12'
+  registry-token:
+    description: 'NPM_TOKEN for Node, PYPI_TOKEN for Python, empty for Terraform'
+    required: false
+    default: ''
+  github-token:
+    description: 'GITHUB_TOKEN with contents:write to push the release commit and tag'
+    required: true
+  repo-url:
+    description: >
+      Consumer repository URL embedded in the generated semantic-release config.
+      Defaults to the GitHub server URL plus the calling repository.
+    required: false
+    default: ''
+
+outputs:
+  released-modules:
+    description: 'JSON array of { module, version, tag } objects for modules released in this run'
+    value: ${{ steps.dispatch.outputs.released-modules }}
+  failed-modules:
+    description: 'JSON array of { module, error } objects for modules that failed publish'
+    value: ${{ steps.dispatch.outputs.failed-modules }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ inputs.node-version }}
+        registry-url: 'https://registry.npmjs.org'
+
+    - name: Setup pnpm
+      if: inputs.language == 'node'
+      uses: pnpm/action-setup@v4
+      with:
+        version: ${{ inputs.pnpm-version }}
+
+    - name: Setup Python
+      if: inputs.language == 'python'
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ inputs.python-version }}
+
+    - name: Setup uv
+      if: inputs.language == 'python'
+      uses: astral-sh/setup-uv@v3
+
+    - name: Install codegen dependencies
+      shell: bash
+      working-directory: ${{ github.action_path }}/codegen
+      run: npm install --no-audit --no-fund --silent
+
+    - name: Install consumer-repo release tooling
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      env:
+        LANGUAGE: ${{ inputs.language }}
+      run: |
+        # The consumer repo carries its own root package.json with semantic-release
+        # and its plugins as devDependencies. For Node consumers this is part of
+        # the workspace install. For Python and Terraform consumers we install
+        # only the release tooling here.
+        if [ "$LANGUAGE" = "node" ]; then
+          pnpm install --frozen-lockfile
+        else
+          npm install --no-audit --no-fund --silent
+        fi
+
+    - name: Detect changed modules
+      id: detect
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      env:
+        MANIFEST: ${{ inputs.modules-manifest }}
+        PACKAGES_DIR: ${{ inputs.packages-dir }}
+      run: |
+        changed=$("${{ github.action_path }}/scripts/get_changed_modules.sh" "$MANIFEST" "$PACKAGES_DIR")
+        echo "Changed modules: $changed"
+        echo "modules=$changed" >> "$GITHUB_OUTPUT"
+
+    - name: Generate per-module release configurations
+      id: codegen
+      if: steps.detect.outputs.modules != ''
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      env:
+        ACTION_PATH: ${{ github.action_path }}
+        MANIFEST: ${{ inputs.modules-manifest }}
+        LANGUAGE: ${{ inputs.language }}
+        PACKAGES_DIR: ${{ inputs.packages-dir }}
+        REPO_URL_INPUT: ${{ inputs.repo-url }}
+      run: |
+        repo_url="$REPO_URL_INPUT"
+        if [ -z "$repo_url" ]; then
+          repo_url="${{ github.server_url }}/${{ github.repository }}"
+        fi
+
+        config_dir="${RUNNER_TEMP}/modular-release-config"
+        mkdir -p "$config_dir"
+
+        args=(
+          --manifest "$MANIFEST"
+          --template "$ACTION_PATH/codegen/templates/release.template.js"
+          --output "$config_dir"
+          --language "$LANGUAGE"
+          --repo-url "$repo_url"
+        )
+        if [ -n "$PACKAGES_DIR" ]; then
+          args+=(--packages-dir "$PACKAGES_DIR")
+        fi
+
+        node "$ACTION_PATH/codegen/cli.js" "${args[@]}" > "$config_dir/generated.json"
+        cat "$config_dir/generated.json"
+        echo "config-dir=$config_dir" >> "$GITHUB_OUTPUT"
+
+    - name: Release changed modules
+      id: dispatch
+      if: steps.detect.outputs.modules != ''
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      env:
+        GITHUB_TOKEN: ${{ inputs.github-token }}
+        NPM_TOKEN: ${{ inputs.registry-token }}
+        UV_PUBLISH_TOKEN: ${{ inputs.registry-token }}
+        LANGUAGE: ${{ inputs.language }}
+        PACKAGES_DIR: ${{ inputs.packages-dir }}
+        CONFIG_DIR: ${{ steps.codegen.outputs.config-dir }}
+        CHANGED: ${{ steps.detect.outputs.modules }}
+      run: |
+        set -e
+
+        released='[]'
+        failed='[]'
+
+        for module in $CHANGED; do
+          echo "::group::Releasing $module"
+
+          if [ "$LANGUAGE" = "node" ] && [ -n "$PACKAGES_DIR" ]; then
+            # Pre-publish smoke test: pack the module, install the tarball into
+            # an empty environment, and require the package. Catches missing
+            # runtime declarations that the workspace install masked.
+            pkg_dir="$PACKAGES_DIR/$module"
+            pkg_name=$(node -p "require('./$pkg_dir/package.json').name")
+            tarball=$(cd "$pkg_dir" && pnpm pack | tail -1)
+            smoke_dir=$(mktemp -d)
+            cp "$pkg_dir/$tarball" "$smoke_dir/"
+            (cd "$smoke_dir" && npm init -y >/dev/null && npm install --no-audit --no-fund --silent "./$tarball" && node -e "require('$pkg_name')")
+            echo "Smoke install passed for $pkg_name"
+          fi
+
+          if npx semantic-release --extends "$CONFIG_DIR/release.${module}.js"; then
+            tag=$(git tag --points-at HEAD | grep -- "-${module}$" | head -1 || true)
+            version="${tag#v}"
+            version="${version%-${module}}"
+            released=$(node -e "const a=$released; a.push({module:'$module', version:'$version', tag:'$tag'}); process.stdout.write(JSON.stringify(a));")
+          else
+            failed=$(node -e "const a=$failed; a.push({module:'$module', error:'semantic-release failed'}); process.stdout.write(JSON.stringify(a));")
+          fi
+          echo "::endgroup::"
+        done
+
+        echo "released-modules=$released" >> "$GITHUB_OUTPUT"
+        echo "failed-modules=$failed" >> "$GITHUB_OUTPUT"
+
+        # Surface a non-zero exit if any module failed, after attempting all of them.
+        if [ "$failed" != "[]" ]; then
+          echo "One or more module releases failed: $failed" >&2
+          exit 1
+        fi

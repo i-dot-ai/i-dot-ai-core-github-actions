@@ -1,0 +1,59 @@
+name: Modular Release Tests
+
+on:
+  pull_request:
+    paths:
+      - '.github/actions/modular-release/**'
+      - '.github/workflows/modular-release.yml'
+      - '.github/workflows/test-modular-release.yml'
+  push:
+    branches: [main]
+    paths:
+      - '.github/actions/modular-release/**'
+      - '.github/workflows/modular-release.yml'
+
+jobs:
+  unit:
+    runs-on: ubuntu-latest
+    name: Codegen unit tests
+    defaults:
+      run:
+        working-directory: .github/actions/modular-release/codegen
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - run: npm install --no-audit --no-fund
+      - run: npm test
+
+  fixture-codegen:
+    runs-on: ubuntu-latest
+    name: Codegen against fixture manifests
+    strategy:
+      matrix:
+        language: [node, python, terraform]
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - run: npm install --no-audit --no-fund
+        working-directory: .github/actions/modular-release/codegen
+      - name: Generate config for fixture
+        run: |
+          out=$(mktemp -d)
+          node .github/actions/modular-release/codegen/cli.js \
+            --manifest .github/actions/modular-release/__fixtures__/sample-node/modules.yml \
+            --template .github/actions/modular-release/codegen/templates/release.template.js \
+            --output "$out" \
+            --language ${{ matrix.language }} \
+            --repo-url https://github.com/i-dot-ai/i-dot-ai-utilities-npm
+          echo "Generated files:"
+          ls -la "$out"
+          # Parse-check each generated config. Rename to .mjs so `node --check`
+          # treats the file as an ES module (it contains `export default`).
+          for f in "$out"/release.*.js; do
+            mv "$f" "${f%.js}.mjs"
+            node --check "${f%.js}.mjs" || (echo "Syntax error in $f"; cat "${f%.js}.mjs"; exit 1)
+          done
