@@ -75,7 +75,7 @@ jobs:
 
       - name: Run modular-release
         id: run
-        uses: i-dot-ai/i-dot-ai-core-github-actions/.github/actions/modular-release@main
+        uses: i-dot-ai/i-dot-ai-core-github-actions/.github/actions/modular-release@EN-1535/modular-release-actions
         with:
           modules-manifest: ${{ inputs.modules-manifest }}
           language: ${{ inputs.language }}
