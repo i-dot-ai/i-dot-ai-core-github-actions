@@ -78,6 +78,8 @@ runs:
   steps:
     - name: Setup Node.js
       uses: actions/setup-node@v4
+      env:
+        FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
       with:
         node-version: ${{ inputs.node-version }}
         registry-url: 'https://registry.npmjs.org'
@@ -85,12 +87,16 @@ runs:
     - name: Setup pnpm
       if: inputs.language == 'node'
       uses: pnpm/action-setup@v4
+      env:
+        FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
       with:
         version: ${{ inputs.pnpm-version }}
 
     - name: Setup Python
       if: inputs.language == 'python'
       uses: actions/setup-python@v5
+      env:
+        FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
       with:
         python-version: ${{ inputs.python-version }}
 
@@ -200,11 +206,12 @@ runs:
           echo "::group::Releasing $module"
 
           if [ "$LANGUAGE" = "node" ] && [ -n "$PACKAGES_DIR" ] && [ "$DRY_RUN" != "true" ]; then
-            # Pre-publish smoke test: pack the module, install the tarball into
-            # an empty environment, and require the package. Catches missing
+            # Pre-publish smoke test: build, pack the module, install the tarball
+            # into an empty environment, and require the package. Catches missing
             # runtime declarations that the workspace install masked.
             pkg_dir="$PACKAGES_DIR/$module"
             pkg_name=$(node -p "require('./$pkg_dir/package.json').name")
+            pnpm --filter "$pkg_name" run build
             tarball=$(cd "$pkg_dir" && pnpm pack | tail -1)
             smoke_dir=$(mktemp -d)
             cp "$pkg_dir/$tarball" "$smoke_dir/"

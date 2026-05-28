@@ -16,6 +16,8 @@ jobs:
   unit:
     runs-on: ubuntu-latest
     name: Codegen unit tests
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
     defaults:
       run:
         working-directory: .github/actions/modular-release/codegen
@@ -30,6 +32,8 @@ jobs:
   fixture-codegen:
     runs-on: ubuntu-latest
     name: Codegen against fixture manifests
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
     strategy:
       matrix:
         language: [node, python, terraform]
