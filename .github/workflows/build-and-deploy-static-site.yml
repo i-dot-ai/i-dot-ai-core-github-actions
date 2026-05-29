@@ -123,13 +123,13 @@ jobs:
       - name: Install dependencies
         env:
           INSTALL_COMMAND: ${{ inputs.INSTALL_COMMAND }}
-        run: $INSTALL_COMMAND
+        run: eval "$INSTALL_COMMAND"
         shell: bash
 
       - name: Build static site
         env:
           BUILD_COMMAND: ${{ inputs.BUILD_COMMAND }}
-        run: $BUILD_COMMAND
+        run: eval "$BUILD_COMMAND"
         shell: bash
 
       - name: AWS Authentication
