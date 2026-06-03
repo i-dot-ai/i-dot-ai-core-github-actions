@@ -1,0 +1,113 @@
+name: Terraform Checks
+
+on:
+  workflow_call:
+    inputs:
+      TERRAFORM_DIRECTORY:
+        description: "Root directory containing Terraform configuration"
+        required: false
+        type: string
+        default: "terraform"
+      TF_FILE:
+        description: "Path to the .tf file containing the required_version constraint"
+        required: false
+        type: string
+        default: "terraform/provider.tf"
+      TFLINT_VERSION:
+        description: "Version of TFLint to install"
+        required: false
+        type: string
+        default: "latest"
+      TFLINT_CONTINUE_ON_ERROR:
+        description: "Allow the TFLint job to continue on error"
+        required: false
+        type: boolean
+        default: false
+      CHECKOV_SOFT_FAIL:
+        description: "Allow Checkov to soft-fail instead of failing the job"
+        required: false
+        type: boolean
+        default: false
+      CHECKOV_DOWNLOAD_EXTERNAL_MODULES:
+        description: "Download external Terraform modules from public git repositories and Terraform registry"
+        required: false
+        type: boolean
+        default: true
+
+jobs:
+  determine-terraform-version:
+    name: Determine Terraform Version
+    runs-on: ubuntu-latest
+
+    outputs:
+      terraform_version: ${{ steps.parse_version.outputs.tf_version }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Parse Terraform version
+        id: parse_version
+        uses: ukhsa-collaboration/devops-github-actions/.github/actions/parse-terraform-version@ea0aa2a80fccfb2a19e1c71443a0a60b85f618a8
+        with:
+          tf_file: ${{ inputs.TF_FILE }}
+
+  terraform-format:
+    name: Terraform Format Check
+    runs-on: ubuntu-latest
+    needs:
+      - determine-terraform-version
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@dfe3c3f87815947d99a8997f908cb6525fc44e9e # v4.0.1
+        with:
+          terraform_version: ${{ needs.determine-terraform-version.outputs.terraform_version }}
+
+      - name: Terraform Format Check
+        env:
+          TERRAFORM_DIRECTORY: ${{ inputs.TERRAFORM_DIRECTORY }}
+        run: terraform fmt -check -recursive $TERRAFORM_DIRECTORY/
+
+  terraform-lint:
+    name: Terraform Lint (tflint)
+    runs-on: ubuntu-latest
+    needs:
+      - determine-terraform-version
+    continue-on-error: ${{ inputs.TFLINT_CONTINUE_ON_ERROR }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Setup TFLint
+        uses: terraform-linters/setup-tflint@b480b8fcdaa6f2c577f8e4fa799e89e756bb7c93 # v6.2.2
+        with:
+          tflint_version: ${{ inputs.TFLINT_VERSION }}
+
+      - name: Init TFLint
+        run: tflint --init
+        working-directory: ${{ inputs.TERRAFORM_DIRECTORY }}
+
+      - name: Run TFLint
+        run: tflint --recursive
+        working-directory: ${{ inputs.TERRAFORM_DIRECTORY }}
+
+  terraform-security-scan:
+    name: Terraform Security Scan (Checkov)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Run Checkov
+        uses: bridgecrewio/checkov-action@99bb2caf247dfd9f03cf984373bc6043d4e32ebf
+        with:
+          directory: ${{ inputs.TERRAFORM_DIRECTORY }}
+          framework: "terraform"
+          soft_fail: ${{ inputs.CHECKOV_SOFT_FAIL }}
+          download_external_modules: ${{ inputs.CHECKOV_DOWNLOAD_EXTERNAL_MODULES }}

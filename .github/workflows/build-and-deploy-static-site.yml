@@ -1,0 +1,242 @@
+name: Build and deploy static site
+
+on:
+  workflow_call:
+    inputs:
+      ENVIRONMENT:
+        required: true
+        type: string
+      COMMIT_HASH:
+        required: true
+        type: string
+      SITE_PREFIX:
+        description: "S3 key prefix for this site (must match the key in core-static-site sites.yaml). Defaults to the calling repository's name."
+        required: false
+        type: string
+      SITE_URL:
+        description: "URL to smoke test after deployment. If omitted, the smoke test is skipped."
+        required: false
+        type: string
+      EC2_INSTANCE_TYPE:
+        required: false
+        type: string
+        default: "t3.large"
+      RUNNER_SIZE:
+        required: false
+        type: string
+        default: "large"
+      NODE_VERSION:
+        description: "Node.js version to use for building the static site"
+        required: false
+        type: string
+        default: "latest"
+      INSTALL_COMMAND:
+        description: "Command to install dependencies"
+        required: false
+        type: string
+        default: "cd frontend && npm install"
+      BUILD_COMMAND:
+        description: "Command to build the static site"
+        required: false
+        type: string
+        default: "cd frontend && npm run build"
+      BUILD_DIRECTORY:
+        description: "Path to the built static site output directory"
+        required: false
+        type: string
+        default: "frontend/dist"
+      SMOKE_TEST_URLS:
+        description: "Optional newline-separated list of additional URLs to check for HTTP 200 (e.g. sub-pages, static assets)."
+        required: false
+        type: string
+      BUILD_ENV_VARS:
+        description: "Newline-separated KEY=VALUE pairs written to a .env file before the build step. Use for build-time configuration (e.g. base URLs, feature flags)."
+        required: false
+        type: string
+    secrets:
+      AWS_GITHUBRUNNER_PAT: # Org level secret
+        required: true
+      AWS_REGION: # Org level secret
+        required: true
+      AWS_ACCOUNT_ID: # Org level secret
+        required: true
+      SLACK_WEBHOOK_URL: # Org level secret
+        required: true
+      STATIC_SITE_DEV_DESTINATION_BUCKET: # Org level secret
+        required: false
+      STATIC_SITE_PREPROD_DESTINATION_BUCKET: # Org level secret
+        required: false
+      STATIC_SITE_PROD_DESTINATION_BUCKET: # Org level secret
+        required: false
+      STATIC_SITE_DEV_CLOUDFRONT_DISTRIBUTION_ID: # Org level secret
+        required: false
+      STATIC_SITE_PREPROD_CLOUDFRONT_DISTRIBUTION_ID: # Org level secret
+        required: false
+      STATIC_SITE_PROD_CLOUDFRONT_DISTRIBUTION_ID: # Org level secret
+        required: false
+
+jobs:
+  start-runner:
+    uses: i-dot-ai/i-dot-ai-core-github-actions/.github/workflows/start-runner.yml@main
+    with:
+      EC2_INSTANCE_TYPE: ${{ inputs.EC2_INSTANCE_TYPE }}
+      RUNNER_SIZE: ${{ inputs.RUNNER_SIZE }}
+      ENVIRONMENT: ${{ inputs.ENVIRONMENT }}
+    secrets:
+      AWS_GITHUBRUNNER_PAT: ${{ secrets.AWS_GITHUBRUNNER_PAT }}
+      AWS_REGION: ${{ secrets.AWS_REGION }}
+      AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
+
+  build-and-deploy:
+    runs-on: ${{ needs.start-runner.outputs.label }}
+    needs:
+      - start-runner
+    environment: ${{ inputs.ENVIRONMENT }}
+    env:
+      STATIC_SITE_DEV_DESTINATION_BUCKET: ${{ secrets.STATIC_SITE_DEV_DESTINATION_BUCKET }}
+      STATIC_SITE_PREPROD_DESTINATION_BUCKET: ${{ secrets.STATIC_SITE_PREPROD_DESTINATION_BUCKET }}
+      STATIC_SITE_PROD_DESTINATION_BUCKET: ${{ secrets.STATIC_SITE_PROD_DESTINATION_BUCKET }}
+      STATIC_SITE_DEV_CLOUDFRONT_DISTRIBUTION_ID: ${{ secrets.STATIC_SITE_DEV_CLOUDFRONT_DISTRIBUTION_ID }}
+      STATIC_SITE_PREPROD_CLOUDFRONT_DISTRIBUTION_ID: ${{ secrets.STATIC_SITE_PREPROD_CLOUDFRONT_DISTRIBUTION_ID }}
+      STATIC_SITE_PROD_CLOUDFRONT_DISTRIBUTION_ID: ${{ secrets.STATIC_SITE_PROD_CLOUDFRONT_DISTRIBUTION_ID }}
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          ref: ${{ inputs.COMMIT_HASH }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: ${{ inputs.NODE_VERSION }}
+
+      - name: Create .env file
+        if: ${{ inputs.BUILD_ENV_VARS != '' }}
+        run: |
+          echo "${{ inputs.BUILD_ENV_VARS }}" >> .env
+        shell: bash
+
+      - name: Install dependencies
+        env:
+          INSTALL_COMMAND: ${{ inputs.INSTALL_COMMAND }}
+        run: eval "$INSTALL_COMMAND"
+        shell: bash
+
+      - name: Build static site
+        env:
+          BUILD_COMMAND: ${{ inputs.BUILD_COMMAND }}
+        run: eval "$BUILD_COMMAND"
+        shell: bash
+
+      - name: AWS Authentication
+        uses: i-dot-ai/i-dot-ai-core-github-actions/.github/actions/authenticate-aws@main
+        with:
+          ENVIRONMENT: ${{ inputs.ENVIRONMENT }}
+          AWS_REGION: ${{ secrets.AWS_REGION }}
+          AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
+
+      - name: Resolve environment-specific secrets
+        env:
+          ENVIRONMENT: ${{ inputs.ENVIRONMENT }}
+        run: |
+          ENV_PREFIX=$(echo "$ENVIRONMENT" | tr '[:lower:]' '[:upper:]')
+          BUCKET_VAR="STATIC_SITE_${ENV_PREFIX}_DESTINATION_BUCKET"
+          CF_VAR="STATIC_SITE_${ENV_PREFIX}_CLOUDFRONT_DISTRIBUTION_ID"
+          echo "DESTINATION_BUCKET=${!BUCKET_VAR}" >> $GITHUB_ENV
+          echo "CLOUDFRONT_DISTRIBUTION_ID=${!CF_VAR}" >> $GITHUB_ENV
+        shell: bash
+
+      - name: Validate environment-specific secrets
+        env:
+          ENVIRONMENT: ${{ inputs.ENVIRONMENT }}
+        run: |
+          if [ -z "${{ env.DESTINATION_BUCKET }}" ] || [ -z "${{ env.CLOUDFRONT_DISTRIBUTION_ID }}" ]; then
+            echo "::error::Missing required secrets for environment '$ENVIRONMENT'. Ensure <ENV>_DESTINATION_BUCKET and <ENV>_CLOUDFRONT_DISTRIBUTION_ID are set as organization secrets."
+            exit 1
+          fi
+        shell: bash
+
+      - name: Sync to S3
+        env:
+          BUILD_DIRECTORY: ${{ inputs.BUILD_DIRECTORY }}
+          SITE_PREFIX: ${{ inputs.SITE_PREFIX || github.event.repository.name }}
+        run: |
+          aws s3 sync $BUILD_DIRECTORY s3://${{ env.DESTINATION_BUCKET }}/$SITE_PREFIX/ --delete
+        shell: bash
+
+      - name: Invalidate CloudFront cache
+        run: |
+          aws cloudfront create-invalidation \
+            --distribution-id ${{ env.CLOUDFRONT_DISTRIBUTION_ID }} \
+            --paths "/${{ inputs.SITE_PREFIX || github.event.repository.name }}/*"
+        shell: bash
+
+  smoke-test:
+    needs: build-and-deploy
+    if: inputs.SITE_URL != ''
+    runs-on: ubuntu-latest
+    permissions:
+      checks: write
+    steps:
+      - name: Run smoke tests
+        uses: i-dot-ai/i-dot-ai-core-github-actions/.github/actions/smoke-test-static-site@EN-1421/workflow-for-static-content # TODO: recursive. needs converting to main before merge.
+        with:
+          site-url: ${{ inputs.SITE_URL }}
+          additional-urls: ${{ inputs.SMOKE_TEST_URLS }}
+
+  determine-success:
+    needs:
+      - start-runner
+      - build-and-deploy
+      - smoke-test
+    runs-on: ${{ needs.start-runner.outputs.label }}
+    if: always()
+    outputs:
+      success: ${{ steps.success.outputs.success }}
+    steps:
+      - id: success
+        run: |
+          if [[ "${{ needs.build-and-deploy.result }}" == "success" && "${{ needs.smoke-test.result }}" != "failure" ]]; then
+              echo "success=true" >> $GITHUB_OUTPUT
+          else
+              echo "success=false" >> $GITHUB_OUTPUT
+          fi
+        shell: bash
+
+  notify-slack:
+    uses: i-dot-ai/i-dot-ai-core-github-actions/.github/workflows/slack-notify.yml@main
+    needs:
+      - start-runner
+      - build-and-deploy
+      - smoke-test
+      - determine-success
+    if: always()
+    with:
+      RUNNER_LABEL: ${{ needs.start-runner.outputs.label }}
+      WORKFLOW_PASSED: ${{ needs.determine-success.outputs.success == 'true' }}
+      SUCCESS_PAYLOAD: "{\"blocks\":[{\"type\":\"header\",\"text\":{\"type\":\"plain_text\",\"text\":\":airplane: ${{ github.repository }} - Static site deployed to ${{ inputs.ENVIRONMENT }} :large_green_circle:\"}},{\"type\":\"section\",\"text\":{\"type\":\"mrkdwn\",\"text\":\"${{ inputs.COMMIT_HASH }} successfully deployed to ${{ inputs.ENVIRONMENT }}\"}}]}"
+      FAILURE_PAYLOAD: "{\"blocks\":[{\"type\":\"header\",\"text\":{\"type\":\"plain_text\",\"text\":\":x: ${{ github.repository }} - Static site deploy to ${{ inputs.ENVIRONMENT }} failed :x:\"}},{\"type\":\"section\",\"text\":{\"type\":\"mrkdwn\",\"text\":\"${{ inputs.COMMIT_HASH }} failed to deploy to ${{ inputs.ENVIRONMENT }}\"}}]}"
+    secrets:
+      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+
+  stop-runner:
+    uses: i-dot-ai/i-dot-ai-core-github-actions/.github/workflows/stop-runner.yml@main
+    if: needs.start-runner.outputs.use-persisted == 0 && always()
+    needs:
+      - start-runner
+      - build-and-deploy
+      - smoke-test
+      - determine-success
+      - notify-slack
+    with:
+      RUNNER_LABEL: ${{ needs.start-runner.outputs.label }}
+      EC2_INSTANCE_ID: ${{ needs.start-runner.outputs.ec2-instance-id }}
+      ENVIRONMENT: ${{ inputs.ENVIRONMENT }}
+    secrets:
+      AWS_GITHUBRUNNER_PAT: ${{ secrets.AWS_GITHUBRUNNER_PAT }}
+      AWS_REGION: ${{ secrets.AWS_REGION }}
+      AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
