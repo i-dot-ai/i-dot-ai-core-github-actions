@@ -40,6 +40,11 @@ on:
         description: 'ECR Public URL'
         required: false
         type: string
+      PUSH_IMAGE:
+        description: 'Push the built image to ECR'
+        required: false
+        type: boolean
+        default: true
       USE_OIDC: # now obsolete, but needs to remain to ensure backwards compatibility for existing consumers.
         required: false
         type: boolean
@@ -56,6 +61,8 @@ on:
       DOCKERHUB_USERNAME:
         required: false
       DOCKERHUB_TOKEN:
+        required: false
+      SENTRY_AUTH_TOKEN:
         required: false
       AWS_GITHUBRUNNER_USER_ACCESS_KEY: # now obsolete, but needs to remain to ensure backwards compatibility for existing consumers.
         required: false
@@ -147,6 +154,7 @@ jobs:
         SERVICE: ${{ inputs.SERVICE }}
         CACHE: ${{ env.EFS_MOUNT_PATH }}
         GITHUB_TOKEN: ${{ secrets.AWS_GITHUBRUNNER_PAT }}
+        SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
       run: |
         cd main
         make docker_build service=$SERVICE cache=$CACHE
@@ -160,12 +168,13 @@ jobs:
           VERSION: ${{ inputs.VERSION }}
           CACHE: ${{ env.EFS_MOUNT_PATH }}
           GITHUB_TOKEN: ${{ secrets.AWS_GITHUBRUNNER_PAT }}
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
       run: |
         cd main
         make docker_build_public_image service=$SERVICE cache=$CACHE version=$VERSION
     
     - name: Docker Push (Private)
-      if: ${{ inputs.PUBLIC_ECR == false}}
+      if: ${{ inputs.PUBLIC_ECR == false && inputs.PUSH_IMAGE }}
       env:
         AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
         APP_NAME: ${{ inputs.APP_NAME }}
@@ -176,7 +185,7 @@ jobs:
         IMAGE=$(eval $(make docker_echo value=IMAGE service=$SERVICE) | awk '{print $1;}')
 
     - name: Docker Push (Public)
-      if: ${{ inputs.PUBLIC_ECR == true}}
+      if: ${{ inputs.PUBLIC_ECR == true && inputs.PUSH_IMAGE }}
       env:
         AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
         APP_NAME: ${{ inputs.APP_NAME }}

@@ -34,6 +34,9 @@ on:
       IMAGE_TAG:
         type: string
         required: false
+      TF_TARGET:
+        type: string
+        required: false
       ECR_REPO:
           type: string
           required: false
@@ -127,7 +130,7 @@ jobs:
       uses: actions/checkout@v4
       with:
           path: main
-      
+
     - name: Optionally Download Artifacts
       if: ${{ inputs.ARTIFACTS_PATH != '' }}
       uses: actions/download-artifact@v4
@@ -171,6 +174,7 @@ jobs:
         INFRASTRUCTURE_FOLDER: ${{ inputs.INFRASTRUCTURE_FOLDER }}
         ENVIRONMENT: ${{ inputs.ENVIRONMENT }}
         IMAGE_TAG: ${{ inputs.IMAGE_TAG }}
+        TF_TARGET: ${{ inputs.TF_TARGET }}
         TF_LOGS: "INFO"
         TF_CLI_ARGS: "-no-color"
       run: |
@@ -180,7 +184,9 @@ jobs:
         tfParams+=( "env=$ENVIRONMENT" )
         make tf_set_or_create_workspace "${tfParams[@]}"
         if [[ $IMAGE_TAG ]]; then
-          make tf_auto_apply IMAGE_TAG=${{ inputs.IMAGE_TAG }} "${tfParams[@]}" > tf_apply_log.log # TODO: mask any sensitive values
+          make tf_auto_apply IMAGE_TAG=$IMAGE_TAG "${tfParams[@]}" > tf_apply_log.log # TODO: mask any sensitive values
+        elif [[ $TF_TARGET ]]; then
+          make tf_auto_apply TF_TARGET=$TF_TARGET "${tfParams[@]}" > tf_apply_log.log # TODO: mask any sensitive values
         else
           make tf_auto_apply "${tfParams[@]}" > tf_apply_log.log # TODO: mask any sensitive values
         fi
@@ -203,7 +209,7 @@ jobs:
         aws s3 cp tf_apply_log.log "s3://i-dot-ai-$ENVIRONMENT-github-runner-logs/${FILENAME}"
 
     - name: Tag built image with deployment environment
-      if: ${{ inputs.IMAGE_TAG != '' }}
+      if: ${{ inputs.TF_TARGET == '' }}
       env:
         ENVIRONMENT: ${{ inputs.ENVIRONMENT }}
         APP_NAME: ${{ inputs.APP_NAME }}
