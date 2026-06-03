@@ -105,7 +105,7 @@ jobs:
         uses: actions/checkout@v6
 
       - name: Run Checkov
-        uses: bridgecrewio/checkov-action@v12
+        uses: bridgecrewio/checkov-action@99bb2caf247dfd9f03cf984373bc6043d4e32ebf
         with:
           directory: ${{ inputs.TERRAFORM_DIRECTORY }}
           framework: "terraform"
