@@ -1,4 +1,0 @@
-modules:
-  packages:
-    - auth
-    - llm
