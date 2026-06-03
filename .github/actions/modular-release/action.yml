@@ -104,7 +104,7 @@ runs:
 
     - name: Setup uv
       if: inputs.language == 'python'
-      uses: astral-sh/setup-uv@v3
+      uses: astral-sh/setup-uv@caf0cab7a618c569241d31dcd442f54681755d39 # v3.2.4
 
     - name: Install codegen dependencies
       shell: bash
