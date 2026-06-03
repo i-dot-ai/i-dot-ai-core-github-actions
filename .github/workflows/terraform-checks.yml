@@ -84,7 +84,7 @@ jobs:
         uses: actions/checkout@v6
 
       - name: Setup TFLint
-        uses: terraform-linters/setup-tflint@v6
+        uses: terraform-linters/setup-tflint@b480b8fcdaa6f2c577f8e4fa799e89e756bb7c93 # v6.2.2
         with:
           tflint_version: ${{ inputs.TFLINT_VERSION }}
 
