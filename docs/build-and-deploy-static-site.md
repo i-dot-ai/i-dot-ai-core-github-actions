@@ -52,7 +52,7 @@ These are marked as `required: false` in the workflow definition, but the **buil
 
 | Input | Default | Notes |
 |---|---|---|
-| `SITE_PREFIX` | Calling repository name | S3 key prefix. Must match the key for your site in `core-static-site` `sites.yaml`. |
+| `SITE_PREFIX` | Calling repository name | S3 key prefix. Must match the key for your site in the [core-static-site/config/<env>/sites.yaml](https://github.com/i-dot-ai/core-static-site/blob/main/config/dev/sites.yaml). |
 | `NODE_VERSION` | `latest` | **Recommend pinning to an LTS version** (e.g. `22`) to avoid unexpected breakages. |
 | `INSTALL_COMMAND` | `cd frontend && npm install` | Override if your project structure differs. |
 | `BUILD_COMMAND` | `cd frontend && npm run build` | Override if your project structure differs. |
