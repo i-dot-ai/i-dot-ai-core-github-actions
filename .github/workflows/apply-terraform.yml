@@ -49,6 +49,11 @@ on:
         required: false
         default: false
         type: boolean
+      TAG_IMAGE:
+        description: 'Whether to tag a container image with the deployment environment. Set to false for repos without container images.'
+        required: false
+        default: true
+        type: boolean
       TF_FILE:
         description: "Path to the .tf file containing the required_version constraint"
         required: false
@@ -96,11 +101,6 @@ jobs:
     - name: Set global git credentials
       run: git config --global url.https://${{ secrets.AWS_GITHUBRUNNER_PAT }}@github.com/.insteadOf https://github.com/
 
-    - name: Dump inputs context
-      env:
-        INPUTS: ${{ toJSON(inputs) }}
-      run: echo "$INPUTS"
-
     - name: AWS Authentication
       uses: i-dot-ai/i-dot-ai-core-github-actions/.github/actions/authenticate-aws@main
       with:
@@ -139,6 +139,7 @@ jobs:
         path: main/${{ inputs.ARTIFACTS_PATH }}
 
     - name: Login to Amazon ECR
+      if: ${{ inputs.TAG_IMAGE == true }}
       run: |
         aws ecr get-login-password | docker login --username AWS --password-stdin ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com
       shell: bash
@@ -209,7 +210,7 @@ jobs:
         aws s3 cp tf_apply_log.log "s3://i-dot-ai-$ENVIRONMENT-github-runner-logs/${FILENAME}"
 
     - name: Tag built image with deployment environment
-      if: ${{ inputs.TF_TARGET == '' }}
+      if: ${{ inputs.TF_TARGET == '' && inputs.TAG_IMAGE == true }}
       env:
         ENVIRONMENT: ${{ inputs.ENVIRONMENT }}
         APP_NAME: ${{ inputs.APP_NAME }}
