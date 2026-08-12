@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// CLI wrapper invoked by the composite action.
+// Generates module configurations for the composite action.
 //
 // Usage:
 //   node codegen/cli.js \
@@ -11,7 +11,9 @@
 //     [--packages-dir <dir>] \
 //     [--pre-release-branch <branch-name>]
 //
-// On success, writes the generated module list as JSON to stdout.
+// Generated files are written below --output. On success, stdout contains the
+// generated module list as JSON. Argument errors exit with status 2; manifest,
+// validation, and filesystem errors exit with status 1.
 
 import { generateModuleConfigurations } from './generator.js';
 
@@ -29,7 +31,14 @@ function parseArgs(argv) {
 }
 
 function main() {
-  const args = parseArgs(process.argv.slice(2));
+  let args;
+  try {
+    args = parseArgs(process.argv.slice(2));
+  } catch (error) {
+    console.error(error.message);
+    process.exit(2);
+  }
+
   const required = ['manifest', 'template', 'output', 'language', 'repo-url'];
   for (const key of required) {
     if (!args[key]) {

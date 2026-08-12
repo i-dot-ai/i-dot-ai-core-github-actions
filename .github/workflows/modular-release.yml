@@ -15,24 +15,29 @@ on:
         type: string
         required: true
       packages-dir:
-        description: 'Directory containing per-module packages'
+        description: >
+          Directory that directly contains every module package. When empty,
+          nested manifest keys form each module's package path.
         type: string
         required: false
         default: ''
       working-directory:
-        description: 'Directory to run all commands in (defaults to repo root)'
+        description: 'Consumer directory in which release commands run'
         type: string
         required: false
         default: '.'
       node-version:
+        description: 'Node.js version used to run semantic-release'
         type: string
         required: false
-        default: '20'
+        default: '22'
       pnpm-version:
+        description: 'pnpm version used for Node consumers'
         type: string
         required: false
         default: '9'
       python-version:
+        description: 'Python version used for Python consumers'
         type: string
         required: false
         default: '3.12'
@@ -42,7 +47,10 @@ on:
         required: false
         default: ''
       dry-run:
-        description: "When 'true', runs semantic-release in dry-run mode (no tags, no publish)"
+        description: >
+          When 'true', runs semantic-release in dry-run mode (no tags, no
+          publish, no commits). The Node package smoke test is skipped, so a
+          dry run does not exercise the published artifact.
         type: boolean
         required: false
         default: false
@@ -53,17 +61,19 @@ on:
         default: ''
     secrets:
       registry-token:
-        description: 'NPM_TOKEN for Node, PYPI_TOKEN for Python, empty for Terraform'
+        description: 'Registry publish token for Node or Python; omit for Terraform'
         required: false
       github-token:
-        description: 'GITHUB_TOKEN with contents:write to push the release commit and tag'
+        description: 'GitHub token with contents:write for release commits, tags, and releases'
         required: true
     outputs:
       released-modules:
-        description: 'JSON array of released modules with version and tag'
+        description: >
+          JSON array of { module, version, tag } objects. A dry run reports the
+          literal string 'dry-run' for both version and tag.
         value: ${{ jobs.release.outputs.released-modules }}
       failed-modules:
-        description: 'JSON array of modules that failed publish'
+        description: 'JSON array of { module, error } objects that failed release'
         value: ${{ jobs.release.outputs.failed-modules }}
 
 jobs:
@@ -81,6 +91,8 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
         with:
+          # Change detection diffs HEAD against its first parent, which a
+          # single-commit checkout cannot resolve.
           fetch-depth: 2
           persist-credentials: true
           token: ${{ secrets.github-token }}

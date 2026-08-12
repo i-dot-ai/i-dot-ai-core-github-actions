@@ -1,3 +1,10 @@
+// Not valid JavaScript until the codegen substitutes it. Two placeholder
+// namespaces share the `${...}` syntax: uppercase markers are replaced by
+// codegen/release.js, while `${version}` and `${nextRelease.version}` belong to
+// semantic-release and must survive substitution untouched.
+//
+// See ./README.md for the substitution contract and the per-module scoping
+// rationale.
 const Configuration = {
   branches: ${BRANCHES},
   repositoryUrl: '${REPO_URL}',

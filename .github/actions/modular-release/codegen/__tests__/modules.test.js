@@ -16,8 +16,8 @@ describe('modules manifest parser', () => {
     const manifest = tmpFile(`modules:\n  packages:\n    - auth\n    - llm\n`);
     const result = getAndValidateModules(manifest);
     expect(result).toEqual([
-      { name: 'auth', parentKeys: 'packages' },
-      { name: 'llm', parentKeys: 'packages' },
+      { name: 'auth', packageDir: 'packages' },
+      { name: 'llm', packageDir: 'packages' },
     ]);
   });
 
@@ -32,9 +32,22 @@ modules:
 `);
     const result = getAndValidateModules(manifest);
     expect(result).toEqual([
-      { name: 'rds', parentKeys: 'infrastructure' },
-      { name: 'vpc', parentKeys: 'infrastructure' },
-      { name: 'cost', parentKeys: 'observability' },
+      { name: 'rds', packageDir: 'infrastructure' },
+      { name: 'vpc', packageDir: 'infrastructure' },
+      { name: 'cost', packageDir: 'observability' },
+    ]);
+  });
+
+  test('joins deeply nested manifest keys into a slash-separated directory', () => {
+    const manifest = tmpFile(`
+modules:
+  infrastructure:
+    networking:
+      - vpc
+`);
+    const result = getAndValidateModules(manifest);
+    expect(result).toEqual([
+      { name: 'vpc', packageDir: 'infrastructure/networking' },
     ]);
   });
 
@@ -52,6 +65,6 @@ modules:
   test('tolerates a manifest without the top-level modules key', () => {
     const manifest = tmpFile(`packages:\n  - auth\n`);
     const result = getAndValidateModules(manifest);
-    expect(result).toEqual([{ name: 'auth', parentKeys: 'packages' }]);
+    expect(result).toEqual([{ name: 'auth', packageDir: 'packages' }]);
   });
 });

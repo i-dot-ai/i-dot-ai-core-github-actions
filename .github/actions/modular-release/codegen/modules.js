@@ -1,10 +1,17 @@
 import * as yaml from 'js-yaml';
 import * as fs from 'fs';
 
-// Walks the modules.yml manifest, returning a flat list of
-// `{ name, parentKeys }` objects. Group nesting is preserved as a
-// dotted parentKeys path so the same shape works for the Node, Python,
-// and Terraform consumers.
+/**
+ * Reads and validates a modules manifest.
+ *
+ * The manifest may be a bare mapping or use a top-level `modules` key. Each
+ * module name must be unique across all groups, regardless of its directory.
+ *
+ * @param {string} modulePath Path to the YAML manifest.
+ * @returns {{name: string, packageDir: string}[]} Modules in manifest order,
+ * where `packageDir` is the module group's directory as a POSIX-relative path.
+ * @throws {Error} If the file cannot be read or parsed, or names are duplicated.
+ */
 function getAndValidateModules(modulePath) {
   const moduleInfo = getModuleNamesAndPath(modulePath);
 
@@ -27,11 +34,14 @@ function getModuleNamesAndPath(yamlFilePath) {
 
     if (Array.isArray(obj)) {
       obj.forEach((value) => {
-        leaves.push({ name: value, parentKeys: parentPath });
+        leaves.push({ name: value, packageDir: parentPath });
       });
     } else if (typeof obj === 'object' && obj !== null) {
       for (const key in obj) {
-        const newPath = parentPath ? `${parentPath}.${key}` : key;
+        // Nested manifest keys join with '/' so the value is directly usable as
+        // a directory path; there is no separate manifest-path representation to
+        // reconcile downstream.
+        const newPath = parentPath ? `${parentPath}/${key}` : key;
         leaves = leaves.concat(extractValues(obj[key], newPath));
       }
     }
@@ -39,7 +49,6 @@ function getModuleNamesAndPath(yamlFilePath) {
     return leaves;
   }
 
-  // Allow either `{ modules: { ... } }` or a bare `{ ... }` top level.
   const root = parsedYaml && parsedYaml.modules ? parsedYaml.modules : parsedYaml;
   return extractValues(root);
 }

@@ -1,28 +1,25 @@
 name: 'Modular Release'
 description: >
-  Per-module release dispatch for module-library repositories.
-  Reads a modules.yml manifest, detects which modules changed in the merged
-  commit, generates a per-module semantic-release configuration, and runs
-  semantic-release once per changed module. Supports node, python, and
-  terraform consumers.
+  Releases independently versioned modules from a shared repository using
+  module-scoped conventional commits. Supports node, python, and terraform
+  consumers.
 
 inputs:
   modules-manifest:
     description: 'Path to modules.yml relative to the repository root'
-    required: true
+    required: false
     default: 'modules.yml'
   language:
     description: "One of 'python', 'node', 'terraform'"
     required: true
   packages-dir:
     description: >
-      Directory under the repo root that contains the per-module packages.
-      Used by change-detection and codegen. Defaults to the manifest's
-      group key (the Terraform-style layout).
+      Directory that directly contains every module package. When empty,
+      nested manifest keys form each module's package path.
     required: false
     default: ''
   working-directory:
-    description: 'Directory to run all commands in (defaults to repo root)'
+    description: 'Consumer directory in which release commands run'
     required: false
     default: '.'
   node-version:
@@ -38,11 +35,11 @@ inputs:
     required: false
     default: '3.12'
   registry-token:
-    description: 'NPM_TOKEN for Node, PYPI_TOKEN for Python, empty for Terraform'
+    description: 'Registry publish token for Node or Python; omit for Terraform'
     required: false
     default: ''
   github-token:
-    description: 'GITHUB_TOKEN with contents:write to push the release commit and tag'
+    description: 'GitHub token with contents:write for release commits, tags, and releases'
     required: true
   repo-url:
     description: >
@@ -52,8 +49,11 @@ inputs:
     default: ''
   dry-run:
     description: >
-      When 'true', runs semantic-release in dry-run mode (no tags, no publish,
-      no commits). Useful for testing the pipeline end-to-end without side effects.
+      Stringified boolean. Only the literal 'true' enables dry-run mode, in
+      which semantic-release makes no tags, commits, or publishes. The Node
+      package smoke test is skipped, so a dry run does not exercise the
+      published artifact. Composite action inputs are always strings; the
+      reusable workflow exposes this as a boolean and GitHub stringifies it.
     required: false
     default: 'false'
   pre-release-branch:
@@ -67,10 +67,12 @@ inputs:
 
 outputs:
   released-modules:
-    description: 'JSON array of { module, version, tag } objects for modules released in this run'
+    description: >
+      JSON array of { module, version, tag } objects. A dry run reports the
+      literal string 'dry-run' for both version and tag.
     value: ${{ steps.dispatch.outputs.released-modules }}
   failed-modules:
-    description: 'JSON array of { module, error } objects for modules that failed publish'
+    description: 'JSON array of { module, error } objects that failed release'
     value: ${{ steps.dispatch.outputs.failed-modules }}
 
 runs:
@@ -229,13 +231,34 @@ runs:
                 node -e 'const a=JSON.parse(process.env.RELEASED_JSON); a.push({module:process.env.MODULE, version:"dry-run", tag:"dry-run"}); process.stdout.write(JSON.stringify(a));'
               )
             else
-              tag=$(git tag --points-at HEAD | grep -- "-${module}$" | head -1 || true)
-              version="${tag#v}"
-              version="${version%-${module}}"
-              released=$(
-                RELEASED_JSON="$released" MODULE="$module" VERSION="$version" TAG="$tag" \
-                node -e 'const a=JSON.parse(process.env.RELEASED_JSON); a.push({module:process.env.MODULE, version:process.env.VERSION, tag:process.env.TAG}); process.stdout.write(JSON.stringify(a));'
-              )
+              # semantic-release exits successfully when no release is due, so
+              # the tags at HEAD are what distinguish a release from a no-op.
+              # Modules whose names are suffixes of one another would both
+              # match here; the manifest's unique-name rule does not prevent it.
+              mapfile -t head_tags < <(git tag --points-at HEAD)
+              module_tags=()
+              for candidate in "${head_tags[@]}"; do
+                if [[ "$candidate" == v*-"$module" ]]; then
+                  module_tags+=("$candidate")
+                fi
+              done
+
+              if [ "${#module_tags[@]}" -eq 0 ]; then
+                echo "::notice::No release was due for $module"
+              elif [ "${#module_tags[@]}" -gt 1 ]; then
+                failed=$(
+                  FAILED_JSON="$failed" MODULE="$module" \
+                  node -e 'const a=JSON.parse(process.env.FAILED_JSON); a.push({module:process.env.MODULE, error:"multiple release tags found at HEAD"}); process.stdout.write(JSON.stringify(a));'
+                )
+              else
+                tag="${module_tags[0]}"
+                version="${tag#v}"
+                version="${version%-${module}}"
+                released=$(
+                  RELEASED_JSON="$released" MODULE="$module" VERSION="$version" TAG="$tag" \
+                  node -e 'const a=JSON.parse(process.env.RELEASED_JSON); a.push({module:process.env.MODULE, version:process.env.VERSION, tag:process.env.TAG}); process.stdout.write(JSON.stringify(a));'
+                )
+              fi
             fi
           else
             failed=$(
