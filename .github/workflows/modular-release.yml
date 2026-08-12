@@ -35,7 +35,7 @@ on:
         description: 'pnpm version used for Node consumers'
         type: string
         required: false
-        default: '9'
+        default: '11'
       python-version:
         description: 'Python version used for Python consumers'
         type: string

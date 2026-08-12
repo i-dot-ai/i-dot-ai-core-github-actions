@@ -48,7 +48,7 @@ Composite action (if a consumer needs full control of the surrounding job):
 | `packages-dir` | no | Directory holding every module package. Set it when modules are flat under one directory rather than organised by manifest group |
 | `working-directory` | no | Directory to run commands in (default repo root) |
 | `node-version` | no | Default `22` |
-| `pnpm-version` | no | Default `9` (Node only) |
+| `pnpm-version` | no | Default `11` (Node only) |
 | `python-version` | no | Default `3.12` (Python only) |
 | `repo-url` | no | Defaults to the calling repository |
 | `registry-token` | secret | npm or uv/PyPI publish token; empty for Terraform |
@@ -89,7 +89,7 @@ This section is the policy source for modular-release toolchain defaults. The ac
 | Toolchain | Version | Notes |
 |---|---|---|
 | Node.js | `22` | Oldest still-supported LTS; used for the `semantic-release` runtime and Node builds. Matches consumer CI. |
-| pnpm | `9` | Node consumers only. |
+| pnpm | `11` | Node consumers only. |
 | Python | `3.12` | Python consumers only (default; Python repos test the `3.10`–`3.13` range). |
 
 Changing any of these defaults is a behaviour change for consumers pinned to a mutable ref, and should ship with a new SemVer tag of this repository so consumers adopt it explicitly.
