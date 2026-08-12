@@ -28,7 +28,7 @@ inputs:
   node-version:
     description: 'Node.js version used to run semantic-release'
     required: false
-    default: '20'
+    default: '22'
   pnpm-version:
     description: 'pnpm version (Node consumers only)'
     required: false
@@ -224,15 +224,24 @@ runs:
 
           if npx semantic-release $dry_run_flag --extends "$CONFIG_DIR/release.${module}.js"; then
             if [ "$DRY_RUN" = "true" ]; then
-              released=$(node -e "const a=$released; a.push({module:'$module', version:'dry-run', tag:'dry-run'}); process.stdout.write(JSON.stringify(a));")
+              released=$(
+                RELEASED_JSON="$released" MODULE="$module" \
+                node -e 'const a=JSON.parse(process.env.RELEASED_JSON); a.push({module:process.env.MODULE, version:"dry-run", tag:"dry-run"}); process.stdout.write(JSON.stringify(a));'
+              )
             else
               tag=$(git tag --points-at HEAD | grep -- "-${module}$" | head -1 || true)
               version="${tag#v}"
               version="${version%-${module}}"
-              released=$(node -e "const a=$released; a.push({module:'$module', version:'$version', tag:'$tag'}); process.stdout.write(JSON.stringify(a));")
+              released=$(
+                RELEASED_JSON="$released" MODULE="$module" VERSION="$version" TAG="$tag" \
+                node -e 'const a=JSON.parse(process.env.RELEASED_JSON); a.push({module:process.env.MODULE, version:process.env.VERSION, tag:process.env.TAG}); process.stdout.write(JSON.stringify(a));'
+              )
             fi
           else
-            failed=$(node -e "const a=$failed; a.push({module:'$module', error:'semantic-release failed'}); process.stdout.write(JSON.stringify(a));")
+            failed=$(
+              FAILED_JSON="$failed" MODULE="$module" \
+              node -e 'const a=JSON.parse(process.env.FAILED_JSON); a.push({module:process.env.MODULE, error:"semantic-release failed"}); process.stdout.write(JSON.stringify(a));'
+            )
           fi
           echo "::endgroup::"
         done

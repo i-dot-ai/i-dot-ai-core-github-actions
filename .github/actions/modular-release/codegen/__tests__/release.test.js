@@ -73,4 +73,18 @@ describe('release.template substitution', () => {
     expect(generated).toContain("scope: 'auth'");
     expect(generated).toContain("scope: '!auth', release: false");
   });
+
+  test('defaults branches to main only', () => {
+    const generated = generate('node');
+    expect(generated).toContain("branches: ['main'],");
+    expect(generated).not.toContain('EN-1538');
+  });
+
+  test('adds a prerelease channel when preReleaseBranch is set', () => {
+    const generated = generate('node', { preReleaseBranch: 'release/next' });
+    expect(generated).toContain(
+      'branches: ["main",{"name":"release/next","prerelease":true}],',
+    );
+    expect(generated).not.toContain('EN-1538');
+  });
 });
