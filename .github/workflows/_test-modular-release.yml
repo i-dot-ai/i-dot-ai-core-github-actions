@@ -22,10 +22,10 @@ jobs:
       run:
         working-directory: .github/actions/modular-release/codegen
     steps:
-      - uses: actions/checkout@v6
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with:
-          node-version: '20'
+          node-version: '22'
       - run: npm install --no-audit --no-fund
       - run: npm test
 
@@ -38,10 +38,10 @@ jobs:
       matrix:
         language: [node, python, terraform]
     steps:
-      - uses: actions/checkout@v6
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with:
-          node-version: '20'
+          node-version: '22'
       - run: npm install --no-audit --no-fund
         working-directory: .github/actions/modular-release/codegen
       - name: Generate config for fixture

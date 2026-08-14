@@ -2,21 +2,24 @@ import getAndValidateModules from './modules.js';
 import { upsertReleaseConfig } from './release.js';
 import { supportedLanguages } from './constants.js';
 
-// Programmatic entrypoint. The composite action invokes this with explicit
-// arguments rather than relying on relative paths from a working directory.
-//
-// Args:
-//   manifestPath:       path to the consumer's modules.yml
-//   templatePath:       path to the release.template.js shipped inside the action
-//   outputDirectory:    directory to write release.<module>.js files into
-//                       (typically a runner temp dir, never the consumer repo)
-//   language:           'node' | 'python' | 'terraform'
-//   repoUrl:            consumer repo URL (https://github.com/<owner>/<repo>)
-//   packagesDir:        optional override for the package group directory
-//   preReleaseBranch:   optional branch name to add as a pre-release channel
-//
-// Returns the list of `{ name, parentKeys, configPath }` for downstream
-// dispatch.
+/**
+ * Generates one semantic-release configuration for every declared module.
+ *
+ * Files are written synchronously to `outputDirectory`; callers should use a
+ * temporary directory because generated configs may contain repository-specific
+ * values.
+ *
+ * @param {object} options
+ * @param {string} options.manifestPath Path to the consumer's modules manifest.
+ * @param {string} options.templatePath Path to the release config template.
+ * @param {string} options.outputDirectory Directory that receives generated configs.
+ * @param {'node'|'python'|'terraform'} options.language Consumer ecosystem.
+ * @param {string} options.repoUrl Consumer repository URL.
+ * @param {string} [options.packagesDir] Directory that directly contains all modules.
+ * @param {string} [options.preReleaseBranch] Branch exposed as a prerelease channel.
+ * @returns {{name: string, packageDir: string, configPath: string}[]} Generated modules.
+ * @throws {Error} If the language, manifest, template, or output path is invalid.
+ */
 export function generateModuleConfigurations({
   manifestPath,
   templatePath,
@@ -38,13 +41,13 @@ export function generateModuleConfigurations({
   for (const key of moduleInfo) {
     const configPath = upsertReleaseConfig(
       key.name,
-      key.parentKeys,
+      key.packageDir,
       language,
       templatePath,
       outputDirectory,
       { repoUrl, packagesDir, preReleaseBranch },
     );
-    generated.push({ name: key.name, parentKeys: key.parentKeys, configPath });
+    generated.push({ name: key.name, packageDir: key.packageDir, configPath });
   }
 
   return generated;

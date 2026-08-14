@@ -45,7 +45,9 @@ describe('release.template substitution', () => {
     const generated = generate('python');
     writeAndCheck(generated);
     expect(generated).not.toContain('@semantic-release/npm');
-    expect(generated).toContain('uv lock');
+    expect(generated).toContain(
+      'cd packages/auth && uv lock --upgrade-package i-dot-ai-utilities-auth',
+    );
     expect(generated).toContain('packages/auth/pyproject.toml');
     expect(generated).toContain('packages/auth/uv.lock');
   });
@@ -54,11 +56,39 @@ describe('release.template substitution', () => {
     const generated = generate('terraform');
     writeAndCheck(generated);
     expect(generated).not.toContain('@semantic-release/npm');
-    expect(generated).not.toContain('uv lock');
+    expect(generated).not.toContain('@semantic-release/exec');
   });
 
   test('rejects an unsupported language', () => {
     expect(() => generate('rust')).toThrow(/Unsupported language/);
+  });
+
+  test('rejects missing required release options', () => {
+    expect(() =>
+      buildReleaseConfig('auth', 'packages', 'node', templateContents),
+    ).toThrow(/repoUrl is required/);
+    expect(() =>
+      buildReleaseConfig('auth', 'packages', '', templateContents, {
+        repoUrl: 'https://example',
+      }),
+    ).toThrow(/language is required/);
+  });
+
+  test('uses packagesDir instead of the manifest directory when provided', () => {
+    const generated = generate('node', { packagesDir: 'components' });
+    expect(generated).toContain("pkgRoot: 'components/auth'");
+    expect(generated).toContain('components/auth/CHANGELOG.md');
+  });
+
+  test('places a module under its nested package directory', () => {
+    const generated = buildReleaseConfig(
+      'vpc',
+      'infrastructure/networking',
+      'terraform',
+      templateContents,
+      { repoUrl: 'https://example' },
+    );
+    expect(generated).toContain('infrastructure/networking/vpc/CHANGELOG.md');
   });
 
   test('uses the consumer repo URL in the generated config', () => {
@@ -72,5 +102,18 @@ describe('release.template substitution', () => {
     const generated = generate('node');
     expect(generated).toContain("scope: 'auth'");
     expect(generated).toContain("scope: '!auth', release: false");
+  });
+
+  test('defaults branches to main only', () => {
+    const generated = generate('node');
+    expect(generated).toContain("branches: ['main'],");
+    expect(generated).not.toContain('prerelease');
+  });
+
+  test('adds a prerelease channel when preReleaseBranch is set', () => {
+    const generated = generate('node', { preReleaseBranch: 'release/next' });
+    expect(generated).toContain(
+      'branches: ["main",{"name":"release/next","prerelease":true}],',
+    );
   });
 });

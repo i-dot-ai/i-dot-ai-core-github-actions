@@ -1,67 +1,54 @@
 #!/usr/bin/env bash
-# Detects which modules have changed in the merged commit (HEAD..HEAD~1),
-# excluding test directories.
+# Reports modules whose published package content changed between HEAD and its
+# first parent.
 #
-# Reads the manifest to determine the module set and (for nested manifests
-# like the Terraform-modules layout) the per-module group directory.
+# Usage: get_changed_modules.sh [manifest-path] [packages-dir]
 #
-# Usage:
-#   get_changed_modules.sh <manifest-path> <packages-dir>
+# `manifest-path` defaults to modules.yml and accepts the formats documented by
+# codegen/modules.js. A non-empty `packages-dir` places every module directly
+# below that directory; otherwise nested manifest keys form the package path.
+# Stdout is a space-separated module list, or an empty line when no module has
+# non-test changes. Invalid manifests and unreachable parent commits fail
+# non-zero.
 #
-# When <packages-dir> is set, all modules are assumed to live directly under
-# it (the Node/Python case, e.g. `packages/auth`). When empty, the script
-# walks the manifest's nested groups and uses each group key as the
-# directory name (the Terraform case, e.g. `modules/infrastructure/rds`).
-#
-# Emits a space-separated list of module names to stdout.
+# Requires Node and the installed codegen dependencies, because module names
+# come from ../codegen/list-modules.js.
 
 set -euo pipefail
 
 manifest="${1:-modules.yml}"
 packages_dir="${2:-}"
+script_dir=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
 
 if [ ! -f "$manifest" ]; then
   echo "Manifest not found at $manifest" >&2
   exit 1
 fi
 
-# List every leaf module name from the manifest. Tolerant of either a top-level
-# `modules:` key or a bare mapping.
-list_modules() {
-  python3 - "$manifest" <<'PY'
-import sys, yaml
-with open(sys.argv[1]) as f:
-    data = yaml.safe_load(f)
-root = data.get('modules', data) if isinstance(data, dict) else data
-def walk(node, parent=''):
-    out = []
-    if isinstance(node, list):
-        for v in node:
-            out.append((parent, v))
-    elif isinstance(node, dict):
-        for k, v in node.items():
-            new_parent = f"{parent}/{k}" if parent else k
-            out += walk(v, new_parent)
-    return out
-for parent, name in walk(root):
-    print(f"{parent}\t{name}")
-PY
-}
+if ! git rev-parse --verify HEAD^ >/dev/null 2>&1; then
+  echo "Cannot diff HEAD against its first parent. Check out at least two commits (fetch-depth: 2), or confirm HEAD is not the repository's first commit." >&2
+  exit 1
+fi
 
+module_list=$(node "$script_dir/../codegen/list-modules.js" "$manifest")
 changed=()
 while IFS=$'\t' read -r parent name; do
+  if [ -z "$name" ]; then
+    continue
+  fi
+
   if [ -n "$packages_dir" ]; then
     module_dir="${packages_dir}/${name}"
   else
     module_dir="${parent}/${name}"
   fi
 
-  # Match any change under module_dir except files in __tests__ or tests dirs.
-  if git diff --name-only HEAD HEAD~1 -- "$module_dir" \
+  # The release policy excludes test-only paths from versioning signals.
+  if git diff --name-only HEAD^ HEAD -- "$module_dir" \
       | grep -v -E "(^|/)(__tests__|tests)(/|$)" \
       | grep -q .; then
     changed+=("$name")
   fi
-done < <(list_modules)
+done <<< "$module_list"
 
 echo "${changed[@]:-}"

@@ -1,7 +1,6 @@
 import * as path from 'path';
 import { readFileContents, replaceTemplateVariables, writeConfig } from './utils.js';
 
-// Language-conditional plugin fragments used by the release template.
 function buildLanguageFragments(language, packagePath) {
   switch (language) {
     case 'node':
@@ -50,17 +49,29 @@ function buildLanguageFragments(language, packagePath) {
   }
 }
 
-function buildPackagePath(parentKeys, moduleName, packagesDir) {
-  // parentKeys is e.g. "packages" or "infrastructure" or empty.
-  // packagesDir overrides the leading directory for languages that store
-  // packages somewhere other than the manifest's group key (rare, but supported).
-  const groupDir = packagesDir || parentKeys.replace(/\./g, '/');
-  return path.posix.join(groupDir, moduleName);
+function buildPackagePath(packageDir, moduleName, packagesDirOverride) {
+  return path.posix.join(packagesDirOverride || packageDir, moduleName);
 }
 
+/**
+ * Produces a semantic-release configuration for one module.
+ *
+ * @param {string} moduleName Manifest name used as the commit scope and tag suffix.
+ * @param {string} packageDir Module group's directory as a POSIX-relative path.
+ * @param {'node'|'python'|'terraform'} language Consumer ecosystem.
+ * @param {string} templateContents Release template source.
+ * @param {object} options
+ * @param {string} options.repoUrl Consumer repository URL; required.
+ * @param {string} [options.packagesDir] Directory containing all modules. When
+ * omitted, `packageDir` locates the module.
+ * @param {string} [options.preReleaseBranch] Prerelease channel. When omitted,
+ * only production releases from `main` are enabled.
+ * @returns {string} Complete JavaScript configuration source.
+ * @throws {Error} If `repoUrl` or `language` is missing or unsupported.
+ */
 export function buildReleaseConfig(
   moduleName,
-  parentKeys,
+  packageDir,
   language,
   templateContents,
   options = {},
@@ -70,12 +81,11 @@ export function buildReleaseConfig(
   if (!repoUrl) throw new Error('repoUrl is required');
   if (!language) throw new Error('language is required');
 
-  const packagePath = buildPackagePath(parentKeys, moduleName, packagesDir);
+  const packagePath = buildPackagePath(packageDir, moduleName, packagesDir);
   const fragments = buildLanguageFragments(language, packagePath);
 
-  // Build the branches config. Default is just ['main']. When a pre-release
-  // branch is specified, add it as a prerelease channel so semantic-release
-  // publishes with a pre-release version and a non-latest dist-tag.
+  // Retaining main alongside an optional prerelease channel ensures the same
+  // generated config can promote production releases without changing policy.
   let branchesValue;
   if (preReleaseBranch) {
     branchesValue = JSON.stringify([
@@ -88,6 +98,9 @@ export function buildReleaseConfig(
 
   let prepared = templateContents;
   prepared = replaceTemplateVariables('${BRANCHES}', branchesValue, prepared);
+  prepared = replaceTemplateVariables('${NPM_PLUGIN}', fragments.npmPlugin, prepared);
+  prepared = replaceTemplateVariables('${PREPARE_EXEC}', fragments.prepareExec, prepared);
+  prepared = replaceTemplateVariables('${GIT_ASSETS}', fragments.gitAssets, prepared);
   prepared = replaceTemplateVariables('${MODULE_NAME}', moduleName, prepared);
   prepared = replaceTemplateVariables('${REPO_URL}', repoUrl, prepared);
   prepared = replaceTemplateVariables('${PACKAGE_PATH}', packagePath, prepared);
@@ -96,16 +109,28 @@ export function buildReleaseConfig(
     `${packagePath}/CHANGELOG.md`,
     prepared,
   );
-  prepared = replaceTemplateVariables('${NPM_PLUGIN}', fragments.npmPlugin, prepared);
-  prepared = replaceTemplateVariables('${PREPARE_EXEC}', fragments.prepareExec, prepared);
-  prepared = replaceTemplateVariables('${GIT_ASSETS}', fragments.gitAssets, prepared);
 
   return prepared;
 }
 
+/**
+ * Writes a generated module configuration to `outputDirectory`.
+ *
+ * Parent directories are created synchronously when absent. Existing module
+ * configuration files are replaced.
+ *
+ * @param {string} moduleName Manifest module name.
+ * @param {string} packageDir Module group's directory as a POSIX-relative path.
+ * @param {'node'|'python'|'terraform'} language Consumer ecosystem.
+ * @param {string} templatePath Path to the release template.
+ * @param {string} outputDirectory Directory that receives the generated file.
+ * @param {object} options Options accepted by {@link buildReleaseConfig}.
+ * @returns {string} Path to `release.<moduleName>.js`.
+ * @throws {Error} If template reading, validation, or file writing fails.
+ */
 export function upsertReleaseConfig(
   moduleName,
-  parentKeys,
+  packageDir,
   language,
   templatePath,
   outputDirectory,
@@ -114,7 +139,7 @@ export function upsertReleaseConfig(
   const templateContents = readFileContents(templatePath);
   const prepared = buildReleaseConfig(
     moduleName,
-    parentKeys,
+    packageDir,
     language,
     templateContents,
     options,
