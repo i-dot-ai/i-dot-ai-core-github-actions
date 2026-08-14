@@ -32,10 +32,14 @@ on:
         required: false
         default: '22'
       pnpm-version:
-        description: 'pnpm version used for Node consumers'
+        description: >
+          pnpm version for Node consumers. Leave empty to read the version from
+          the consumer's package.json "packageManager" field; set a value only
+          for consumers without a packageManager pin (passing both errors under
+          pnpm/action-setup v6).
         type: string
         required: false
-        default: '11'
+        default: ''
       python-version:
         description: 'Python version used for Python consumers'
         type: string

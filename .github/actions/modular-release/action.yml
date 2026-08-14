@@ -27,9 +27,14 @@ inputs:
     required: false
     default: '22'
   pnpm-version:
-    description: 'pnpm version (Node consumers only)'
+    description: >
+      pnpm version (Node consumers only). Leave empty to let pnpm/action-setup
+      read the version from the consumer's package.json "packageManager" field;
+      passing both a version here and a packageManager pin errors under
+      action-setup v6. Set a value only for consumers without a packageManager
+      pin.
     required: false
-    default: '11'
+    default: ''
   python-version:
     description: 'Python version (Python consumers only)'
     required: false
@@ -94,6 +99,9 @@ runs:
       env:
         FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
       with:
+        # Empty version lets action-setup read the consumer's packageManager
+        # pin. Passing a non-empty version alongside a packageManager field
+        # errors (ERR_PNPM_BAD_PM_VERSION), so only forward an explicit input.
         version: ${{ inputs.pnpm-version }}
 
     - name: Setup Python
