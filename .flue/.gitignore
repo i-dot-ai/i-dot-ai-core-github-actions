@@ -1,0 +1,4 @@
+# Flue build output and runtime cache. Authored under SLICE-006a.
+.dist/
+.cache/
+*.log

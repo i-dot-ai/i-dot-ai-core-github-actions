@@ -1,0 +1,150 @@
+name: Smoke test — publish-context (SLICE-004a)
+# Authored under SLICE-004a. Drives the publish-context reusable workflow
+# locally (i.e., from inside this repo) against the SLICE-001 fixtures
+# and asserts the partial workflow's behaviour. Three scenarios:
+#   - positive: valid Layer 1 + valid Layer 2 → workflow exits 0.
+#   - negative: invalid Layer 1 → workflow exits non-zero at the
+#     validation step, before any write step.
+#   - mismatch: capability_id input disagrees with YAML body →
+#     workflow exits non-zero at the capability_id guard, before
+#     validation completes.
+#
+# Write steps in publish-context.yaml are stubbed at SLICE-004a, so
+# this smoke test does NOT require AWS credentials. SLICE-004c will
+# extend the smoke matrix with an end-to-end scenario.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/publish-context.yaml'
+      - '.github/workflows/test-publish-context.yaml'
+      - 'scripts/publish_context.sh'
+      - 'scripts/validate_context.py'
+      - 'schemas/**'
+      - 'contracts/publish-context.contract.yaml'
+  pull_request:
+    paths:
+      - '.github/workflows/publish-context.yaml'
+      - '.github/workflows/test-publish-context.yaml'
+      - 'scripts/publish_context.sh'
+      - 'scripts/validate_context.py'
+      - 'schemas/**'
+      - 'contracts/publish-context.contract.yaml'
+
+permissions:
+  contents: read
+
+jobs:
+  positive:
+    name: positive — valid layer 1 + layer 2 → workflow passes
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install validator deps
+        run: python -m pip install jsonschema pyyaml
+
+      - name: Stage caller workspace from fixtures
+        run: |
+          mkdir -p caller-workspace
+          cp scripts/fixtures/context-index.valid.yaml caller-workspace/context.yaml
+          cp scripts/fixtures/context-detail.valid.yaml caller-workspace/context-detail.yaml
+          cp -r . caller-workspace/.platform-context-tooling
+
+      - name: capability_id guard (positive)
+        working-directory: caller-workspace
+        run: |
+          ./.platform-context-tooling/scripts/publish_context.sh assert_capability_match \
+            CAP-002 context.yaml context-detail.yaml
+
+      - name: schema_version guard (positive)
+        working-directory: caller-workspace
+        run: |
+          ./.platform-context-tooling/scripts/publish_context.sh assert_schema_versions_match \
+            context.yaml context-detail.yaml
+
+      - name: Validate Layer 1 (positive)
+        working-directory: caller-workspace
+        run: python ./.platform-context-tooling/scripts/validate_context.py --layer index context.yaml
+
+      - name: Validate Layer 2 (positive)
+        working-directory: caller-workspace
+        run: python ./.platform-context-tooling/scripts/validate_context.py --layer detail context-detail.yaml
+
+      - name: Canonicalise (positive)
+        working-directory: caller-workspace
+        run: |
+          ./.platform-context-tooling/scripts/publish_context.sh canonicalise \
+            context.yaml CAP-002 i-dot-ai-dev-context-engine-context-detail "${{ github.actor }}"
+          # Confirm the rewrite landed.
+          grep -q 'detail_ref: s3://i-dot-ai-dev-context-engine-context-detail/capabilities/CAP-002/detail.yaml' context.yaml
+
+      - name: Emit step summary (positive)
+        if: always()
+        working-directory: caller-workspace
+        run: |
+          ./.platform-context-tooling/scripts/publish_context.sh emit_step_summary \
+            CAP-002 context.yaml context-detail.yaml i-dot-ai-dev-context-engine-context-detail
+
+  negative_invalid_layer1:
+    name: negative — invalid layer 1 → validation step fails
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install validator deps
+        run: python -m pip install jsonschema pyyaml
+
+      - name: Stage caller workspace with invalid layer 1
+        run: |
+          mkdir -p caller-workspace
+          cp scripts/fixtures/context-index.invalid.yaml caller-workspace/context.yaml
+          cp scripts/fixtures/context-detail.valid.yaml caller-workspace/context-detail.yaml
+
+      - name: Validate Layer 1 — expect failure
+        run: |
+          if python scripts/validate_context.py --layer index caller-workspace/context.yaml; then
+            echo "::error::Validator unexpectedly accepted the invalid fixture"
+            exit 1
+          fi
+          echo "Validator rejected the invalid fixture as expected."
+
+  negative_capability_mismatch:
+    name: negative — capability_id mismatch → guard fails before validation
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install validator deps
+        run: python -m pip install jsonschema pyyaml
+
+      - name: Stage caller workspace
+        run: |
+          mkdir -p caller-workspace
+          cp scripts/fixtures/context-index.valid.yaml caller-workspace/context.yaml
+          cp scripts/fixtures/context-detail.valid.yaml caller-workspace/context-detail.yaml
+
+      - name: capability_id guard with mismatched input — expect failure
+        run: |
+          if ./scripts/publish_context.sh assert_capability_match \
+              CAP-999 caller-workspace/context.yaml caller-workspace/context-detail.yaml; then
+            echo "::error::Guard unexpectedly accepted a capability_id mismatch"
+            exit 1
+          fi
+          echo "Guard rejected the mismatched capability_id as expected."

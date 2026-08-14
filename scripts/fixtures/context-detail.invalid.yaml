@@ -1,0 +1,18 @@
+# Negative fixture: Layer 2 record missing schema_version and carrying an
+# unknown top-level field (`primary_contact`). Validator MUST reject.
+capability_id: CAP-002
+architecture:
+  description: >-
+    Single CloudFront distribution shared across all i.AI applications.
+  deployment_model: serverless
+  components:
+    - name: CloudFront Distribution
+      type: cdn
+      provider: aws
+operational_model:
+  on_call: Platform team
+  runbooks: []
+  monitoring: []
+known_limitations: []
+integration_patterns: []
+primary_contact: "platform-team@example.gov.uk"
