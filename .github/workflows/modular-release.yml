@@ -63,6 +63,22 @@ on:
         type: string
         required: false
         default: ''
+      use-oidc:
+        description: >
+          When 'true', Node consumers publish via npm trusted publishing (OIDC)
+          instead of a registry token. Requires id-token:write (already granted
+          on this job) and a trusted publisher configured on npmjs.com for the
+          calling repository and workflow file. Leave false for token auth.
+        type: boolean
+        required: false
+        default: false
+      npm-version:
+        description: >
+          npm CLI version installed when use-oidc is true. Trusted publishing
+          requires npm >= 11.5.1.
+        type: string
+        required: false
+        default: '11.5.1'
     secrets:
       registry-token:
         description: 'Registry publish token for Node or Python; omit for Terraform'
@@ -117,3 +133,5 @@ jobs:
           github-token: ${{ secrets.github-token }}
           dry-run: ${{ inputs.dry-run }}
           pre-release-branch: ${{ inputs.pre-release-branch }}
+          use-oidc: ${{ inputs.use-oidc }}
+          npm-version: ${{ inputs.npm-version }}

@@ -43,6 +43,23 @@ inputs:
     description: 'Registry publish token for Node or Python; omit for Terraform'
     required: false
     default: ''
+  use-oidc:
+    description: >
+      Stringified boolean. When 'true', publishes via npm trusted publishing
+      (OIDC) instead of a registry token: no NODE_AUTH_TOKEN is written and the
+      runner npm CLI is upgraded to satisfy the OIDC version floor. Node
+      consumers only; requires id-token:write on the job and a trusted publisher
+      configured on npmjs.com for this repository and workflow. Leave 'false' to
+      keep token-based publishing.
+    required: false
+    default: 'false'
+  npm-version:
+    description: >
+      npm CLI version installed globally when use-oidc is 'true' (Node
+      consumers). Trusted publishing requires npm >= 11.5.1, which is newer than
+      the npm bundled with Node 22.
+    required: false
+    default: '11.5.1'
   github-token:
     description: 'GitHub token with contents:write for release commits, tags, and releases'
     required: true
@@ -87,11 +104,22 @@ runs:
       uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
       env:
         FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
-        NODE_AUTH_TOKEN: ${{ inputs.registry-token }}
+        NODE_AUTH_TOKEN: ${{ inputs.use-oidc == 'true' && '' || inputs.registry-token }}
       with:
         node-version: ${{ inputs.node-version }}
         registry-url: 'https://registry.npmjs.org'
         always-auth: true
+
+    - name: Upgrade npm for trusted publishing
+      if: inputs.language == 'node' && inputs.use-oidc == 'true'
+      shell: bash
+      env:
+        NPM_VERSION: ${{ inputs.npm-version }}
+      run: |
+        # Node 22 bundles an npm older than the 11.5.1 OIDC floor, so upgrade
+        # the global npm before semantic-release shells out to `npm publish`.
+        npm install -g "npm@${NPM_VERSION}"
+        npm -v
 
     - name: Setup pnpm
       if: inputs.language == 'node'
@@ -195,8 +223,8 @@ runs:
       working-directory: ${{ inputs.working-directory }}
       env:
         GITHUB_TOKEN: ${{ inputs.github-token }}
-        NPM_TOKEN: ${{ inputs.registry-token }}
-        NODE_AUTH_TOKEN: ${{ inputs.registry-token }}
+        NPM_TOKEN: ${{ inputs.use-oidc == 'true' && '' || inputs.registry-token }}
+        NODE_AUTH_TOKEN: ${{ inputs.use-oidc == 'true' && '' || inputs.registry-token }}
         UV_PUBLISH_TOKEN: ${{ inputs.registry-token }}
         LANGUAGE: ${{ inputs.language }}
         PACKAGES_DIR: ${{ inputs.packages-dir }}

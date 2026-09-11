@@ -27,6 +27,25 @@ jobs:
       github-token: ${{ secrets.GITHUB_TOKEN }}
 ```
 
+Trusted publishing (OIDC) for Node consumers; omit `registry-token` and set `use-oidc: true`. The caller must grant `id-token: write` (both the caller job and this reusable workflow already declare it), and each published package needs a trusted publisher on npmjs.com naming the calling repository and the caller's workflow filename (e.g. `release.yml`, not this reusable workflow):
+
+```yaml
+permissions:
+  contents: write
+  id-token: write
+
+jobs:
+  release:
+    uses: i-dot-ai/i-dot-ai-core-github-actions/.github/workflows/modular-release.yml@main
+    with:
+      modules-manifest: modules.yml
+      language: node
+      packages-dir: packages
+      use-oidc: true
+    secrets:
+      github-token: ${{ secrets.GITHUB_TOKEN }}
+```
+
 Composite action (if a consumer needs full control of the surrounding job):
 
 ```yaml
@@ -55,6 +74,8 @@ Composite action (if a consumer needs full control of the surrounding job):
 | `github-token` | secret | `contents:write` to push release commits and tags and create releases |
 | `dry-run` | no | Evaluate releases without publishing, committing, or tagging; default `false`. The reusable workflow types this as a `boolean`; the composite action receives the stringified value and treats only the literal `true` as enabled |
 | `pre-release-branch` | no | Optional branch exposed as a semantic-release prerelease channel |
+| `use-oidc` | no | Node only. When `true`, publishes via npm trusted publishing (OIDC): no token is written and the runner npm CLI is upgraded to the OIDC floor. Requires `id-token: write` on the job and a trusted publisher configured on npmjs.com for the calling repository and workflow file. Default `false` (token auth) |
+| `npm-version` | no | npm CLI version installed when `use-oidc` is `true`. Trusted publishing requires npm `>= 11.5.1`; default `11.5.1` |
 
 ### Release contract
 
