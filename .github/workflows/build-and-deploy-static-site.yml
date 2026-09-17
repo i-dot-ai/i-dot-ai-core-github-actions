@@ -126,6 +126,8 @@ jobs:
         env:
           BUILD_SECRETS: ${{ secrets.BUILD_SECRETS }}
         run: |
+          set -euo pipefail
+          set +x
           if [ -z "$BUILD_SECRETS" ]; then
             echo "No BUILD_SECRETS provided; skipping."
             exit 0
