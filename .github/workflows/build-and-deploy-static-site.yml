@@ -74,6 +74,8 @@ on:
         required: false
       STATIC_SITE_PROD_CLOUDFRONT_DISTRIBUTION_ID: # Org level secret
         required: false
+      BUILD_SECRETS:
+        required: false
 
 jobs:
   start-runner:
@@ -118,6 +120,21 @@ jobs:
         if: ${{ inputs.BUILD_ENV_VARS != '' }}
         run: |
           echo "${{ inputs.BUILD_ENV_VARS }}" >> .env
+        shell: bash
+
+      - name: Load build secrets
+        env:
+          BUILD_SECRETS: ${{ secrets.BUILD_SECRETS }}
+        run: |
+          if [ -z "$BUILD_SECRETS" ]; then
+            echo "No BUILD_SECRETS provided; skipping."
+            exit 0
+          fi
+          while IFS= read -r line; do
+            [ -z "$line" ] && continue
+            echo "::add-mask::${line#*=}"
+            echo "$line" >> "$GITHUB_ENV"
+          done <<< "$BUILD_SECRETS"
         shell: bash
 
       - name: Install dependencies
