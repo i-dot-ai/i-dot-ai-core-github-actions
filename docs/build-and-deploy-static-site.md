@@ -57,13 +57,47 @@ These are marked as `required: false` in the workflow definition, but the **buil
 | `INSTALL_COMMAND` | `cd frontend && npm install` | Override if your project structure differs. |
 | `BUILD_COMMAND` | `cd frontend && npm run build` | Override if your project structure differs. |
 | `BUILD_DIRECTORY` | `frontend/dist` | Path to the build output. If you change `BUILD_COMMAND`, you likely need to change this too. |
-| `BUILD_ENV_VARS` | _(none)_ | Newline-separated `KEY=VALUE` pairs written to a `.env` file before the build step. Use for build-time configuration (e.g. base URLs, feature flags). These values are baked into the static output and are **not secret**. If you manage these per environment, pass `${{ vars.BUILD_ENV_VARS }}` from your caller (see [Per-environment build variables](#per-environment-build-variables) below). |
+| `BUILD_ENV_VARS` | _(none)_ | Newline-separated `KEY=VALUE` pairs written to a `.env` file before the build step. Use for build-time configuration (e.g. base URLs, feature flags). These values are baked into the static output and are **not secret**. For sensitive values use the [`BUILD_SECRETS`](#optional-secrets) secret instead. If you manage these per environment, pass `${{ vars.BUILD_ENV_VARS }}` from your caller (see [Per-environment build variables](#per-environment-build-variables) below). |
 | `SITE_URL` | _(none)_ | If provided, enables the smoke test job. |
 | `SMOKE_TEST_URLS` | _(none)_ | Newline-separated list of additional URLs to check for HTTP 200 (e.g. sub-pages, static assets). Only used when `SITE_URL` is set. |
 
-## Per-environment build variables
+### Per-environment build variables
 
 If you need different build-time configuration per environment (e.g. different API base URLs for `dev` vs `prod`), you need to configure set jobs and pass these through as separate inputs. 
+
+## Optional secrets
+
+| Secret | Default | Notes |
+|---|---|---|
+| `BUILD_SECRETS` | _(none)_ | Newline-separated `KEY=VALUE` pairs exported as environment variables, making them available within the install and build steps. Use for build-time secrets, such as a token for fetching content from a private repository. Values are masked in logs, are **not** written to `.env`, and are **not** synced to S3. This is the secret counterpart to `BUILD_ENV_VARS`. |
+
+> [!IMPORTANT]
+> `secrets: inherit` alone will **not** populate `BUILD_SECRETS`. `inherit` only forwards secrets that already exist by name in the caller, and `BUILD_SECRETS` is a value you construct from your own repository secrets. You must therefore pass it explicitly, and because a `secrets:` block cannot combine `inherit` with named secrets, you also need to list the other required secrets explicitly. See the [private content example](#building-with-private-content) below.
+
+## Building with private content
+
+If your build fetches content from a private source (for example, an Astro build that pulls Markdown from a private GitHub repo via the API), pass the token through `BUILD_SECRETS`:
+
+```yaml
+jobs:
+  deploy:
+    uses: i-dot-ai/i-dot-ai-core-github-actions/.github/workflows/build-and-deploy-static-site.yml@main
+    with:
+      ENVIRONMENT: dev
+      COMMIT_HASH: ${{ github.sha }}
+      SITE_PREFIX: my-site
+    secrets:
+      AWS_GITHUBRUNNER_PAT: ${{ secrets.AWS_GITHUBRUNNER_PAT }}
+      AWS_REGION: ${{ secrets.AWS_REGION }}
+      AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
+      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+      STATIC_SITE_DEV_DESTINATION_BUCKET: ${{ secrets.STATIC_SITE_DEV_DESTINATION_BUCKET }}
+      STATIC_SITE_DEV_CLOUDFRONT_DISTRIBUTION_ID: ${{ secrets.STATIC_SITE_DEV_CLOUDFRONT_DISTRIBUTION_ID }}
+      BUILD_SECRETS: |
+        MY_REPO_TOKEN=${{ secrets.MY_REPO_TOKEN }}
+```
+
+The named env var (`MY_REPO_TOKEN` here) is then available to your `INSTALL_COMMAND` and `BUILD_COMMAND`.
 
 ## Caller permissions
 
