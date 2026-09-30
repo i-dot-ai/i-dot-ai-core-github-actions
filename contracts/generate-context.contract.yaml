@@ -1,0 +1,144 @@
+contract_version: "1.0"
+artefact_type: "REUSABLE_WORKFLOW_CONTRACT"
+contract_id: "generate-context"
+locked_at: "SLICE-006a close"
+linked_lock: "LOCK-005"
+
+description: >-
+  Canonical input and output contract for the generate-context reusable
+  workflow at .github/workflows/generate-context.yml (authored under
+  SLICE-006c). Caller workflows in capability repositories invoke this
+  workflow on pull_request events to produce updated context records via
+  the Flue agent harness pinned in package.json. Locked at SLICE-006a
+  close; any change requires a contract dispute. The workflow file
+  itself is authored later (SLICE-006c-a) and MUST honour this contract.
+
+workflow_call:
+  inputs:
+    capability_id:
+      description: >-
+        Stable capability identifier matching the LOCK-001 schema's
+        capability_id pattern (^CAP-\d{3}$). Required. The agent reads
+        this from the workflow payload and the workflow uses it to
+        force-set the capability_id field on the Flue agent's output
+        before validation (per OQ-005 field forcing rules).
+      type: string
+      required: true
+
+    context_index_path:
+      description: "Path to the existing Layer 1 record YAML, relative to caller workspace."
+      type: string
+      required: false
+      default: "context.yaml"
+
+    context_detail_path:
+      description: "Path to the existing Layer 2 detail YAML, relative to caller workspace."
+      type: string
+      required: false
+      default: "context-detail.yaml"
+
+    significance_model:
+      description: >-
+        LiteLLM-mapped model identifier for the significance assessment
+        skill. Defaults to bedrock-claude-4.6-sonnet per OQ-005.
+      type: string
+      required: false
+      default: "bedrock-claude-4.6-sonnet"
+
+    generation_model:
+      description: >-
+        LiteLLM-mapped model identifier for the generation skill. Defaults
+        to bedrock-claude-4.7-opus per OQ-005.
+      type: string
+      required: false
+      default: "bedrock-claude-4.7-opus"
+
+  secrets:
+    inheritance: "secrets: inherit"
+    description: >-
+      Caller MUST invoke this workflow with `secrets: inherit`. The
+      following secrets are consumed by the workflow:
+        - CONTEXT_GENERATION_LLM_KEY: LiteLLM API key for the LLM
+          Gateway, scoped to the context generation use case per
+          OQ-004 with a 30-day budget cap. Required.
+        - LLM_GATEWAY_URL: HTTPS URL of the i.AI LLM Gateway endpoint
+          for OpenAI-compatible model routing. Required.
+        - GH_TOKEN (or built-in GITHUB_TOKEN): used by the workflow
+          (NOT the agent) to commit generated files back to the PR
+          branch and emit PR annotations. Required.
+    rationale: >-
+      Reusable workflows in i-dot-ai-core-github-actions follow the
+      existing convention of secrets: inherit (see apply-terraform.yml
+      and the publish-context contract LOCK-004). Callers do not pass
+      an explicit secret block.
+
+permissions_required:
+  contents: "write   # required to commit generated context files to the PR branch"
+  pull-requests: "write   # required to add PR annotations"
+
+response_shape:
+  conclusion: "success | failure | skipped"
+  step_summary_fields:
+    - "capability_id (echoed from input)"
+    - "mode (skipped | generated)"
+    - "significance_assessment (rationale + candidate_changed_fields)"
+    - "significance_model_sha (skill file SHA256)"
+    - "generation_model_sha (skill file SHA256, when mode=generated)"
+    - "validation_result (passed | retried | failed)"
+    - "files_changed (list of modified paths in the PR branch)"
+  exit_codes:
+    "0":  "Significance was false (skipped) OR generation succeeded and validated."
+    "non-zero":
+      - "Generation failed validation on both first attempt and retry."
+      - "Field forcing produced an output that the validator rejected (would indicate a contract bug; high-severity)."
+      - "PR is from a fork (per AGENTS.md invariant: refuse to run on fork PRs)."
+      - "LLM Gateway call failed three times (no fallback path)."
+
+workflow_invariants:
+  - "Schema validation step MUST run after the agent returns and after field forcing. Validation against LOCK-001 / LOCK-002 is performed by scripts/validate_context.py."
+  - "capability_id, schema_version, last_updated, and updated_by are field-forced by the workflow on the agent's output BEFORE validation. The agent's values for these fields are discarded per OQ-005 field forcing rules. This is the workflow's responsibility, NOT the agent's, and NOT the skill prompts'."
+  - "The Flue agent runs with the read-only tool restriction declared in .flue/AGENTS.md. The workflow performs all side effects (git commit, PR annotation, metric emission)."
+  - "Generation runs at temperature 0 (or the lowest the gateway permits) per AGENTS.md."
+  - "Workflow MUST NOT echo CONTEXT_GENERATION_LLM_KEY, GH_TOKEN, or any LLM Gateway response containing secrets."
+  - "Workflow MUST refuse to run on a pull request from a fork (per AGENTS.md). The check happens before the agent is invoked."
+  - "Validation retry: at most one retry, with the validation error appended to the agent's input. No third retry; non-zero exit on second-pass failure."
+  - "Skill file SHA256 of every invoked skill is recorded in the step summary so reviewers can correlate generated content with the skill version."
+
+caller_example: |
+  # In a capability repository's .github/workflows/generate-context.yml:
+  name: Generate Context
+  on:
+    pull_request:
+      branches: [main]
+      paths:
+        - 'terraform/**'
+        - '.github/workflows/**'
+        - 'context.yaml'
+        - 'context-detail.yaml'
+  jobs:
+    generate:
+      uses: i-dot-ai/i-dot-ai-core-github-actions/.github/workflows/generate-context.yml@v1
+      with:
+        capability_id: CAP-002
+      secrets: inherit
+
+field_forcing_responsibility:
+  description: >-
+    The Flue agent's structured output (context_index, context_detail) is
+    POST-PROCESSED by the calling workflow before any file is written or
+    validated. This is the workflow's responsibility, not the agent's
+    and not the skill prompts'.
+  forced_fields:
+    capability_id: "from inputs.capability_id"
+    schema_version: '"1.0" hardcoded'
+    last_updated: "workflow run start time, ISO 8601 with trailing Z"
+    updated_by: '"github-actions[bot]" hardcoded'
+  rationale: >-
+    Per OQ-005, LLM-supplied values for these four fields are NOT trusted.
+    The skill prompt instructs the model to leave them alone for clarity,
+    but the workflow does not rely on the model honouring that instruction.
+    This is the model_assurance affordance.
+
+stop_conditions_for_callers:
+  - "If the caller modifies the workflow signature locally, the contract is broken and the caller MUST upstream the change as a contract dispute."
+  - "If the caller passes a capability_id whose YAML body disagrees, the caller's existing context.yaml may need correction; the workflow does not silently rewrite capability_id during generation (the field is force-set from inputs.capability_id without consulting the YAML body)."

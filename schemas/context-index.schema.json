@@ -1,0 +1,162 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/i-dot-ai/i-dot-ai-core-github-actions/schemas/context-index.schema.json",
+  "title": "Capability Context Index (Layer 1)",
+  "description": "Layer 1 capability index record stored in DynamoDB. Authored as context.yaml per capability repository and published by the publish-context reusable workflow. Field set fixed by docs/execution/EXEC-20260515-platform-context-management/decisions/OQ-001-schemas.md.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "capability_id",
+    "schema_version",
+    "name",
+    "owner",
+    "lifecycle",
+    "summary",
+    "cloud_providers",
+    "interfaces",
+    "dependencies",
+    "references",
+    "detail_ref",
+    "last_updated",
+    "updated_by"
+  ],
+  "properties": {
+    "capability_id": {
+      "type": "string",
+      "pattern": "^CAP-\\d{3}$",
+      "description": "Stable identifier for the capability. Three-digit zero-padded suffix."
+    },
+    "schema_version": {
+      "type": "string",
+      "const": "1.0",
+      "description": "Pin to schema version 1.0. Any change is a deliberate schema-version bump."
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 80
+    },
+    "owner": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 80,
+      "description": "Free-text team name. The platform does not enforce a team registry at this version."
+    },
+    "lifecycle": {
+      "type": "string",
+      "enum": ["Proposed", "Building", "Live", "Deprecated", "Retired"],
+      "description": "Lifecycle stage. Source of truth: docs/context/capability-registry.md."
+    },
+    "summary": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 500,
+      "description": "Single-paragraph summary suitable for token-efficient agent consumption."
+    },
+    "cloud_providers": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "enum": ["aws", "azure", "gcp"]
+      },
+      "description": "Cloud-only estate. on-prem is intentionally excluded; introducing it is a schema-version bump."
+    },
+    "interfaces": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["name", "type", "location"],
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "rest",
+              "mcp",
+              "yaml-config",
+              "terraform-module",
+              "cli",
+              "library",
+              "event"
+            ]
+          },
+          "location": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    },
+    "dependencies": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "pattern": "^CAP-\\d{3}$"
+      },
+      "description": "Other capability IDs this capability depends on. May be empty."
+    },
+    "references": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["repository"],
+      "properties": {
+        "repository": {
+          "type": "string",
+          "minLength": 1,
+          "description": "GitHub URL or i-dot-ai/<repo> slug."
+        },
+        "dashboard": {
+          "type": "string",
+          "minLength": 1
+        },
+        "logs": {
+          "type": "string",
+          "minLength": 1
+        },
+        "cost_report": {
+          "type": "string",
+          "minLength": 1
+        },
+        "runbook": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "detail_ref": {
+      "type": "string",
+      "pattern": "^s3://[a-z0-9.\\-]+/.+\\.yaml$",
+      "description": "S3 URI of the linked Layer 2 detail object."
+    },
+    "last_updated": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?Z$",
+      "description": "ISO 8601 UTC timestamp with literal Z suffix."
+    },
+    "updated_by": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 80
+    },
+    "tags": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 40
+      },
+      "description": "Optional extension surface for capability shapes the core fields do not cover. Mitigates schema-rigidity risk without admitting silent field drift."
+    }
+  }
+}

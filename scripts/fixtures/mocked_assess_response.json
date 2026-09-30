@@ -1,0 +1,20 @@
+{
+  "_comment": "Fixture: assess-significance LLM response for the significant scenario. Used by .github/workflows/test-generate-context.yml to drive a deterministic agent run via a fake-provider URL. The shape MUST match the Significance valibot schema declared in .flue/agents/generate-context.ts.",
+  "scenarios": {
+    "significant": {
+      "significant": true,
+      "rationale": "Adds a new dependency on the platform DynamoDB module via terraform/dependencies.tf and toggles ENABLE_HEALTHCHECK in the release workflow. Both changes plausibly alter dependencies and operational_model.",
+      "candidate_changed_fields": ["dependencies", "operational_model.monitoring", "architecture.components"]
+    },
+    "insignificant": {
+      "significant": false,
+      "rationale": "Diff contains only README typo fixes and comment-only changes; nothing in the diff plausibly alters architecture, dependencies, interfaces, or operational model.",
+      "candidate_changed_fields": []
+    },
+    "validator_failure_assess": {
+      "significant": true,
+      "rationale": "x",
+      "candidate_changed_fields": []
+    }
+  }
+}

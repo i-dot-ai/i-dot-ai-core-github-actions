@@ -1,0 +1,131 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/i-dot-ai/i-dot-ai-core-github-actions/schemas/context-detail.schema.json",
+  "title": "Capability Context Detail (Layer 2)",
+  "description": "Layer 2 capability detail object stored in S3 at s3://<bucket>/capabilities/<capability_id>/detail.yaml. Authored as context-detail.yaml per capability repository and published by the publish-context reusable workflow. Field set fixed by docs/execution/EXEC-20260515-platform-context-management/decisions/OQ-001-schemas.md.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "capability_id",
+    "schema_version",
+    "architecture",
+    "operational_model",
+    "known_limitations",
+    "integration_patterns"
+  ],
+  "properties": {
+    "capability_id": {
+      "type": "string",
+      "pattern": "^CAP-\\d{3}$",
+      "description": "Must equal the linked Layer 1 record's capability_id. Cross-record consistency is enforced by the publish workflow, not by this schema alone."
+    },
+    "schema_version": {
+      "type": "string",
+      "const": "1.0"
+    },
+    "architecture": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["description", "deployment_model", "components"],
+      "properties": {
+        "description": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 4000
+        },
+        "deployment_model": {
+          "type": "string",
+          "enum": ["serverless", "container", "vm", "managed-service", "hybrid"]
+        },
+        "components": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["name", "type", "provider"],
+            "properties": {
+              "name": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 120
+              },
+              "type": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 60
+              },
+              "provider": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 40
+              }
+            }
+          }
+        }
+      }
+    },
+    "operational_model": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["on_call", "runbooks", "monitoring"],
+      "properties": {
+        "on_call": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200
+        },
+        "runbooks": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 500
+          }
+        },
+        "monitoring": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 500
+          }
+        }
+      }
+    },
+    "known_limitations": {
+      "type": "array",
+      "minItems": 0,
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 500
+      }
+    },
+    "integration_patterns": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["pattern", "description"],
+        "properties": {
+          "pattern": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "description": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 4000
+          }
+        }
+      }
+    },
+    "change_log_ref": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Optional URL or path to a richer change-log narrative. Reserved for post-MVP."
+    }
+  }
+}

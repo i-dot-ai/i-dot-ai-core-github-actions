@@ -1,0 +1,40 @@
+# Positive fixture: Layer 2 record for CAP-002 Edge Network Routing.
+# Mirrors the RFC Appendix example, expressed against the OQ-001-locked field set.
+capability_id: CAP-002
+schema_version: "1.0"
+architecture:
+  description: >-
+    Single CloudFront distribution shared across all i.AI applications.
+    Host-based routing via a CloudFront Function maps request hostnames
+    to origin ALBs. WAF rules are applied at the edge. TLS termination
+    uses ACM certificates managed in us-east-1.
+  deployment_model: serverless
+  components:
+    - name: CloudFront Distribution
+      type: cdn
+      provider: aws
+    - name: CloudFront Function
+      type: edge-compute
+      provider: aws
+    - name: WAF WebACL
+      type: firewall
+      provider: aws
+operational_model:
+  on_call: Platform team
+  runbooks:
+    - "Add new application route"
+    - "WAF rule management"
+    - "TLS certificate renewal"
+  monitoring:
+    - "CloudFront error rate alarm"
+    - "WAF blocked request rate alarm"
+    - "Origin latency alarm"
+known_limitations:
+  - "Single distribution shared across all apps; one misconfigured route can affect all"
+  - "WAF managed rules in count-only mode (not blocking)"
+  - "Uses tfsec instead of Checkov, inconsistent with other repos"
+integration_patterns:
+  - pattern: "New application onboarding"
+    description: >-
+      Add a YAML entry per environment in core-edge-network with the
+      application hostname and origin ALB. Merge triggers deployment.

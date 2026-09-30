@@ -1,0 +1,30 @@
+diff --git a/terraform/dependencies.tf b/terraform/dependencies.tf
+index 1234567..abcdefg 100644
+--- a/terraform/dependencies.tf
++++ b/terraform/dependencies.tf
+@@ -10,6 +10,12 @@ data "terraform_remote_state" "dynamodb" {
+   }
+ }
+
++# New dependency on the platform DynamoDB module to back the
++# capability's session store.
++module "session_store" {
++  source = "github.com/i-dot-ai/i-dot-ai-core-terraform-modules//modules/dynamodb"
++  table_name = "${local.name}-sessions"
++}
++
+ resource "aws_iam_policy" "session_store_read" {
+   name = "${local.name}-session-store-read"
+   policy = data.aws_iam_policy_document.session_store_read.json
+diff --git a/.github/workflows/release.yml b/.github/workflows/release.yml
+index abc1234..def5678 100644
+--- a/.github/workflows/release.yml
++++ b/.github/workflows/release.yml
+@@ -20,6 +20,7 @@ jobs:
+       contents: read
+     uses: i-dot-ai/i-dot-ai-core-github-actions/.github/workflows/apply-terraform.yml@v1
+     with:
++      ENABLE_HEALTHCHECK: true
+       APP_NAME: ${{ env.APP_NAME }}
+       RUNNER_LABEL: arc-runners-i-dot-ai
+       PUBLIC_INFRA_DEPLOYMENT: true

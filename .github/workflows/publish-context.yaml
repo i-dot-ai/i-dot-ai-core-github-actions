@@ -1,0 +1,149 @@
+name: Publish Context (reusable)
+# Authored under SLICE-004a of EXEC-20260515-platform-context-management.
+# Contract: contracts/publish-context.contract.yaml (LOCK-004 at SLICE-004a close).
+#
+# What this slice ships:
+#   - Checkout, OIDC AWS credentials, schema validation via SLICE-001's
+#     validate_context.py, capability_id match guard, detail_ref
+#     canonicalisation, last_updated/updated_by injection, step summary.
+#   - Write steps are STUBBED. SLICE-004b adds the DynamoDB write +
+#     read-back; SLICE-004c adds the S3 write + read-back and the
+#     partial-write annotation.
+
+on:
+  workflow_call:
+    inputs:
+      capability_id:
+        description: "Stable capability identifier (^CAP-\\d{3}$). Source of truth; YAML must match."
+        type: string
+        required: true
+      context_index_path:
+        description: "Path to the Layer 1 record YAML, relative to caller workspace."
+        type: string
+        required: false
+        default: "context.yaml"
+      context_detail_path:
+        description: "Path to the Layer 2 detail YAML, relative to caller workspace."
+        type: string
+        required: false
+        default: "context-detail.yaml"
+      aws_region:
+        description: "AWS region of the platform context store."
+        type: string
+        required: false
+        default: "eu-west-2"
+      environment:
+        description: "Target environment: dev, preprod, or prod."
+        type: string
+        required: false
+        default: "prod"
+    # secrets: caller invokes with `secrets: inherit` — see contract.
+    # Specific secrets used: AWS_ACCOUNT_ID (for OIDC role construction).
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  publish:
+    name: Validate and publish context (writes stubbed at SLICE-004a)
+    runs-on: ubuntu-latest
+    env:
+      CAPABILITY_ID: ${{ inputs.capability_id }}
+      CONTEXT_INDEX_PATH: ${{ inputs.context_index_path }}
+      CONTEXT_DETAIL_PATH: ${{ inputs.context_detail_path }}
+      AWS_REGION: ${{ inputs.aws_region }}
+      ENVIRONMENT: ${{ inputs.environment }}
+    steps:
+      - name: Checkout caller repository
+        uses: actions/checkout@v4
+
+      - name: Checkout reusable workflow repository (validator + schemas)
+        uses: actions/checkout@v4
+        with:
+          repository: i-dot-ai/i-dot-ai-core-github-actions
+          path: .platform-context-tooling
+          ref: main
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install validator dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install jsonschema pyyaml
+
+      - name: Validate capability_id input shape
+        run: |
+          if ! [[ "${CAPABILITY_ID}" =~ ^CAP-[0-9]{3}$ ]]; then
+            echo "::error title=Invalid capability_id::capability_id input '${CAPABILITY_ID}' does not match ^CAP-[0-9]{3}$"
+            exit 1
+          fi
+
+      - name: Confirm context files exist
+        run: |
+          for path in "${CONTEXT_INDEX_PATH}" "${CONTEXT_DETAIL_PATH}"; do
+            if [ ! -f "${path}" ]; then
+              echo "::error title=Missing context file::${path} not found in caller workspace"
+              exit 1
+            fi
+          done
+
+      - name: capability_id match guard (input vs YAML body)
+        run: |
+          ./.platform-context-tooling/scripts/publish_context.sh assert_capability_match \
+            "${CAPABILITY_ID}" "${CONTEXT_INDEX_PATH}" "${CONTEXT_DETAIL_PATH}"
+
+      - name: Schema validation — Layer 1
+        run: |
+          python ./.platform-context-tooling/scripts/validate_context.py \
+            --layer index \
+            "${CONTEXT_INDEX_PATH}"
+
+      - name: Schema validation — Layer 2
+        run: |
+          python ./.platform-context-tooling/scripts/validate_context.py \
+            --layer detail \
+            "${CONTEXT_DETAIL_PATH}"
+
+      - name: schema_version cross-layer guard
+        run: |
+          ./.platform-context-tooling/scripts/publish_context.sh assert_schema_versions_match \
+            "${CONTEXT_INDEX_PATH}" "${CONTEXT_DETAIL_PATH}"
+
+      - name: Canonicalise Layer 1 record (detail_ref, last_updated, updated_by)
+        id: canonicalise
+        run: |
+          BUCKET="i-dot-ai-${ENVIRONMENT}-context-engine-context-detail"
+          ./.platform-context-tooling/scripts/publish_context.sh canonicalise \
+            "${CONTEXT_INDEX_PATH}" \
+            "${CAPABILITY_ID}" \
+            "${BUCKET}" \
+            "${{ github.actor }}"
+          echo "bucket=${BUCKET}" >> "${GITHUB_OUTPUT}"
+
+      - name: Configure AWS credentials via OIDC
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: ${{ inputs.aws_region }}
+          mask-aws-account-id: "yes"
+          role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/infra/i-dot-ai-${{ inputs.environment }}-${{ github.event.repository.name }}-ci-deployment-role
+
+      - name: STUB — DynamoDB write
+        run: |
+          echo "::notice title=Write stubbed (SLICE-004a)::DynamoDB PutItem skipped at this slice; lands in SLICE-004b."
+
+      - name: STUB — S3 write
+        run: |
+          echo "::notice title=Write stubbed (SLICE-004a)::S3 PutObject skipped at this slice; lands in SLICE-004c."
+
+      - name: Emit step summary
+        if: always()
+        run: |
+          ./.platform-context-tooling/scripts/publish_context.sh emit_step_summary \
+            "${CAPABILITY_ID}" \
+            "${CONTEXT_INDEX_PATH}" \
+            "${CONTEXT_DETAIL_PATH}" \
+            "${{ steps.canonicalise.outputs.bucket }}"

@@ -1,0 +1,25 @@
+# Negative fixture: Layer 1 record missing capability_id and carrying an
+# unknown top-level field (`maintainer_handle`). Validator MUST reject.
+# Targets evidence_required.policy_evidence and the additionalProperties: false
+# enforcement at the schema root.
+schema_version: "1.0"
+name: Edge Network Routing
+owner: Platform team
+lifecycle: Live
+summary: >-
+  This record intentionally omits capability_id and adds an unknown
+  top-level key to exercise the schema's additionalProperties: false
+  guarantee.
+cloud_providers:
+  - aws
+interfaces:
+  - name: Edge Network Configuration
+    type: yaml-config
+    location: "core-edge-network/config/{env}/applications.yaml"
+dependencies: []
+references:
+  repository: "i-dot-ai/core-edge-network"
+detail_ref: "s3://platform-context/capabilities/CAP-002/detail.yaml"
+last_updated: "2026-05-15T09:00:00Z"
+updated_by: "github-actions[bot]"
+maintainer_handle: "@platform-team-on-slack"

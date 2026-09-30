@@ -1,0 +1,31 @@
+{
+  "name": "i-dot-ai-core-github-actions",
+  "version": "0.0.0",
+  "private": true,
+  "description": "GitHub Actions reusable workflows for the I.AI platform. Hosts the Flue agent runtime for the generate-context workflow.",
+  "type": "module",
+  "scripts": {
+    "tsc": "tsc --noEmit",
+    "flue:version": "flue --version"
+  },
+  "dependencies": {
+    "@flue/runtime": "0.6.2",
+    "valibot": "1.1.0"
+  },
+  "devDependencies": {
+    "@flue/cli": "0.6.2",
+    "@types/node": "20.16.5",
+    "typescript": "5.6.3"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "comments": {
+    "pinning_rationale": [
+      "Per OQ-005, Flue is pinned to a specific version because the framework is experimental.",
+      "@flue/runtime and @flue/cli are pinned by exact version (0.6.2). package-lock.json captures the cryptographic integrity hash for each transitive dependency which provides reproducibility equivalent to a commit SHA pin.",
+      "valibot is pinned to 1.1.0 (exact). It is the structured-output validator the agent uses; non-major iteration is not desired during SLICE-007 calibration.",
+      "Bumps to any of these pins is a contract dispute against SLICE-006a, not a routine update."
+    ]
+  }
+}

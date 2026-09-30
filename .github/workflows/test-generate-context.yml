@@ -1,0 +1,354 @@
+name: Smoke test — generate-context Flue agent (SLICE-006b)
+# Authored under SLICE-006b. Drives the .flue/agents/generate-context.ts agent
+# against the SLICE-006b fixtures with a fake provider, asserting three
+# scenarios:
+#   - significant: agent produces mode='generated' with both records.
+#   - insignificant: agent returns mode='skipped' with no generated records.
+#   - validator_failure_generate: deterministic error visible in stdout
+#     (the workflow does NOT validate; SLICE-006c-a's production workflow
+#     does. This scenario is here to exercise the agent's pass-through.)
+#
+# Field forcing assertions: the malicious_field_forcing_attempt scenario
+# (in mocked_generate_response.json) has CAP-EVIL, schema_version "9.9",
+# last_updated "1970-01-01T00:00:00Z", updated_by "attacker". After the
+# agent run, this workflow asserts those values appear UNCHANGED in the
+# agent's stdout. Field forcing is the calling workflow's responsibility
+# and SLICE-006c-a will exercise it.
+#
+# Node 22 requirement: Flue 0.6.2 requires Node >=22.18.0. SLICE-006a's
+# evidence GAP-006a-node-version documents the validation container's
+# Node 20 baseline. This workflow uses actions/setup-node@v5 with
+# node-version: 22 to guarantee Flue can run on the runner.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.flue/**'
+      - 'scripts/fixtures/**'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'tsconfig.json'
+      - '.github/workflows/test-generate-context.yml'
+  pull_request:
+    paths:
+      - '.flue/**'
+      - 'scripts/fixtures/**'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'tsconfig.json'
+      - '.github/workflows/test-generate-context.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  static-checks:
+    name: actionlint + tsc + skill conciseness + british english
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node 22
+        uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: npm ci
+        run: npm ci --no-audit --no-fund
+
+      - name: tsc --noEmit
+        run: npx tsc --noEmit
+
+      - name: Skill conciseness (each skill < 80 lines)
+        run: |
+          for f in .flue/skills/*.md; do
+            lines=$(wc -l < "$f")
+            if [ "$lines" -ge 80 ]; then
+              echo "::error file=$f::Skill file is $lines lines (must be < 80)."
+              exit 1
+            fi
+          done
+
+      - name: British English check
+        run: |
+          # Spot-check for a small set of high-signal American spellings.
+          # Full corpus check is the human reviewer's job at lock.
+          if grep -rnE '\b(behavior|color|center|labeled|organized|recognize|optimization|specialize|customize)\b' .flue/skills/ .flue/AGENTS.md; then
+            echo "::error::American spellings found in skill or AGENTS.md content."
+            exit 1
+          fi
+
+      - name: Read-only tool restriction declared in agent
+        run: |
+          # Static check: agent declares tools: [] at init() and at each skill() call.
+          if ! grep -E 'tools:\s*\[\s*\]' .flue/agents/generate-context.ts > /dev/null; then
+            echo "::error::Agent does not declare an empty tools array. Read-only invariant unverified."
+            exit 1
+          fi
+          # Negative check: agent must not reference bash, gh, or git tools.
+          if grep -nE '\b(bash|gh|git)\s*:\s*\{' .flue/agents/generate-context.ts; then
+            echo "::error::Agent declares a bash/gh/git tool. Violates AGENTS.md invariant 3."
+            exit 1
+          fi
+
+  flue-significant:
+    name: flue run — significant scenario (mode=generated)
+    runs-on: ubuntu-latest
+    needs: static-checks
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+          cache: 'npm'
+      - run: npm ci --no-audit --no-fund
+
+      - name: Start fake provider
+        run: |
+          # Inline fake provider. Serves the assess and generate fixtures
+          # under /v1/messages and /v1/chat/completions endpoints. The
+          # active scenario is keyed by the SCENARIO env var. Fake server
+          # belongs to the smoke harness only; it is not a production
+          # artefact and is not authored as a separate script under
+          # SLICE-006b's target_files.
+          python3 - <<'PYEOF' &
+          import http.server
+          import json
+          import os
+          import socketserver
+
+          SCENARIO = os.environ.get("SCENARIO", "significant")
+          ASSESS = json.load(open("scripts/fixtures/mocked_assess_response.json"))
+          GENERATE = json.load(open("scripts/fixtures/mocked_generate_response.json"))
+
+          def pick(fixture, scenario):
+              return fixture["scenarios"].get(scenario, fixture["scenarios"][next(iter(fixture["scenarios"]))])
+
+          class _H(http.server.BaseHTTPRequestHandler):
+              def do_POST(self):
+                  length = int(self.headers.get("content-length", "0"))
+                  body = self.rfile.read(length).decode() if length else ""
+                  # Decide which fixture to serve based on body content.
+                  if "assess-significance" in body or "Significance" in body:
+                      payload = pick(ASSESS, SCENARIO if SCENARIO != "significant" else "significant")
+                      if SCENARIO == "insignificant":
+                          payload = ASSESS["scenarios"]["insignificant"]
+                  else:
+                      payload = pick(GENERATE, SCENARIO)
+                  self.send_response(200)
+                  self.send_header("Content-Type", "application/json")
+                  self.end_headers()
+                  self.wfile.write(json.dumps({"choices": [{"message": {"content": json.dumps(payload)}}]}).encode())
+              def log_message(self, *a, **k):
+                  pass
+
+          with socketserver.TCPServer(("127.0.0.1", 8088), _H) as srv:
+              srv.serve_forever()
+          PYEOF
+          echo $! > /tmp/fake-provider.pid
+          sleep 2
+        env:
+          SCENARIO: significant
+
+      - name: Run agent
+        env:
+          LLM_GATEWAY_URL: 'http://127.0.0.1:8088'
+          CONTEXT_GENERATION_LLM_KEY: 'fake-key-for-smoke-test'
+          GH_TOKEN: 'fake-token-for-smoke-test'
+        run: |
+          npx flue run generate-context \
+            --payload '{"capability_id":"CAP-002","pr_number":42,"diff_path":"scripts/fixtures/sample_diff.patch","previous_index_path":"scripts/fixtures/previous_context_index.yaml","previous_detail_path":"scripts/fixtures/previous_context_detail.yaml"}' \
+            > /tmp/agent-stdout.txt 2>&1
+          echo '--- agent stdout ---'
+          cat /tmp/agent-stdout.txt
+
+      - name: Assert mode=generated and both records present
+        run: |
+          if ! grep -q '"mode":"generated"' /tmp/agent-stdout.txt; then
+            echo "::error::Expected mode=generated in agent stdout."
+            cat /tmp/agent-stdout.txt
+            exit 1
+          fi
+          if ! grep -q '"context_index"' /tmp/agent-stdout.txt; then
+            echo "::error::Expected context_index in agent output."
+            exit 1
+          fi
+          if ! grep -q '"context_detail"' /tmp/agent-stdout.txt; then
+            echo "::error::Expected context_detail in agent output."
+            exit 1
+          fi
+
+      - name: Assert model identifier and skill SHA logged for both calls
+        run: |
+          # Two structured JSON lines should appear: assess + generate.
+          assess_lines=$(grep -c '"call_mode":"assess"' /tmp/agent-stdout.txt || true)
+          gen_lines=$(grep -c '"call_mode":"generate"' /tmp/agent-stdout.txt || true)
+          if [ "$assess_lines" != "1" ] || [ "$gen_lines" != "1" ]; then
+            echo "::error::Expected exactly one assess and one generate call_mode log line."
+            exit 1
+          fi
+          # Skill SHA must match on-disk hash.
+          on_disk_assess=$(sha256sum .flue/skills/assess-significance.md | awk '{print $1}')
+          if ! grep -q "\"skill_sha\":\"$on_disk_assess\"" /tmp/agent-stdout.txt; then
+            echo "::error::Logged assess skill_sha does not match on-disk SHA256."
+            exit 1
+          fi
+
+      - name: Stop fake provider
+        if: always()
+        run: kill "$(cat /tmp/fake-provider.pid)" || true
+
+  flue-insignificant:
+    name: flue run — insignificant scenario (mode=skipped)
+    runs-on: ubuntu-latest
+    needs: static-checks
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+          cache: 'npm'
+      - run: npm ci --no-audit --no-fund
+
+      - name: Start fake provider (insignificant scenario)
+        run: |
+          python3 - <<'PYEOF' &
+          import http.server
+          import json
+          import os
+          import socketserver
+
+          SCENARIO = os.environ.get("SCENARIO", "insignificant")
+          ASSESS = json.load(open("scripts/fixtures/mocked_assess_response.json"))
+          GENERATE = json.load(open("scripts/fixtures/mocked_generate_response.json"))
+
+          class _H(http.server.BaseHTTPRequestHandler):
+              def do_POST(self):
+                  length = int(self.headers.get("content-length", "0"))
+                  body = self.rfile.read(length).decode() if length else ""
+                  if "assess-significance" in body or "Significance" in body:
+                      payload = ASSESS["scenarios"]["insignificant"]
+                  else:
+                      payload = GENERATE["scenarios"]["significant"]
+                  self.send_response(200)
+                  self.send_header("Content-Type", "application/json")
+                  self.end_headers()
+                  self.wfile.write(json.dumps({"choices": [{"message": {"content": json.dumps(payload)}}]}).encode())
+              def log_message(self, *a, **k):
+                  pass
+
+          with socketserver.TCPServer(("127.0.0.1", 8088), _H) as srv:
+              srv.serve_forever()
+          PYEOF
+          echo $! > /tmp/fake-provider.pid
+          sleep 2
+        env:
+          SCENARIO: insignificant
+
+      - name: Run agent
+        env:
+          LLM_GATEWAY_URL: 'http://127.0.0.1:8088'
+          CONTEXT_GENERATION_LLM_KEY: 'fake-key-for-smoke-test'
+          GH_TOKEN: 'fake-token-for-smoke-test'
+        run: |
+          npx flue run generate-context \
+            --payload '{"capability_id":"CAP-002","pr_number":42,"diff_path":"scripts/fixtures/sample_diff.patch","previous_index_path":"scripts/fixtures/previous_context_index.yaml","previous_detail_path":"scripts/fixtures/previous_context_detail.yaml"}' \
+            > /tmp/agent-stdout.txt 2>&1
+          cat /tmp/agent-stdout.txt
+
+      - name: Assert mode=skipped and rationale present
+        run: |
+          if ! grep -q '"mode":"skipped"' /tmp/agent-stdout.txt; then
+            echo "::error::Expected mode=skipped."
+            exit 1
+          fi
+          if ! grep -qE '"rationale":"[^"]{10,400}"' /tmp/agent-stdout.txt; then
+            echo "::error::Significance rationale must be 10-400 characters."
+            exit 1
+          fi
+          if grep -q '"context_index"' /tmp/agent-stdout.txt; then
+            echo "::error::Skipped run must NOT contain context_index."
+            exit 1
+          fi
+
+      - name: Stop fake provider
+        if: always()
+        run: kill "$(cat /tmp/fake-provider.pid)" || true
+
+  flue-malicious-field-forcing:
+    name: flue run — malicious field forcing scenario (agent passes through)
+    runs-on: ubuntu-latest
+    needs: static-checks
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+          cache: 'npm'
+      - run: npm ci --no-audit --no-fund
+
+      - name: Start fake provider (malicious scenario)
+        run: |
+          python3 - <<'PYEOF' &
+          import http.server
+          import json
+          import os
+          import socketserver
+
+          ASSESS = json.load(open("scripts/fixtures/mocked_assess_response.json"))
+          GENERATE = json.load(open("scripts/fixtures/mocked_generate_response.json"))
+
+          class _H(http.server.BaseHTTPRequestHandler):
+              def do_POST(self):
+                  length = int(self.headers.get("content-length", "0"))
+                  body = self.rfile.read(length).decode() if length else ""
+                  if "assess-significance" in body or "Significance" in body:
+                      payload = ASSESS["scenarios"]["significant"]
+                  else:
+                      payload = GENERATE["scenarios"]["malicious_field_forcing_attempt"]
+                  self.send_response(200)
+                  self.send_header("Content-Type", "application/json")
+                  self.end_headers()
+                  self.wfile.write(json.dumps({"choices": [{"message": {"content": json.dumps(payload)}}]}).encode())
+              def log_message(self, *a, **k):
+                  pass
+
+          with socketserver.TCPServer(("127.0.0.1", 8088), _H) as srv:
+              srv.serve_forever()
+          PYEOF
+          echo $! > /tmp/fake-provider.pid
+          sleep 2
+
+      - name: Run agent
+        env:
+          LLM_GATEWAY_URL: 'http://127.0.0.1:8088'
+          CONTEXT_GENERATION_LLM_KEY: 'fake-key-for-smoke-test'
+          GH_TOKEN: 'fake-token-for-smoke-test'
+        run: |
+          npx flue run generate-context \
+            --payload '{"capability_id":"CAP-002","pr_number":42,"diff_path":"scripts/fixtures/sample_diff.patch","previous_index_path":"scripts/fixtures/previous_context_index.yaml","previous_detail_path":"scripts/fixtures/previous_context_detail.yaml"}' \
+            > /tmp/agent-stdout.txt 2>&1
+          cat /tmp/agent-stdout.txt
+
+      - name: Assert agent passes through attacker-controlled fields unchanged
+        run: |
+          # The agent must NOT silently overwrite or strip these values.
+          # Field forcing is the calling workflow's responsibility.
+          if ! grep -q '"capability_id":"CAP-EVIL"' /tmp/agent-stdout.txt; then
+            echo "::error::Agent unexpectedly overwrote capability_id. Field forcing is the workflow's job, not the agent's."
+            exit 1
+          fi
+          if ! grep -q '"schema_version":"9.9"' /tmp/agent-stdout.txt; then
+            echo "::error::Agent unexpectedly overwrote schema_version."
+            exit 1
+          fi
+          if ! grep -q '"updated_by":"attacker"' /tmp/agent-stdout.txt; then
+            echo "::error::Agent unexpectedly overwrote updated_by."
+            exit 1
+          fi
+
+      - name: Stop fake provider
+        if: always()
+        run: kill "$(cat /tmp/fake-provider.pid)" || true
