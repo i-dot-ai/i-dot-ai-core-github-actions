@@ -6,17 +6,40 @@ inputs:
         description: 'Env of the task'
     APP_NAME:
         required: true
-        description: 'ECS Service Name to poll against'
+        description: 'ECS Service Name to poll against. Only used when SERVICES is empty (deprecated)'
+    SERVICES:
+        required: false
+        default: ''
+        description: >-
+          JSON list of services to wait on, e.g. [{"cluster": "...", "service": "..."}].
+          Each entry may also set timeout_seconds (default 600) and stable_seconds (default 60).
+    APPLY_STARTED_AT:
+        required: false
+        default: ''
+        description: >-
+          Unix time just before terraform apply started. Deployment failures and rollbacks after this
+          time fail the check. Defaults to when the check starts.
 
 runs:
   using: "composite"
   steps:
-  - name: Check ECS endpoint response
+  - name: Wait for ECS services to roll out
+    if: ${{ inputs.SERVICES != '' }}
+    env:
+      SERVICES: ${{ inputs.SERVICES }}
+      APPLY_STARTED_AT: ${{ inputs.APPLY_STARTED_AT }}
+    shell: bash
+    run: ${{ github.action_path }}/await-services.sh
+
+  - name: Wait for ECS service to stabilise (deprecated)
+    if: ${{ inputs.SERVICES == '' }}
     env:
       ENVIRONMENT: ${{ inputs.ENVIRONMENT }}
       APP_NAME: ${{ inputs.APP_NAME }}
     shell: bash
     run: |
+      echo "::warning title=Deprecated health check::ENABLE_HEALTHCHECK is deprecated. Declare an ecs_services_to_await Terraform output to wait on all your services; see https://github.com/i-dot-ai/i-dot-ai-core-github-actions/blob/main/docs/await-ecs-services.md"
+
       CLUSTER_NAME=i-dot-ai-$ENVIRONMENT-ecs-cluster
       SERVICE_NAME=i-dot-ai-$ENVIRONMENT-$APP_NAME-ecs-service
 
