@@ -210,12 +210,23 @@ jobs:
 
     - name: Trivy scan of the pushed image (report only, never fails the build)
       if: ${{ inputs.PUSH_IMAGE && inputs.PUBLIC_ECR == false }}
-      uses: aquasecurity/trivy-action@v0.36.0
+      continue-on-error: true  # a scan failure (bad ref, registry auth) must never block a deploy
+      uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0, pinned by commit
       with:
         image-ref: ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/${{ steps.export-ecr.outputs.repo }}:${{ steps.export-ecr.outputs.tag }}
         format: table
+        output: trivy-report.txt
         severity: HIGH,CRITICAL
         ignore-unfixed: true
         exit-code: '0'
       env:
         AWS_REGION: ${{ secrets.AWS_REGION }}
+
+    - name: Publish Trivy report to the job summary
+      if: ${{ inputs.PUSH_IMAGE && inputs.PUBLIC_ECR == false }}
+      continue-on-error: true
+      run: |
+        {
+          echo '## Trivy scan of the pushed image (HIGH/CRITICAL, report-only)'
+          cat trivy-report.txt 2>/dev/null || echo '_the scan did not produce a report_'
+        } >> "$GITHUB_STEP_SUMMARY"
