@@ -26,6 +26,7 @@ jobs:
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with:
           node-version: '22'
+          check-latest: true
       - run: npm install --no-audit --no-fund
       - run: npm test
 
@@ -42,6 +43,7 @@ jobs:
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with:
           node-version: '22'
+          check-latest: true
       - run: npm install --no-audit --no-fund
         working-directory: .github/actions/modular-release/codegen
       - name: Generate config for fixture

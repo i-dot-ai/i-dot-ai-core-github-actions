@@ -115,6 +115,7 @@ jobs:
         uses: actions/setup-node@v6
         with:
           node-version: ${{ inputs.NODE_VERSION }}
+          check-latest: true
 
       - name: Create .env file
         if: ${{ inputs.BUILD_ENV_VARS != '' }}

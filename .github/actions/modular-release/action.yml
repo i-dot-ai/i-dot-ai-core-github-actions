@@ -107,6 +107,7 @@ runs:
         NODE_AUTH_TOKEN: ${{ inputs.use-oidc == 'true' && '' || inputs.registry-token }}
       with:
         node-version: ${{ inputs.node-version }}
+        check-latest: true
         registry-url: 'https://registry.npmjs.org'
         always-auth: true
 
@@ -143,6 +144,8 @@ runs:
     - name: Setup uv
       if: inputs.language == 'python'
       uses: astral-sh/setup-uv@caf0cab7a618c569241d31dcd442f54681755d39 # v3.2.4
+      with:
+        version: "0.13.4"
 
     - name: Install codegen dependencies
       shell: bash
