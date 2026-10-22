@@ -1,72 +1,23 @@
-# Await ECS Services
+# Waiting for ECS services to deploy
 
-After `apply-terraform.yml` runs `terraform apply`, it can wait for your ECS services to finish rolling out their new version. The release then only goes green if every service is running the new version healthily.
+A release used to go green as soon as `terraform apply` had asked ECS to deploy, even if the new containers never started. From `v8.0.0-ecs` of the `ecs` module in [i-dot-ai-core-terraform-modules](https://github.com/i-dot-ai/i-dot-ai-core-terraform-modules), the apply itself waits for every ECS service in the root module to roll out its new version healthily, and fails if one does not.
 
-Without this, the pipeline goes green as soon as Terraform has asked ECS to deploy, even if the new containers never start.
+Nothing in this repository needs configuring for that. It happens inside Terraform, so it works for every app that bumps the module, however many services it has and whatever they are called.
 
-## What it checks
+## What happens on a bump
 
-All listed services are checked together, every 15 seconds. A service fails if:
+With `v8.0.0-ecs` or later, for each ECS service the apply:
 
-- ECS reports that a deployment failed or was rolled back after `terraform apply` started, for example because the circuit breaker tripped. This is read from the service's events, because a rollback reactivates the previous deployment and leaves no failed deployment to inspect
-- its deployment is replaced before completing
-- its deployment has not completed within `timeout_seconds` of the check starting
-- any of its new tasks stop during the `stable_seconds` window after it completes, which catches containers that start and then crash
+- waits for the new deployment to complete, which takes about 1–2 minutes with the default health check timings
+- fails if the deployment fails or is rolled back by the ECS circuit breaker, which is now on by default, so a bad image never replaces the running version
+- gives up after `wait_timeout` (default 5 minutes) if the deployment has not completed
 
-Tasks stopped by scaling in are ignored. On failure, the job shows an error annotation and the service's last 5 ECS events, and still checks the remaining services.
+Slow-starting services, for example ones that download a model on start, should raise `health_check_grace_period_seconds` and `wait_timeout` on their module. See the module's README for every setting.
 
-## Usage
-
-Opt in by adding two things to your repository. No change to your release workflow is needed.
-
-1. A Terraform output called `ecs_services_to_await`, in the root module that `apply-terraform.yml` applies, listing the services to wait on e.g.:
-
-   ```hcl
-   output "ecs_services_to_await" {
-     value = [
-       { cluster = module.ecs_cluster.ecs_cluster_name, service = module.frontend.ecs_service_name },
-       { cluster = module.ecs_cluster.ecs_cluster_name, service = module.backend.ecs_service_name },
-     ]
-   }
-   ```
-
-   List every ECS service the root module deploys. The `ecs` module in `i-dot-ai-core-terraform-modules` provides `ecs_service_name`. `cluster` accepts either a cluster name or ARN.
-
-2. A `tf_output` make target that prints a Terraform output as JSON, so the workflow can read the output without knowing where your Terraform lives:
-
-   ```makefile
-   .PHONY: tf_output
-   tf_output:
-   	terraform -chdir=./terraform/ output -json $(output)
-   ```
-
-   Point `-chdir` at the same folder your `tf_auto_apply` target uses.
-
-Apps generated from `i-dot-ai-cookiecutter` include both.
-
-If either is missing, or the output is an empty list, the check is skipped. If the `tf_output` target exists but reading the output fails for any other reason, such as a state or credentials error, or the output is not a list, the release fails, because it can no longer confirm your services started.
-
-## Fields and defaults
-
-| Field             | Default  | Notes                                                                                                                                                                                           |
-|-------------------|----------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `cluster`         | Required | Cluster name or ARN.                                                                                                                                                                            |
-| `service`         | Required | ECS service name.                                                                                                                                                                               |
-| `timeout_seconds` | `600`    | How long to wait for the rollout to complete, measured from when the check starts. You may wish to raise the value for slow-starting services, for example ones that download a model on start. |
-| `stable_seconds`  | `60`     | How long the service must stay healthy after its rollout completes.                                                                                                                             |
-
-To override a default for one service, set the field on that entry:
-
-```hcl
-{ cluster = module.ecs_cluster.ecs_cluster_name, service = module.worker.ecs_service_name, timeout_seconds = 1800 }
-```
-
-## What "healthy" means
-
-The check relies on ECS's own view of health. A service with a load balancer health check or a container health check must pass it before its rollout completes. A service with neither counts as healthy as soon as its container is running, so give services without a load balancer, such as backends reached through service discovery and workers, a container health check if you want this check to catch a broken health endpoint.
+Services without a load balancer, such as backends behind service discovery and workers, are only checked if they set `container_healthcheck`. Apps generated from `i-dot-ai-cookiecutter` set it for the backend.
 
 ## Migrating from `ENABLE_HEALTHCHECK`
 
-`ENABLE_HEALTHCHECK` is deprecated. It only works for apps with a single ECS service whose name matches `i-dot-ai-<env>-<APP_NAME>-ecs-service` in the shared `i-dot-ai-<env>-ecs-cluster`, and it cannot detect rollbacks or crashes after rollout.
+`ENABLE_HEALTHCHECK` is deprecated. It only works for apps with a single ECS service whose name matches `i-dot-ai-<env>-<APP_NAME>-ecs-service` in the shared `i-dot-ai-<env>-ecs-cluster`, and it cannot detect rollbacks.
 
-To migrate, add the output and make target above, listing your one service, then remove `ENABLE_HEALTHCHECK: true` from your workflow. If you leave the flag set, the new check is used whenever the output exists.
+Bump the `ecs` module to `v8.0.0-ecs` or later, then remove `ENABLE_HEALTHCHECK: true` from your workflow. If you leave the flag set, the old check still runs after the apply and shows a deprecation warning.

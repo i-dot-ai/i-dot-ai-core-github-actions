@@ -45,7 +45,7 @@ on:
         required: false
         type: string
       ENABLE_HEALTHCHECK: # deprecated, but needs to remain to ensure backwards compatibility for existing consumers.
-        description: 'Deprecated: only works for apps with a single ECS service. Declare an ecs_services_to_await Terraform output instead; see docs/await-ecs-services.md'
+        description: 'Deprecated: only works for apps with a single ECS service. Bump the ecs Terraform module to v8 instead, which makes the apply itself wait for every service; see docs/await-ecs-services.md'
         required: false
         default: false
         type: boolean
@@ -170,11 +170,6 @@ jobs:
           make tf_init env=$ENVIRONMENT
         fi
 
-    # Lets the ECS health check recognise failures and rollbacks caused by this apply
-    - name: Record when the apply started
-      id: apply-started
-      run: echo "at=$(date +%s)" >> "$GITHUB_OUTPUT"
-
     - name: Terraform apply
       env:
         INFRASTRUCTURE_FOLDER: ${{ inputs.INFRASTRUCTURE_FOLDER }}
@@ -197,73 +192,12 @@ jobs:
           make tf_auto_apply "${tfParams[@]}" > tf_apply_log.log # TODO: mask any sensitive values
         fi
 
-    # Apps opt in by providing a `tf_output` make target and an `ecs_services_to_await` output,
-    # a list of { cluster, service, timeout_seconds?, stable_seconds? }. Apps without either keep
-    # the previous behaviour.
-    - name: Read ECS services to await
-      id: services-to-await
-      env:
-        INFRASTRUCTURE_FOLDER: ${{ inputs.INFRASTRUCTURE_FOLDER }}
-        ENVIRONMENT: ${{ inputs.ENVIRONMENT }}
-        ENABLE_HEALTHCHECK: ${{ inputs.ENABLE_HEALTHCHECK }}
-        TF_CLI_ARGS: "-no-color"
-      run: |
-        # Once an app provides tf_output it has opted in, so failing to read its services must fail
-        # the release rather than silently skip the check
-        cant_read() {
-          echo "::error title=Could not read ECS services to await::$1. Terraform has applied, but the release cannot confirm the new version started."
-          [[ -n "${2:-}" ]] && echo "$2"
-          exit 1
-        }
-
-        not_waiting() {
-          if [[ $ENABLE_HEALTHCHECK == true ]]; then
-            echo 'No services listed in an `ecs_services_to_await` Terraform output, so falling back to the deprecated ENABLE_HEALTHCHECK check.'
-          else
-            echo "Not waiting for ECS services: $1."
-            echo 'This release will be marked successful as soon as Terraform has applied, without checking that the new version started.'
-            echo 'To wait for your services, see https://github.com/i-dot-ai/i-dot-ai-core-github-actions/blob/main/docs/await-ecs-services.md'
-          fi
-        }
-
-        cd main
-        if ! make -n tf_output > /dev/null 2>&1; then
-          not_waiting 'this repository does not say which services to wait for (it has no `tf_output` make target)'
-          exit 0
-        fi
-        tfParams=()
-        [[ $INFRASTRUCTURE_FOLDER ]] && tfParams+=( "INFRASTRUCTURE_FOLDER=$INFRASTRUCTURE_FOLDER" )
-        tfParams+=( "env=$ENVIRONMENT" )
-        errors=$(mktemp)
-        if ! services=$(make -s --no-print-directory tf_output output=ecs_services_to_await "${tfParams[@]}" 2> "$errors"); then
-          # Repos sharing one Makefile across several Terraform folders may not declare the output in every folder
-          if grep -q 'Output "ecs_services_to_await" not found' "$errors"; then
-            not_waiting 'no `ecs_services_to_await` Terraform output is declared'
-            exit 0
-          fi
-          cant_read 'make tf_output failed' "$(cat "$errors")"
-        fi
-
-        if ! jq -e 'type == "array"' <<< "$services" > /dev/null 2>&1; then
-          cant_read 'the `ecs_services_to_await` Terraform output is not a list' "$services"
-        fi
-        count=$(jq length <<< "$services")
-        if (( count == 0 )); then
-          not_waiting 'the `ecs_services_to_await` Terraform output is an empty list'
-          exit 0
-        fi
-        (( count == 1 )) && noun=service || noun=services
-        echo "Found $count ECS $noun to wait for: $(jq -r 'map(.service) | join(", ")' <<< "$services")"
-        echo "services=$(jq -c . <<< "$services")" >> "$GITHUB_OUTPUT"
-
     - name: await-infra
-      if: ${{ inputs.ENABLE_HEALTHCHECK == true || steps.services-to-await.outputs.services != '' }}
+      if: ${{ inputs.ENABLE_HEALTHCHECK == true }}
       uses: i-dot-ai/i-dot-ai-core-github-actions/.github/actions/ecs-healthcheck@main
       with:
         APP_NAME: ${{ inputs.APP_NAME }}
         ENVIRONMENT: ${{ inputs.ENVIRONMENT }}
-        SERVICES: ${{ steps.services-to-await.outputs.services }}
-        APPLY_STARTED_AT: ${{ steps.apply-started.outputs.at }}
 
     - name: Copy terraform logs to s3
       if: always()

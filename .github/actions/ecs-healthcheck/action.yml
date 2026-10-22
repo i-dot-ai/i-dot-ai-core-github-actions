@@ -1,44 +1,23 @@
 name: Check ECS Service Health
-description: "Checks the status of an ECS Service post terraform deploy"
+description: "Deprecated. Waits for a single ECS service to stabilise after a terraform deploy. Bump the ecs Terraform module to v8 instead, which makes the apply wait for every service."
 inputs:
     ENVIRONMENT:
         required: true
         description: 'Env of the task'
     APP_NAME:
         required: true
-        description: 'ECS Service Name to poll against. Only used when SERVICES is empty (deprecated)'
-    SERVICES:
-        required: false
-        default: ''
-        description: >-
-          JSON list of services to wait on, e.g. [{"cluster": "...", "service": "..."}].
-          Each entry may also set timeout_seconds (default 600) and stable_seconds (default 60).
-    APPLY_STARTED_AT:
-        required: false
-        default: ''
-        description: >-
-          Unix time just before terraform apply started. Deployment failures and rollbacks after this
-          time fail the check. Defaults to when the check starts.
+        description: 'ECS Service Name to poll against'
 
 runs:
   using: "composite"
   steps:
-  - name: Wait for ECS services to roll out
-    if: ${{ inputs.SERVICES != '' }}
-    env:
-      SERVICES: ${{ inputs.SERVICES }}
-      APPLY_STARTED_AT: ${{ inputs.APPLY_STARTED_AT }}
-    shell: bash
-    run: ${{ github.action_path }}/await-services.sh
-
   - name: Wait for ECS service to stabilise (deprecated)
-    if: ${{ inputs.SERVICES == '' }}
     env:
       ENVIRONMENT: ${{ inputs.ENVIRONMENT }}
       APP_NAME: ${{ inputs.APP_NAME }}
     shell: bash
     run: |
-      echo "::warning title=Deprecated health check::ENABLE_HEALTHCHECK is deprecated. Declare an ecs_services_to_await Terraform output to wait on all your services; see https://github.com/i-dot-ai/i-dot-ai-core-github-actions/blob/main/docs/await-ecs-services.md"
+      echo "::warning title=Deprecated health check::ENABLE_HEALTHCHECK is deprecated and only checks one service. Bump the ecs Terraform module to v8.0.0-ecs or later, which makes terraform apply wait for every service and fail if one does not start; see https://github.com/i-dot-ai/i-dot-ai-core-github-actions/blob/main/docs/await-ecs-services.md"
 
       CLUSTER_NAME=i-dot-ai-$ENVIRONMENT-ecs-cluster
       SERVICE_NAME=i-dot-ai-$ENVIRONMENT-$APP_NAME-ecs-service
