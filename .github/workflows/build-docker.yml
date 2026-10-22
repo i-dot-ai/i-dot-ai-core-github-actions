@@ -207,3 +207,15 @@ jobs:
         echo "repo=$REPO" >> $GITHUB_OUTPUT
         export TAG=$(eval $(make docker_echo value=IMAGE_TAG service=$SERVICE)| awk '{print $1;}')
         echo "tag=$TAG" >> $GITHUB_OUTPUT
+
+    - name: Trivy scan of the pushed image (report only, never fails the build)
+      if: ${{ inputs.PUSH_IMAGE && inputs.PUBLIC_ECR == false }}
+      uses: aquasecurity/trivy-action@v0.36.0
+      with:
+        image-ref: ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/${{ steps.export-ecr.outputs.repo }}:${{ steps.export-ecr.outputs.tag }}
+        format: table
+        severity: HIGH,CRITICAL
+        ignore-unfixed: true
+        exit-code: '0'
+      env:
+        AWS_REGION: ${{ secrets.AWS_REGION }}
