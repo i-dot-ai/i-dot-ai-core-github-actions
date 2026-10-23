@@ -86,6 +86,15 @@ inputs:
       for production releases from main.
     required: false
     default: ''
+  modules:
+    description: >
+      Space-separated module names to release instead of detecting changed
+      modules from HEAD and its first parent. Each must be named in the
+      manifest. semantic-release still decides the version from each module's
+      commits, so a module with nothing to release is a no-op. Leave empty for
+      change detection.
+    required: false
+    default: ''
 
 outputs:
   released-modules:
@@ -175,8 +184,9 @@ runs:
       env:
         MANIFEST: ${{ inputs.modules-manifest }}
         PACKAGES_DIR: ${{ inputs.packages-dir }}
+        FORCED_MODULES: ${{ inputs.modules }}
       run: |
-        changed=$("${{ github.action_path }}/scripts/get_changed_modules.sh" "$MANIFEST" "$PACKAGES_DIR")
+        changed=$("${{ github.action_path }}/scripts/get_changed_modules.sh" "$MANIFEST" "$PACKAGES_DIR" "$FORCED_MODULES")
         echo "Changed modules: $changed"
         echo "modules=$changed" >> "$GITHUB_OUTPUT"
 
