@@ -63,6 +63,15 @@ on:
         type: string
         required: false
         default: ''
+      modules:
+        description: >
+          Space-separated module names to release instead of detecting changed
+          modules from HEAD and its first parent. Each must be named in the
+          manifest; semantic-release still decides whether a release is due.
+          Leave empty for change detection.
+        type: string
+        required: false
+        default: ''
       use-oidc:
         description: >
           When 'true', Node consumers publish via npm trusted publishing (OIDC)
@@ -133,5 +142,6 @@ jobs:
           github-token: ${{ secrets.github-token }}
           dry-run: ${{ inputs.dry-run }}
           pre-release-branch: ${{ inputs.pre-release-branch }}
+          modules: ${{ inputs.modules }}
           use-oidc: ${{ inputs.use-oidc }}
           npm-version: ${{ inputs.npm-version }}

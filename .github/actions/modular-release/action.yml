@@ -86,6 +86,15 @@ inputs:
       for production releases from main.
     required: false
     default: ''
+  modules:
+    description: >
+      Space-separated module names to release instead of detecting changed
+      modules from HEAD and its first parent. Each must be named in the
+      manifest. semantic-release still decides the version from each module's
+      commits, so a module with nothing to release is a no-op. Leave empty for
+      change detection.
+    required: false
+    default: ''
 
 outputs:
   released-modules:
@@ -175,8 +184,9 @@ runs:
       env:
         MANIFEST: ${{ inputs.modules-manifest }}
         PACKAGES_DIR: ${{ inputs.packages-dir }}
+        FORCED_MODULES: ${{ inputs.modules }}
       run: |
-        changed=$("${{ github.action_path }}/scripts/get_changed_modules.sh" "$MANIFEST" "$PACKAGES_DIR")
+        changed=$("${{ github.action_path }}/scripts/get_changed_modules.sh" "$MANIFEST" "$PACKAGES_DIR" "$FORCED_MODULES")
         echo "Changed modules: $changed"
         echo "modules=$changed" >> "$GITHUB_OUTPUT"
 
@@ -263,6 +273,7 @@ runs:
             echo "Smoke install passed for $pkg_name"
           fi
 
+          pre_tags=$(git tag --points-at HEAD)
           if npx semantic-release $dry_run_flag --extends "$CONFIG_DIR/release.${module}.js"; then
             if [ "$DRY_RUN" = "true" ]; then
               released=$(
@@ -274,10 +285,12 @@ runs:
               # the tags at HEAD are what distinguish a release from a no-op.
               # Modules whose names are suffixes of one another would both
               # match here; the manifest's unique-name rule does not prevent it.
+              # Tags already at HEAD before this run are skipped, because a
+              # forced `modules` run can start on an already-tagged commit.
               mapfile -t head_tags < <(git tag --points-at HEAD)
               module_tags=()
               for candidate in "${head_tags[@]}"; do
-                if [[ "$candidate" == v*-"$module" ]]; then
+                if [[ "$candidate" == v*-"$module" ]] && ! grep -qxF -- "$candidate" <<< "$pre_tags"; then
                   module_tags+=("$candidate")
                 fi
               done

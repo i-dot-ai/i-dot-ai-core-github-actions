@@ -61,8 +61,17 @@ function createRepository() {
   return directory;
 }
 
-function detect(cwd, manifest = 'modules.yml', packagesDirectory = 'packages') {
-  return run('bash', [detectorPath, manifest, packagesDirectory], cwd);
+function detect(
+  cwd,
+  manifest = 'modules.yml',
+  packagesDirectory = 'packages',
+  forcedModules = '',
+) {
+  return run(
+    'bash',
+    [detectorPath, manifest, packagesDirectory, forcedModules],
+    cwd,
+  );
 }
 
 describe('changed module detection', () => {
@@ -158,5 +167,39 @@ describe('changed module detection', () => {
     const result = detect(directory, 'modules.yml', '');
     expect(result.status).toBe(0);
     expect(result.stdout.trim()).toBe('vpc');
+  });
+
+  // createRepository leaves HEAD without a parent, so these also prove forced
+  // modules bypass the first-parent diff.
+  test('returns forced modules without diffing HEAD', () => {
+    const directory = createRepository();
+    fs.writeFileSync(
+      path.join(directory, 'modules.yml'),
+      'modules:\n  packages:\n    - auth\n    - llm\n',
+    );
+
+    const result = detect(directory, 'modules.yml', 'packages', ' llm  auth ');
+    expect(result.status).toBe(0);
+    expect(result.stdout.trim()).toBe('llm auth');
+  });
+
+  test('drops repeated forced modules', () => {
+    const directory = createRepository();
+    fs.writeFileSync(
+      path.join(directory, 'modules.yml'),
+      'modules:\n  packages:\n    - auth\n    - llm\n',
+    );
+
+    const result = detect(directory, 'modules.yml', 'packages', 'auth llm auth');
+    expect(result.status).toBe(0);
+    expect(result.stdout.trim()).toBe('auth llm');
+  });
+
+  test('fails when a forced module is not in the manifest', () => {
+    const directory = createRepository();
+    const result = detect(directory, 'modules.yml', 'packages', 'auth nope');
+
+    expect(result.status).toBe(1);
+    expect(result.stderr).toContain("Forced module 'nope' is not in modules.yml");
   });
 });

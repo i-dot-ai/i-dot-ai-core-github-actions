@@ -74,12 +74,13 @@ Composite action (if a consumer needs full control of the surrounding job):
 | `github-token` | secret | `contents:write` to push release commits and tags and create releases |
 | `dry-run` | no | Evaluate releases without publishing, committing, or tagging; default `false`. The reusable workflow types this as a `boolean`; the composite action receives the stringified value and treats only the literal `true` as enabled |
 | `pre-release-branch` | no | Optional branch exposed as a semantic-release prerelease channel |
+| `modules` | no | Space-separated module names to release instead of running change detection, for example from a manual `workflow_dispatch`. Each must be named in the manifest; semantic-release still decides whether each module has a release due. Default empty (change detection) |
 | `use-oidc` | no | Node only. When `true`, publishes via npm trusted publishing (OIDC): no token is written and the runner npm CLI is upgraded to the OIDC floor. Requires `id-token: write` on the job and a trusted publisher configured on npmjs.com for the calling repository and workflow file. Default `false` (token auth) |
 | `npm-version` | no | npm CLI version installed when `use-oidc` is `true`. Trusted publishing requires npm `>= 11.5.1`; default `11.5.1` |
 
 ### Release contract
 
-The action compares `HEAD` with its first parent and releases modules with source changes under their package directory. A caller must check out at least two commits; the reusable workflow does this with `fetch-depth: 2`. The release policy treats changes whose path contains a `tests` or `__tests__` directory as test-only, so they do not trigger a new package version.
+The action compares `HEAD` with its first parent and releases modules with source changes under their package directory. A caller must check out at least two commits; the reusable workflow does this with `fetch-depth: 2`. The release policy treats changes whose path contains a `tests` or `__tests__` directory as test-only, so they do not trigger a new package version. Setting `modules` skips this comparison and releases the named modules instead.
 
 `modules.yml` may contain a top-level `modules` key or a bare mapping. Each list item is a module name. Mapping keys form its package path:
 
