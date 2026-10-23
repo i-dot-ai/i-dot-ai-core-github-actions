@@ -273,6 +273,7 @@ runs:
             echo "Smoke install passed for $pkg_name"
           fi
 
+          pre_tags=$(git tag --points-at HEAD)
           if npx semantic-release $dry_run_flag --extends "$CONFIG_DIR/release.${module}.js"; then
             if [ "$DRY_RUN" = "true" ]; then
               released=$(
@@ -284,10 +285,12 @@ runs:
               # the tags at HEAD are what distinguish a release from a no-op.
               # Modules whose names are suffixes of one another would both
               # match here; the manifest's unique-name rule does not prevent it.
+              # Tags already at HEAD before this run are skipped, because a
+              # forced `modules` run can start on an already-tagged commit.
               mapfile -t head_tags < <(git tag --points-at HEAD)
               module_tags=()
               for candidate in "${head_tags[@]}"; do
-                if [[ "$candidate" == v*-"$module" ]]; then
+                if [[ "$candidate" == v*-"$module" ]] && ! grep -qxF -- "$candidate" <<< "$pre_tags"; then
                   module_tags+=("$candidate")
                 fi
               done

@@ -38,6 +38,7 @@ if [ -n "${forced_modules// /}" ]; then
       echo "Forced module '$name' is not in $manifest" >&2
       exit 1
     fi
+    [[ " ${forced[*]-} " == *" $name "* ]] && continue
     forced+=("$name")
   done
   echo "${forced[@]}"

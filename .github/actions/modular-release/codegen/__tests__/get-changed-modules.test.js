@@ -183,6 +183,18 @@ describe('changed module detection', () => {
     expect(result.stdout.trim()).toBe('llm auth');
   });
 
+  test('drops repeated forced modules', () => {
+    const directory = createRepository();
+    fs.writeFileSync(
+      path.join(directory, 'modules.yml'),
+      'modules:\n  packages:\n    - auth\n    - llm\n',
+    );
+
+    const result = detect(directory, 'modules.yml', 'packages', 'auth llm auth');
+    expect(result.status).toBe(0);
+    expect(result.stdout.trim()).toBe('auth llm');
+  });
+
   test('fails when a forced module is not in the manifest', () => {
     const directory = createRepository();
     const result = detect(directory, 'modules.yml', 'packages', 'auth nope');
