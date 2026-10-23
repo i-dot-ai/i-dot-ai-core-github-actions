@@ -44,8 +44,8 @@ on:
         description: 'An optional path from which to download build artifacts'
         required: false
         type: string
-      ENABLE_HEALTHCHECK:
-        description: 'Enable ECS Service Health Check and return deployment status. Can increase build times'
+      ENABLE_HEALTHCHECK: # deprecated, but needs to remain to ensure backwards compatibility for existing consumers.
+        description: 'Deprecated: only works for apps with a single ECS service. Bump the ecs Terraform module to v8 instead, which makes the apply itself wait for every service; see docs/await-ecs-services.md'
         required: false
         default: false
         type: boolean
