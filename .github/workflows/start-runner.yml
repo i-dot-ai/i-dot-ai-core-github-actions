@@ -152,10 +152,20 @@ jobs:
               {"Key": "GitHubRepository", "Value": "${{ github.repository }}"}
             ]
           ec2-volume-size: 64
+          # The action writes this script with `echo "<script>"` and then sources
+          # it as root, so: no double quotes or $(...) inside, and `exit 1` aborts
+          # the whole user-data before the runner registers. That is intended.
+          # If EFS is not mounted the job must not run: a root-owned empty
+          # /mnt/efs makes Docker cache writes fail with "permission denied",
+          # and a silent fallback is how a broken AMI went unnoticed for days.
+          # The unregistered runner makes start-runner time out after 5 minutes
+          # and stop-runner terminates the instance.
           pre-runner-script: |
             #!/bin/bash
-            sudo mkdir ${{ env.EFS_MOUNT_PATH }}
+            sudo mkdir -p ${{ env.EFS_MOUNT_PATH }}
             sudo mount -t efs ${{ env.EFS_ID }}:/ ${{ env.EFS_MOUNT_PATH }}
+            if ! mountpoint -q ${{ env.EFS_MOUNT_PATH }}; then echo 'FATAL: EFS ${{ env.EFS_ID }} not mounted at ${{ env.EFS_MOUNT_PATH }}; refusing to register runner' >&2; exit 1; fi
+            sudo chown -R ubuntu ${{ env.EFS_MOUNT_PATH }}
 
       - name: Get runner label
         id: get-runner-label
