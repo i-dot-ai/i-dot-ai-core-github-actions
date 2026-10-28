@@ -54,7 +54,7 @@ jobs:
           LEGACY: ${{ inputs.LEGACY }}
 
       - name: Stop EC2 runner
-        if: ${{ ! contains( 'persistent', inputs.RUNNER_LABEL ) }}
+        if: ${{ inputs.EC2_INSTANCE_ID != '' && !contains(inputs.RUNNER_LABEL, 'persistent') }}
         uses: machulav/ec2-github-runner@v2
         with:
           mode: stop
