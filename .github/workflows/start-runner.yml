@@ -158,19 +158,24 @@ jobs:
           # If EFS is not mounted the job must not run: a root-owned empty
           # /mnt/efs makes Docker cache writes fail with "permission denied",
           # and a silent fallback is how a broken AMI went unnoticed for days.
-          # The unregistered runner makes start-runner time out after 5 minutes
-          # and stop-runner terminates the instance.
+          # The unregistered runner makes start-runner time out after 5 minutes;
+          # get-runner-label still exports the label, so stop-runner terminates
+          # the instance.
+          # The chown must stay non-recursive. A recursive one walks the whole
+          # shared Docker cache and took 15 minutes, which is longer than the
+          # registration timeout (I-579).
           pre-runner-script: |
             #!/bin/bash
             sudo mkdir -p ${{ env.EFS_MOUNT_PATH }}
             sudo mount -t efs ${{ env.EFS_ID }}:/ ${{ env.EFS_MOUNT_PATH }}
             if ! mountpoint -q ${{ env.EFS_MOUNT_PATH }}; then echo 'FATAL: EFS ${{ env.EFS_ID }} not mounted at ${{ env.EFS_MOUNT_PATH }}; refusing to register runner' >&2; exit 1; fi
-            sudo chown -R ubuntu ${{ env.EFS_MOUNT_PATH }}
+            sudo chown ubuntu ${{ env.EFS_MOUNT_PATH }}
 
       - name: Get runner label
         id: get-runner-label
+        if: always() && steps.check-persistent-running.outcome == 'success'
         run: |
-          if [[ ${{ steps.check-persistent-running.outputs.use_persisted }} == 1 ]]; then
+          if [[ "${{ steps.check-persistent-running.outputs.use_persisted }}" == 1 ]]; then
             echo "label=${{ steps.check-persistent-running.outputs.runner_label }}" >> $GITHUB_OUTPUT
           else
             echo "label=${{ steps.start-ec2-runner.outputs.label }}" >> $GITHUB_OUTPUT
