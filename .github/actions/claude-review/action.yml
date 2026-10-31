@@ -23,7 +23,7 @@ runs:
   using: composite
   steps:
     - name: Automatic PR Review
-      uses: anthropics/claude-code-action@v1
+      uses: anthropics/claude-code-action@v1.0.74
       env:
         ANTHROPIC_BASE_URL: ${{ inputs.LLM_GATEWAY_URL }}
         MODEL: ${{ inputs.MODEL }}
