@@ -55,7 +55,7 @@ jobs:
       run: git config --global url.https://${{ secrets.AWS_GITHUBRUNNER_PAT }}@github.com/.insteadOf https://github.com/
 
     - name: ⬇️ Download artifact
-      uses: actions/download-artifact@v4
+      uses: actions/download-artifact@v4.1.3
     
     - name: 📂 List all directories
       run: |
