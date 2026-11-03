@@ -8,9 +8,9 @@ Nothing in this repository needs configuring for that. It happens inside Terrafo
 
 With `v8.0.0-ecs` or later, for each ECS service the apply:
 
-- waits for the new deployment to complete, which takes about 1–2 minutes with the default health check timings
+- waits for the new deployment to complete, which takes around 1–3 minutes with the default health check timings
 - fails if the deployment fails or is rolled back by the ECS circuit breaker, which is now on by default, so a bad image never replaces the running version
-- gives up after `wait_timeout` (default 5 minutes) if the deployment has not completed
+- gives up after `wait_timeout` (default 8 minutes) if the deployment has not completed
 
 Slow-starting services, for example ones that download a model on start, should raise `health_check_grace_period_seconds` and `wait_timeout` on their module. See the module's README for every setting.
 
