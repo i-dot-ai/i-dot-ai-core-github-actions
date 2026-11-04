@@ -16,6 +16,29 @@ Slow-starting services, for example ones that download a model on start, should 
 
 Services without a load balancer, such as backends behind service discovery and workers, are only checked if they set `container_healthcheck`. Apps generated from `i-dot-ai-cookiecutter` set it for the backend.
 
+## How to bump
+
+1. Change the `ecs` module's `ref` to `v8.0.0-ecs`.
+2. In each `health_check` block, delete `interval` and set `timeout = 5`. v8 uses `interval` (default 10 seconds) and requires `timeout` to be less than it, so the old template's `interval = 60` and `timeout = 70` fail the plan.
+3. For each service without a load balancer, set `container_healthcheck`:
+
+   ```hcl
+   container_healthcheck = {
+     command = ["CMD-SHELL", "curl --fail http://localhost:8080/api/healthcheck || exit 1"]
+   }
+   ```
+
+   If the image has no curl, use Python instead:
+
+   ```hcl
+   container_healthcheck = {
+     command = ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8080/api/healthcheck')"]
+   }
+   ```
+
+   Change the port and path if your service uses different ones.
+4. Remove `ENABLE_HEALTHCHECK: true` from your workflow. See [Migrating from `ENABLE_HEALTHCHECK`](#migrating-from-enable_healthcheck).
+
 ## Migrating from `ENABLE_HEALTHCHECK`
 
 `ENABLE_HEALTHCHECK` is deprecated. It only works for apps with a single ECS service whose name matches `i-dot-ai-<env>-<APP_NAME>-ecs-service` in the shared `i-dot-ai-<env>-ecs-cluster`, and it cannot detect rollbacks.
