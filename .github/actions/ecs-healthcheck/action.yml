@@ -1,5 +1,5 @@
 name: Check ECS Service Health
-description: "Checks the status of an ECS Service post terraform deploy"
+description: "Deprecated. Waits for a single ECS service to stabilise after a terraform deploy. Bump the ecs Terraform module to v8 instead, which makes the apply wait for every service."
 inputs:
     ENVIRONMENT:
         required: true
@@ -11,12 +11,14 @@ inputs:
 runs:
   using: "composite"
   steps:
-  - name: Check ECS endpoint response
+  - name: Wait for ECS service to stabilise (deprecated)
     env:
       ENVIRONMENT: ${{ inputs.ENVIRONMENT }}
       APP_NAME: ${{ inputs.APP_NAME }}
     shell: bash
     run: |
+      echo "::warning title=Deprecated health check::ENABLE_HEALTHCHECK is deprecated and only checks one service. Bump the ecs Terraform module to v8.0.0-ecs or later, which makes terraform apply wait for every service and fail if one does not start; see https://github.com/i-dot-ai/i-dot-ai-core-github-actions/blob/main/docs/await-ecs-services.md"
+
       CLUSTER_NAME=i-dot-ai-$ENVIRONMENT-ecs-cluster
       SERVICE_NAME=i-dot-ai-$ENVIRONMENT-$APP_NAME-ecs-service
 
